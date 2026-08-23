@@ -4760,7 +4760,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 <div style="margin-top:20px; border-top:1px solid #334155; padding-top:15px;"><label style="color: var(--danger);">Reject this request instead</label><input type="text" id="rejectReasonInput" placeholder="Reason for rejecting (shown to the Seller)" style="margin-bottom:10px;"><button class="btn-secondary" onclick="submitRejection()" id="submitRejectBtn" style="border-color: var(--danger); color: var(--danger);"><i class="fas fa-times-circle"></i> <span id="submitRejectText">Reject Request</span><span class="spinner small" id="rejectSpinner" style="display: none;"></span></button></div>
 </div></div>
 
-<div class="confirmation-modal fullscreen-modal" id="editPurchaseModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title">Edit Purchase Entry</h2><input type="hidden" id="editPurchaseRowIndex"><input type="hidden" id="editPurchaseOriginalDate"><input type="hidden" id="editPurchaseOriginalBranch"><div class="form-group" style="position: relative;"><label>Product Name</label><div class="suggestions-container"><input type="text" id="editPurchaseProduct" placeholder="Product name" autocomplete="off" oninput="searchEditPurchaseProductsAutocomplete()" onfocus="showEditPurchaseProductsSuggestions()" onblur="hideSuggestionsWithDelay('editPurchaseProductsSuggestions')"><div id="editPurchaseProductsSuggestions" class="suggestions-box"></div></div></div><div class="form-group" style="position: relative;"><label>Supplier</label><div class="suggestions-container"><input type="text" id="editPurchaseSupplier" placeholder="Supplier name" autocomplete="off" oninput="searchEditSuppliersAutocomplete()" onfocus="showEditSupplierSuggestions()" onblur="hideSuggestionsWithDelay('editSupplierSuggestions')"><div id="editSupplierSuggestions" class="suggestions-box"></div></div></div><div class="form-group"><label>Quantity</label><input type="number" id="editPurchaseQuantity" placeholder="Enter quantity" min="0" step="0.01" oninput="calculateEditPurchaseTotal()" required></div><div class="form-group"><label>Unit Cost</label><input type="number" id="editPurchaseUnitCost" placeholder="Cost per unit" min="0" step="0.01" oninput="calculateEditPurchaseTotal()" required></div><div class="form-group"><label>Total Amount</label><input type="number" id="editPurchaseTotal" placeholder="Total amount" readonly></div><div class="form-group"><label>Payment Method</label><select id="editPurchasePaymentMethod"><option value="cash">Cash</option><option value="card">Credit/Debit Card</option><option value="bank">Bank Transfer</option><option value="credit">Credit</option></select></div><div class="confirmation-buttons"><button class="confirmation-btn confirm success" onclick="updatePurchase()" id="updatePurchaseBtn"><i class="fas fa-save"></i> <span id="updatePurchaseText">Update Purchase</span><span class="spinner small" id="updatePurchaseSpinner" style="display: none;"></span></button></div></div></div>
+<div class="confirmation-modal fullscreen-modal" id="editPurchaseModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title">Edit Purchase Entry</h2><input type="hidden" id="editPurchaseRowIndex"><input type="hidden" id="editPurchaseOriginalDate"><input type="hidden" id="editPurchaseOriginalBranch"><div class="form-group" style="position: relative;"><label>Product Name</label><div class="suggestions-container"><input type="text" id="editPurchaseProduct" placeholder="Product name" autocomplete="off" oninput="searchEditPurchaseProductsAutocomplete()" onfocus="showEditPurchaseProductsSuggestions()" onblur="hideSuggestionsWithDelay('editPurchaseProductsSuggestions')"><div id="editPurchaseProductsSuggestions" class="suggestions-box"></div></div></div><div class="form-group" style="position: relative;"><label>Supplier</label><div class="suggestions-container"><input type="text" id="editPurchaseSupplier" placeholder="Supplier name" autocomplete="off" oninput="searchEditSuppliersAutocomplete()" onfocus="showEditSupplierSuggestions()" onblur="hideSuggestionsWithDelay('editSupplierSuggestions')"><div id="editSupplierSuggestions" class="suggestions-box"></div></div></div><div class="form-group"><label>Quantity</label><input type="number" id="editPurchaseQuantity" placeholder="Enter quantity" min="0" step="0.01" oninput="calculateEditPurchaseTotal()" required></div><div class="form-group"><label>Unit Cost</label><input type="number" id="editPurchaseUnitCost" placeholder="Cost per unit" min="0" step="0.01" oninput="calculateEditPurchaseTotal()" required></div><div class="form-group" style="position: relative;"><label>Category (Optional)</label><div class="suggestions-container"><input type="text" id="editPurchaseCategory" placeholder="e.g., Electronics, Clothing" autocomplete="off" oninput="searchEditPurchaseCategoryAutocomplete()" onfocus="showEditPurchaseCategorySuggestions()" onblur="hideSuggestionsWithDelay('editPurchaseCategorySuggestions')"><div id="editPurchaseCategorySuggestions" class="suggestions-box"></div></div></div><div class="form-group"><label>Total Amount</label><input type="number" id="editPurchaseTotal" placeholder="Total amount" readonly></div><div class="form-group"><label>Payment Method</label><select id="editPurchasePaymentMethod"><option value="cash">Cash</option><option value="card">Credit/Debit Card</option><option value="bank">Bank Transfer</option><option value="credit">Credit</option></select></div><div class="confirmation-buttons"><button class="confirmation-btn confirm success" onclick="updatePurchase()" id="updatePurchaseBtn"><i class="fas fa-save"></i> <span id="updatePurchaseText">Update Purchase</span><span class="spinner small" id="updatePurchaseSpinner" style="display: none;"></span></button></div></div></div>
 
 <div class="confirmation-modal fullscreen-modal" id="addCustomerModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title">Add Customer</h2><div class="form-group"><label>Customer Name *</label><input type="text" id="customerName" placeholder="Full name" required></div><div class="input-group"><div><label>Phone Number</label><input type="tel" id="customerPhone" placeholder="Phone number"></div><div><label>Email Address</label><input type="email" id="customerEmail" placeholder="Email address"></div></div><div class="form-group"><label>Address</label><input type="text" id="customerAddress" placeholder="Physical address"></div><div class="form-group"><label>Notes (Optional)</label><textarea id="customerNotes" placeholder="Any notes about this customer" rows="3"></textarea></div><div class="confirmation-buttons"><button class="confirmation-btn confirm success" onclick="submitCustomer()" id="submitCustomerBtn"><i class="fas fa-save"></i> <span id="submitCustomerText">Save Customer</span><span class="spinner small" id="customerSpinner" style="display: none;"></span></button></div></div></div>
 
@@ -4799,7 +4799,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 
     <script>
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbwDtN4m18YW1NNnsqTZds9GJ9gWQMvsOMvz3Idv-_PL9tpBwTpAo3YGyzBIDx6MQ-yKQw/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbx9fyA5qwliAIjBkRs4ZHeldopu5VK5zh50H-bsMM0eLEE-oaTKfqkCRFwAHUg8iw4SJQ/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -5087,7 +5087,11 @@ let debtPhotoBase64 = null;
                        (offlineData.suppliers?.length || 0) + 
                        (offlineData.debts?.length || 0) +
                        (offlineData.units?.length || 0) +
-                       (offlineData.purchaseRequestActions?.length || 0);
+                       (offlineData.categories?.length || 0) +
+                       (offlineData.purchaseRequestActions?.length || 0) +
+                       (offlineData.stockEdits?.length || 0) +
+                       (offlineData.saleEdits?.length || 0) +
+                       (offlineData.purchaseEdits?.length || 0);
     
     showNotification(`Syncing ${totalItems} offline items...`, 'info');
     
@@ -5147,7 +5151,10 @@ let debtPhotoBase64 = null;
             customers: offlineData.customers || [],
             suppliers: offlineData.suppliers || [],
             debts: offlineData.debts || [],
-            purchaseRequestActions: offlineData.purchaseRequestActions || []
+            purchaseRequestActions: offlineData.purchaseRequestActions || [],
+            stockEdits: offlineData.stockEdits || [],
+            saleEdits: offlineData.saleEdits || [],
+            purchaseEdits: offlineData.purchaseEdits || []
         });
         
         if (result && result.success) {
@@ -5163,6 +5170,9 @@ let debtPhotoBase64 = null;
             offlineData.units = [];
             offlineData.categories = [];
             offlineData.purchaseRequestActions = [];
+            offlineData.stockEdits = [];
+            offlineData.saleEdits = [];
+            offlineData.purchaseEdits = [];
             offlineData.lastSync = new Date().toISOString();
             offlineData.isSyncing = false;
             
@@ -5354,9 +5364,11 @@ let debtPhotoBase64 = null;
     }
     
     try {
-        const result = await apiCall('deleteLogo', {
-            email: currentUser.email
-        });
+        // Clear both storage paths - the new base64-in-Settings copy and
+        // the legacy Drive-based one, in case this account still has an
+        // older logo stored the old way.
+        const result = await apiCall('deleteLogoBase64', {});
+        try { await apiCall('deleteLogo', { email: currentUser.email }); } catch (e) { /* ignore - legacy path may not exist */ }
         
         if (result.success) {
             currentUser.logoUrl = DEFAULT_LOGO_URL;
@@ -5368,6 +5380,7 @@ let debtPhotoBase64 = null;
             localStorage.removeItem('smartTradeDirectLogoUrl');
             localStorage.removeItem('smartTradeLogoBase64');
             
+            applySidebarAndAvatarLogo();
             showNotification('Logo removed successfully', 'info');
         } else {
             showNotification(result.error || 'Failed to remove logo', 'error');
@@ -7355,15 +7368,28 @@ async function forceRefreshLogoFromServer() {
         if (result && result.success && result.logoUrl && result.logoUrl !== DEFAULT_LOGO_URL) {
             console.log('Logo found on server');
             
+            currentUser.logoUrl = result.logoUrl;
+            currentUser.altLogoUrl = result.altLogoUrl || result.logoUrl;
+            currentUser.directLogoUrl = result.directLogoUrl || result.logoUrl;
+            
+            localStorage.setItem('smartTradeLogoUrl', result.logoUrl);
+            
+            // A base64 data URI is already a complete, ready-to-use image
+            // source - render it directly instead of running it through the
+            // Drive-file-ID extraction path below, which only applies to
+            // the older Drive-hosted logos and would never match a data
+            // URI (leaving the preview stuck on its loading spinner).
+            if (result.logoUrl.indexOf('data:') === 0) {
+                if (logoElements.preview) setLogoFromData(logoElements.preview, result.logoUrl);
+                if (logoElements.sidebar) setLogoFromData(logoElements.sidebar, result.logoUrl);
+                if (logoElements.avatar) setLogoFromData(logoElements.avatar, result.logoUrl);
+                return result.logoUrl;
+            }
+            
             const fileId = result.logoId;
             const directUrl = 'https://drive.google.com/uc?export=view&id=' + fileId;
             
-            currentUser.logoUrl = directUrl;
-            currentUser.altLogoUrl = result.altLogoUrl || directUrl;
-            currentUser.directLogoUrl = result.directLogoUrl || directUrl;
             currentUser.logoId = fileId;
-            
-            localStorage.setItem('smartTradeLogoUrl', directUrl);
             localStorage.setItem('smartTradeLogoId', fileId);
             
             // Load the logo - this will show the logo or keep loading state
@@ -7385,6 +7411,13 @@ async function forceRefreshLogoFromServer() {
 // Load logo from URL - NEVER SHOW DEFAULT UNLESS ABSOLUTELY NECESSARY
 async function loadLogoFromUrl(logoUrl) {
     if (!logoElements.preview) return false;
+    
+    // A base64 data URI is already a complete, ready-to-use image source -
+    // no Drive file ID to extract, so render it directly.
+    if (logoUrl && logoUrl.indexOf('data:') === 0) {
+        setLogoFromData(logoElements.preview, logoUrl);
+        return true;
+    }
     
     console.log('Loading logo from URL');
     
@@ -7422,6 +7455,7 @@ async function loadLogoFromUrl(logoUrl) {
 function loadImageWithTimeout(url, timeout) {
     return new Promise(function(resolve, reject) {
         const img = new Image();
+        img.crossOrigin = 'anonymous';
         
         const timer = setTimeout(function() {
             img.src = '';
@@ -7444,6 +7478,14 @@ function loadImageWithTimeout(url, timeout) {
                 logoElements.preview.appendChild(previewImg);
             }
             
+            // This is an older, Drive-hosted logo (not yet migrated to the
+            // base64 storage new uploads use) - now that it has loaded
+            // successfully, quietly adopt a base64 copy of it as the new
+            // logoUrl so this business's logo also becomes available
+            // offline from now on, without the Admin needing to manually
+            // re-upload anything.
+            upgradeLegacyLogoToBase64(img);
+            
             resolve(true);
         };
         
@@ -7454,6 +7496,53 @@ function loadImageWithTimeout(url, timeout) {
         
         img.src = url;
     });
+}
+
+// Converts an already-loaded <img> (a legacy Drive-hosted logo) into a
+// compressed base64 data URI and adopts it as the canonical logo - both
+// locally (usable offline immediately) and on the server (so the
+// business's logo is fully migrated for next time too, and other
+// devices/sessions pick it up on their next sync). Silently does nothing
+// if the browser can't read the image's pixels back out (a cross-origin
+// restriction some Drive URLs may still impose) - the Drive URL keeps
+// working normally online either way; this is purely a one-time bonus
+// upgrade, not something the rest of the app depends on.
+async function upgradeLegacyLogoToBase64(imgElement) {
+    if (!isOnline) return;
+    try {
+        const maxDim = 300;
+        const naturalW = imgElement.naturalWidth || maxDim;
+        const naturalH = imgElement.naturalHeight || maxDim;
+        const scale = Math.min(1, maxDim / Math.max(naturalW, naturalH));
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(naturalW * scale));
+        canvas.height = Math.max(1, Math.round(naturalH * scale));
+        
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(imgElement, 0, 0, canvas.width, canvas.height);
+        
+        const { dataUrl, base64 } = await canvasToCompressedDataUrl(canvas, MAX_LOGO_BASE64_LENGTH);
+        
+        currentUser.logoUrl = dataUrl;
+        currentUser.altLogoUrl = dataUrl;
+        currentUser.directLogoUrl = dataUrl;
+        localStorage.setItem('smartTradeLogoUrl', dataUrl);
+        localStorage.setItem('smartTradeAltLogoUrl', dataUrl);
+        localStorage.setItem('smartTradeDirectLogoUrl', dataUrl);
+        
+        applySidebarAndAvatarLogo();
+        if (logoElements.preview) setLogoFromData(logoElements.preview, dataUrl);
+        
+        apiCall('uploadLogoBase64', { logoData: base64, mimeType: 'image/jpeg' }).catch(function() {
+            // Non-critical - the logo is already usable locally/offline
+            // even if this silent server-side migration attempt fails.
+        });
+    } catch (e) {
+        // Cross-origin canvas restriction or similar - nothing to do, the
+        // Drive URL keeps working normally while online.
+        console.log('Could not upgrade legacy logo to base64:', e);
+    }
 }
 
 // Load logo from cache - NO DEFAULT HERE
@@ -7541,18 +7630,13 @@ function refreshLogoPreview() {
 // Initialize logo
 function initializeLogo() {
     logoElements.preview = document.getElementById('currentLogo');
+    logoElements.sidebar = document.getElementById('sidebarLogo');
+    logoElements.avatar = document.getElementById('userAvatar');
     
-    // Set sidebar icon
-    const sidebarLogo = document.getElementById('sidebarLogo');
-    if (sidebarLogo) {
-        sidebarLogo.innerHTML = '<i class="fas fa-chart-line" style="font-size: 32px; color: var(--accent);"></i>';
-    }
-    
-    // Set user avatar icon
-    const userAvatar = document.getElementById('userAvatar');
-    if (userAvatar) {
-        userAvatar.innerHTML = '<i class="fas fa-store" style="font-size: 20px;"></i>';
-    }
+    // Sidebar icon + user avatar: currentUser.logoUrl is already available
+    // synchronously from login/sync, so show it (or the default icon)
+    // immediately - never a loading spinner in these two small spots.
+    applySidebarAndAvatarLogo();
     
     // Load logo preview in settings - ALWAYS show loading first
     if (logoElements.preview) {
@@ -7567,6 +7651,30 @@ function initializeLogo() {
     }
     
     logoInitialized = true;
+}
+
+// Renders the current logo (or the default icon, quietly, if there isn't
+// one) into the sidebar and the user-avatar spots. Called once at startup
+// and again anytime currentUser.logoUrl changes (upload, remove, switching
+// business) so both spots always reflect the right business's logo.
+function applySidebarAndAvatarLogo() {
+    const hasRealLogo = currentUser.logoUrl && currentUser.logoUrl !== DEFAULT_LOGO_URL && currentUser.logoUrl !== 'https://i.imgur.com/XrJpD6d.png';
+    
+    if (logoElements.sidebar) {
+        if (hasRealLogo) {
+            setLogoFromData(logoElements.sidebar, currentUser.logoUrl);
+        } else {
+            logoElements.sidebar.innerHTML = '<i class="fas fa-chart-line" style="font-size: 32px; color: var(--accent);"></i>';
+        }
+    }
+    
+    if (logoElements.avatar) {
+        if (hasRealLogo) {
+            setLogoFromData(logoElements.avatar, currentUser.logoUrl);
+        } else {
+            logoElements.avatar.innerHTML = '<i class="fas fa-store" style="font-size: 20px;"></i>';
+        }
+    }
 }
 
 // SHOW DEFAULT ONLY AS LAST RESORT - when we KNOW there's no logo
@@ -8082,6 +8190,52 @@ function hideAccessDeniedModal() {
         }
         
         
+        // Google Sheets caps a single cell at ~50,000 characters - stay
+        // safely under that for the logo's base64 string.
+        const MAX_LOGO_BASE64_LENGTH = 48000;
+        
+        // Compresses a cropped canvas down to JPEG, automatically lowering
+        // quality (and, if that's still not enough, physical size) until
+        // the resulting base64 fits the limit above - the whole image is
+        // preserved, just re-encoded smaller, never cropped or cut.
+        function canvasToCompressedDataUrl(canvas, maxBase64Length) {
+            return new Promise((resolve) => {
+                let quality = 0.92;
+                let width = canvas.width;
+                let height = canvas.height;
+                
+                function attempt() {
+                    let sourceCanvas = canvas;
+                    if (width !== canvas.width || height !== canvas.height) {
+                        const resized = document.createElement('canvas');
+                        resized.width = width;
+                        resized.height = height;
+                        resized.getContext('2d').drawImage(canvas, 0, 0, width, height);
+                        sourceCanvas = resized;
+                    }
+                    
+                    const dataUrl = sourceCanvas.toDataURL('image/jpeg', quality);
+                    const base64Only = dataUrl.split(',')[1];
+                    
+                    if (base64Only.length <= maxBase64Length || (quality <= 0.35 && width <= 80)) {
+                        resolve({ dataUrl, base64: base64Only });
+                        return;
+                    }
+                    
+                    if (quality > 0.35) {
+                        quality -= 0.12;
+                    } else {
+                        width = Math.round(width * 0.8);
+                        height = Math.round(height * 0.8);
+                        quality = 0.7; // give the smaller size a fair quality pass again
+                    }
+                    attempt();
+                }
+                
+                attempt();
+            });
+        }
+        
         async function cropAndUpload() {
     if (!cropper || !selectedFile) {
         closeCropper();
@@ -8095,46 +8249,36 @@ function hideAccessDeniedModal() {
         imageSmoothingQuality: 'high'
     });
     
-    canvas.toBlob(async function(blob) {
-        const reader = new FileReader();
-        
-        reader.onload = async function(e) {
-            const base64Data = e.target.result.split(',')[1];
-            const fileExtension = selectedFile.name.split('.').pop().toLowerCase();
-            
-            // Update cache with cropped image
-            const croppedBase64 = e.target.result;
-            logoBase64Cache = {
-                url: 'temp_' + Date.now(),
-                data: croppedBase64,
-                timestamp: new Date().getTime()
-            };
-            localStorage.setItem('smartTradeLogoBase64', JSON.stringify(logoBase64Cache));
-            
-            // Update preview with cropped image
-            if (logoElements.preview) {
-                logoElements.preview.innerHTML = '';
-                const previewImg = document.createElement('img');
-                previewImg.src = croppedBase64;
-                previewImg.style.width = '100%';
-                previewImg.style.height = '100%';
-                previewImg.style.objectFit = 'cover';
-                logoElements.preview.appendChild(previewImg);
-            }
-            
-            closeCropper();
-            
-            const uploadProgress = document.getElementById('logoUploadProgress');
-            const uploadArea = document.getElementById('logoUploadArea');
-            
-            if (uploadProgress) uploadProgress.style.display = 'block';
-            if (uploadArea) uploadArea.style.display = 'none';
-            
-            await uploadLogoToServer(base64Data, 'image/png', 'logo.png', 'png');
-        };
-        
-        reader.readAsDataURL(blob);
-    }, 'image/png', 0.9);
+    const { dataUrl: croppedBase64, base64: base64Data } = await canvasToCompressedDataUrl(canvas, MAX_LOGO_BASE64_LENGTH);
+    
+    // Update cache with cropped image
+    logoBase64Cache = {
+        url: 'temp_' + Date.now(),
+        data: croppedBase64,
+        timestamp: new Date().getTime()
+    };
+    localStorage.setItem('smartTradeLogoBase64', JSON.stringify(logoBase64Cache));
+    
+    // Update preview with cropped image
+    if (logoElements.preview) {
+        logoElements.preview.innerHTML = '';
+        const previewImg = document.createElement('img');
+        previewImg.src = croppedBase64;
+        previewImg.style.width = '100%';
+        previewImg.style.height = '100%';
+        previewImg.style.objectFit = 'cover';
+        logoElements.preview.appendChild(previewImg);
+    }
+    
+    closeCropper();
+    
+    const uploadProgress = document.getElementById('logoUploadProgress');
+    const uploadArea = document.getElementById('logoUploadArea');
+    
+    if (uploadProgress) uploadProgress.style.display = 'block';
+    if (uploadArea) uploadArea.style.display = 'none';
+    
+    await uploadLogoToServer(base64Data, 'image/jpeg', 'logo.jpg', 'jpg');
 }
         
         
@@ -8143,13 +8287,9 @@ function hideAccessDeniedModal() {
     const uploadArea = document.getElementById('logoUploadArea');
     
     try {
-        const result = await apiCall('uploadLogo', {
-            email: currentUser.email,
-            business: currentUser.business,
+        const result = await apiCall('uploadLogoBase64', {
             logoData: base64Data,
-            mimeType: mimeType,
-            fileName: fileName,
-            fileExtension: fileExtension
+            mimeType: mimeType
         });
         
         if (uploadProgress) uploadProgress.style.display = 'none';
@@ -8157,12 +8297,12 @@ function hideAccessDeniedModal() {
         
         if (result.success) {
             currentUser.logoUrl = result.logoUrl;
-            currentUser.altLogoUrl = result.altLogoUrl || result.logoUrl;
-            currentUser.directLogoUrl = result.directLogoUrl || result.logoUrl;
+            currentUser.altLogoUrl = result.logoUrl;
+            currentUser.directLogoUrl = result.logoUrl;
             
             localStorage.setItem('smartTradeLogoUrl', result.logoUrl);
-            localStorage.setItem('smartTradeAltLogoUrl', result.altLogoUrl || '');
-            localStorage.setItem('smartTradeDirectLogoUrl', result.directLogoUrl || '');
+            localStorage.setItem('smartTradeAltLogoUrl', result.logoUrl);
+            localStorage.setItem('smartTradeDirectLogoUrl', result.logoUrl);
             
             // Update cache with final URL
             if (logoBase64Cache && logoBase64Cache.data) {
@@ -8170,6 +8310,8 @@ function hideAccessDeniedModal() {
                 localStorage.setItem('smartTradeLogoBase64', JSON.stringify(logoBase64Cache));
             }
             
+            applySidebarAndAvatarLogo();
+            updateTextContent();
             showNotification('Logo uploaded successfully!', 'success');
         } else {
             showNotification(result.error || 'Failed to upload logo', 'error');
@@ -9894,10 +10036,13 @@ function showEditSupplierProductsSuggestions() {
                            (offlineData.purchases && offlineData.purchases.length > 0) ||
                            (offlineData.customers && offlineData.customers.length > 0) ||
                            (offlineData.suppliers && offlineData.suppliers.length > 0) ||
-                           (offlineData.debts && offlineData.debts.length > 0) || // NEW
+                           (offlineData.debts && offlineData.debts.length > 0) ||
                            (offlineData.units && offlineData.units.length > 0) ||
                            (offlineData.categories && offlineData.categories.length > 0) ||
-                           (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0);
+                           (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0) ||
+                           (offlineData.stockEdits && offlineData.stockEdits.length > 0) ||
+                           (offlineData.saleEdits && offlineData.saleEdits.length > 0) ||
+                           (offlineData.purchaseEdits && offlineData.purchaseEdits.length > 0);
                            
     if (hasOfflineData && currentUser.databaseId) {
         await syncOfflineData();
@@ -9929,7 +10074,10 @@ function showEditSupplierProductsSuggestions() {
                            (offlineData.debts && offlineData.debts.length > 0) ||
                            (offlineData.units && offlineData.units.length > 0) ||
                            (offlineData.categories && offlineData.categories.length > 0) ||
-                           (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0);
+                           (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0) ||
+                           (offlineData.stockEdits && offlineData.stockEdits.length > 0) ||
+                           (offlineData.saleEdits && offlineData.saleEdits.length > 0) ||
+                           (offlineData.purchaseEdits && offlineData.purchaseEdits.length > 0);
                                    
     if (!hasOfflineData) {
         showNotification('No offline data to sync', 'info');
@@ -10113,7 +10261,10 @@ function updateAllCaches(result) {
                            (offlineData.debts && offlineData.debts.length > 0) ||
                            (offlineData.units && offlineData.units.length > 0) ||
                            (offlineData.categories && offlineData.categories.length > 0) ||
-                           (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0);
+                           (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0) ||
+                           (offlineData.stockEdits && offlineData.stockEdits.length > 0) ||
+                           (offlineData.saleEdits && offlineData.saleEdits.length > 0) ||
+                           (offlineData.purchaseEdits && offlineData.purchaseEdits.length > 0);
     
     // This function gets called very often (after almost every action), so
     // only touch the DOM when the visual state actually needs to change -
@@ -10609,7 +10760,37 @@ function updateAllCaches(result) {
                     showNotification(result.error || 'Failed to update sale', 'error');
                 }
             } catch (error) {
-                showNotification('Network error updating sale', 'error');
+                // Offline/network failure - queue the edit for later sync
+                // and apply it to the local cache right away.
+                if (!offlineData.saleEdits) offlineData.saleEdits = [];
+                offlineData.saleEdits.push({
+                    rowIndex: parseInt(rowIndex), product, quantity, unitPrice,
+                    total: total || quantity * unitPrice, customer: customer || "Walk-in", paymentMethod,
+                    oldProduct: oldData.product, oldQuantity: oldData.quantity, oldBranchId: oldData.branchId
+                });
+                saveOfflineData();
+                
+                if (salesCache.data) {
+                    const cacheIndex = parseInt(rowIndex) - 2;
+                    if (cacheIndex >= 0 && cacheIndex < salesCache.data.length) {
+                        salesCache.data[cacheIndex].product = product;
+                        salesCache.data[cacheIndex].quantity = quantity;
+                        salesCache.data[cacheIndex].unitPrice = unitPrice;
+                        salesCache.data[cacheIndex].total = total || quantity * unitPrice;
+                        salesCache.data[cacheIndex].customer = customer || "Walk-in";
+                        salesCache.data[cacheIndex].paymentMethod = paymentMethod;
+                    }
+                    salesCache.filtered = currentUser.userType === 'seller'
+                        ? salesCache.data.filter(s => s.sellerId === currentUser.sellerId)
+                        : salesCache.data;
+                    saveSalesCache();
+                }
+                
+                hideEditSaleModal();
+                showNotification('Sale updated offline. Will sync when online.', 'info');
+                loadSales();
+                loadDashboard();
+                window.oldSaleData = null;
             }
             
             setButtonLoading('updateSaleBtn', 'updateSaleSpinner', 'updateSaleText', false);
@@ -11722,7 +11903,40 @@ async function updateStock() {
         }
     } catch (error) {
         console.error('Error updating stock:', error);
-        showNotification('Network error updating stock', 'error');
+        
+        // Offline/network failure - queue the edit for later sync and
+        // apply it to the local cache right away, same as every "Add"
+        // flow already does, instead of just failing outright.
+        if (!offlineData.stockEdits) offlineData.stockEdits = [];
+        offlineData.stockEdits.push({
+            timestamp, product: originalProduct, branchId: originalBranch,
+            newProduct: product, quantity, buyPrice, sellPrice, category
+        });
+        saveOfflineData();
+        
+        if (stockCache.data) {
+            const targetTime = new Date(timestamp).getTime();
+            const index = stockCache.data.findIndex(item => {
+                const itemTime = new Date(item.date).getTime();
+                return Math.abs(itemTime - targetTime) < 1000 && (item.branchId || 'MAIN') === originalBranch;
+            });
+            if (index !== -1) {
+                stockCache.data[index] = {
+                    ...stockCache.data[index],
+                    product, quantity, buyPrice, sellPrice,
+                    value: quantity * buyPrice, category
+                };
+                stockCache.summary = calculateStockSummary(stockCache.data);
+                saveStockCache();
+                updateProductsFromStock();
+                updateCategoriesCache();
+            }
+        }
+        
+        hideEditStockModal();
+        showNotification('Stock updated offline. Will sync when online.', 'info');
+        loadStock();
+        loadDashboard();
     }
     
     setButtonLoading('updateStockBtn', 'updateStockSpinner', 'updateStockText', false);
@@ -14970,7 +15184,7 @@ function showEditCustomerSuggestions() {
                     <td>${purchase.paymentMethod || '-'}</td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn-sm btn-secondary" onclick="editPurchase('${rowIndex}', '${(purchase.product || '').replace(/'/g, "\\'")}', ${purchase.quantity}, ${purchase.unitCost || 0}, ${purchase.total || 0}, '${(purchase.supplier || '').replace(/'/g, "\\'")}', '${purchase.paymentMethod || 'cash'}', '${purchase.sellerId || ''}', '${purchase.branchId || 'MAIN'}', '${purchase.date}')">
+                            <button class="btn-sm btn-secondary" onclick="editPurchase('${rowIndex}', '${(purchase.product || '').replace(/'/g, "\\'")}', ${purchase.quantity}, ${purchase.unitCost || 0}, ${purchase.total || 0}, '${(purchase.supplier || '').replace(/'/g, "\\'")}', '${purchase.paymentMethod || 'cash'}', '${purchase.sellerId || ''}', '${purchase.branchId || 'MAIN'}', '${purchase.date}', '${(purchase.category || '').replace(/'/g, "\\'")}')">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="btn-sm btn-danger" onclick="deletePurchase('${rowIndex}')">
@@ -15002,7 +15216,7 @@ function showEditCustomerSuggestions() {
     tableBody.innerHTML = html;
 }
 
-function editPurchase(rowIndex, product, quantity, unitCost, total, supplier, paymentMethod, sellerId, branchId, date) {
+function editPurchase(rowIndex, product, quantity, unitCost, total, supplier, paymentMethod, sellerId, branchId, date, category) {
     document.getElementById('editPurchaseRowIndex').value = rowIndex;
     document.getElementById('editPurchaseProduct').value = product;
     document.getElementById('editPurchaseQuantity').value = quantity;
@@ -15010,6 +15224,7 @@ function editPurchase(rowIndex, product, quantity, unitCost, total, supplier, pa
     document.getElementById('editPurchaseTotal').value = total;
     document.getElementById('editPurchaseSupplier').value = supplier || '';
     document.getElementById('editPurchasePaymentMethod').value = paymentMethod || 'cash';
+    document.getElementById('editPurchaseCategory').value = category || '';
     
     // Store original values for reference (optional)
     document.getElementById('editPurchaseOriginalDate').value = date;
@@ -15041,6 +15256,7 @@ async function updatePurchase() {
     const total = parseFloat(document.getElementById('editPurchaseTotal').value);
     const supplier = document.getElementById('editPurchaseSupplier').value.trim();
     const paymentMethod = document.getElementById('editPurchasePaymentMethod').value;
+    const category = document.getElementById('editPurchaseCategory').value.trim();
     
     if (!product || !quantity || !unitCost) {
         showNotification('Please fill all required fields', 'error');
@@ -15057,18 +15273,23 @@ async function updatePurchase() {
         return;
     }
     
+    if (category) registerCategoryIfNew(category);
+    
     setButtonLoading('updatePurchaseBtn', 'updatePurchaseSpinner', 'updatePurchaseText', true);
     
+    const payload = {
+        rowIndex: parseInt(rowIndex),
+        product,
+        quantity,
+        unitCost,
+        total: total || quantity * unitCost,
+        supplier: supplier || "Local Supplier",
+        paymentMethod,
+        category
+    };
+    
     try {
-        const result = await apiCall('updatePurchase', {
-            rowIndex: parseInt(rowIndex),
-            product,
-            quantity,
-            unitCost,
-            total: total || quantity * unitCost,
-            supplier: supplier || "Local Supplier",
-            paymentMethod
-        });
+        const result = await apiCall('updatePurchase', payload);
         
         if (result.success) {
             // Update local cache - FIND BY ROW INDEX, NOT BY ID
@@ -15083,6 +15304,7 @@ async function updatePurchase() {
                     purchasesCache.data[cacheIndex].total = total || quantity * unitCost;
                     purchasesCache.data[cacheIndex].supplier = supplier || "Local Supplier";
                     purchasesCache.data[cacheIndex].paymentMethod = paymentMethod;
+                    purchasesCache.data[cacheIndex].category = category;
                     // IMPORTANT: Do NOT change date, branchId, sellerId
                 } else {
                     await refreshAllData();
@@ -15105,7 +15327,33 @@ async function updatePurchase() {
             showNotification(result.error || 'Failed to update purchase', 'error');
         }
     } catch (error) {
-        showNotification('Network error updating purchase', 'error');
+        // Offline/network failure - queue the edit for later sync and
+        // apply it to the local cache right away.
+        if (!offlineData.purchaseEdits) offlineData.purchaseEdits = [];
+        offlineData.purchaseEdits.push(payload);
+        saveOfflineData();
+        
+        if (purchasesCache.data) {
+            const cacheIndex = parseInt(rowIndex) - 2;
+            if (cacheIndex >= 0 && cacheIndex < purchasesCache.data.length) {
+                purchasesCache.data[cacheIndex].product = product;
+                purchasesCache.data[cacheIndex].quantity = quantity;
+                purchasesCache.data[cacheIndex].unitCost = unitCost;
+                purchasesCache.data[cacheIndex].total = total || quantity * unitCost;
+                purchasesCache.data[cacheIndex].supplier = supplier || "Local Supplier";
+                purchasesCache.data[cacheIndex].paymentMethod = paymentMethod;
+                purchasesCache.data[cacheIndex].category = category;
+            }
+            purchasesCache.filtered = currentUser.userType === 'seller'
+                ? purchasesCache.data.filter(p => p.sellerId === currentUser.sellerId)
+                : purchasesCache.data;
+            savePurchasesCache();
+        }
+        
+        hideEditPurchaseModal();
+        showNotification('Purchase updated offline. Will sync when online.', 'info');
+        loadPurchases();
+        loadDashboard();
     }
     
     setButtonLoading('updatePurchaseBtn', 'updatePurchaseSpinner', 'updatePurchaseText', false);
@@ -15404,7 +15652,8 @@ function showEditSupplierSuggestions() {
                                 paymentMethod: paymentMethod,
                                 sellerId: currentUser.sellerId,
                                 sellerName: currentUser.sellerName || 'Admin',
-                                branchId: branchId
+                                branchId: branchId,
+                                category: category
                             });
                             sortDataDescending(purchasesCache.data);
                             purchasesCache.filtered = purchasesCache.data;
@@ -15803,6 +16052,61 @@ function selectEditCategorySuggestion(category) {
 function showEditCategorySuggestions() {
     if (document.getElementById('editStockCategory').value.trim()) {
         searchEditCategoriesAutocomplete();
+    }
+}
+
+function searchEditPurchaseCategoryAutocomplete() {
+    const input = document.getElementById('editPurchaseCategory');
+    if (!input) return;
+    
+    const searchTerm = input.value.trim().toLowerCase();
+    const suggestionsBox = document.getElementById('editPurchaseCategorySuggestions');
+    
+    if (hideSuggestionsTimer) {
+        clearTimeout(hideSuggestionsTimer);
+    }
+    
+    updateCategoriesCache();
+    
+    if (!searchTerm || categoriesCache.size === 0) {
+        suggestionsBox.style.display = 'none';
+        suggestionsBox.innerHTML = '';
+        return;
+    }
+    
+    const categories = Array.from(categoriesCache);
+    const matches = categories.filter(cat => 
+        cat.toLowerCase().includes(searchTerm)
+    ).sort().slice(0, 5);
+    
+    if (matches.length === 0) {
+        suggestionsBox.style.display = 'none';
+        return;
+    }
+    
+    let html = '';
+    matches.forEach(category => {
+        html += `
+            <div class="suggestion-item" onclick="selectEditPurchaseCategorySuggestion('${category.replace(/'/g, "\\'")}')">
+                <div class="suggestion-name">
+                    <i class="fas fa-tag"></i> ${category}
+                </div>
+            </div>
+        `;
+    });
+    
+    suggestionsBox.innerHTML = html;
+    suggestionsBox.style.display = 'block';
+}
+
+function selectEditPurchaseCategorySuggestion(category) {
+    document.getElementById('editPurchaseCategory').value = category;
+    document.getElementById('editPurchaseCategorySuggestions').style.display = 'none';
+}
+
+function showEditPurchaseCategorySuggestions() {
+    if (document.getElementById('editPurchaseCategory').value.trim()) {
+        searchEditPurchaseCategoryAutocomplete();
     }
 }
         
@@ -18036,6 +18340,17 @@ function updateReportStatsFromCache() {
                 if (result.success) {
                     currentUser.business = business;
                     localStorage.setItem('smartTradeBusiness', business);
+                    
+                    // Keep the business-switcher list in sync too, so the
+                    // renamed business shows its new name immediately there
+                    // as well, without needing to log out and back in.
+                    if (currentUser.businesses) {
+                        const entry = currentUser.businesses.find(b => b.databaseId === currentUser.databaseId);
+                        if (entry) entry.business = business;
+                        localStorage.setItem('smartTradeBusinessesList', JSON.stringify(currentUser.businesses));
+                    }
+                    setupBusinessSwitcher();
+                    
                     updateTextContent();
                     showNotification('Profile updated successfully!', 'success');
                 } else {
@@ -19995,6 +20310,46 @@ function hidePhotoModal() {
 // PDF REPORT GENERATION
 // ============================================
 
+// Builds the download entirely from the file bytes the server returned
+// (Blob + local object URL) instead of navigating to an external
+// drive.google.com link. This is what makes downloads work reliably even
+// inside restricted WebViews (e.g. app-wrapper tools like AppCreator24)
+// where opening a Google Drive URL can fail, get blocked, or silently do
+// nothing. Falls back to the Drive link only if no file bytes came back
+// (older server response, or something odd about the file).
+function triggerFileDownload(result) {
+    if (result.fileData) {
+        try {
+            const byteChars = atob(result.fileData);
+            const byteNumbers = new Array(byteChars.length);
+            for (let i = 0; i < byteChars.length; i++) {
+                byteNumbers[i] = byteChars.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: result.mimeType || 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+            
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = result.fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+            return;
+        } catch (blobError) {
+            console.warn('Blob download failed, falling back to Drive link:', blobError);
+        }
+    }
+    
+    const link = document.createElement('a');
+    link.href = result.downloadUrl;
+    link.download = result.fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
 async function generatePDFReport() {
     setButtonLoading('generateReportBtn', 'reportSpinner', 'generateReportText', true);
     
@@ -20004,13 +20359,7 @@ async function generatePDFReport() {
         });
         
         if (result.success) {
-            // Create download link
-            const link = document.createElement('a');
-            link.href = result.downloadUrl;
-            link.download = result.fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            triggerFileDownload(result);
             
             // Notification safi tu
             showNotification('Report generated successfully!', 'success');
@@ -20592,12 +20941,7 @@ async function generateFilteredReportDirect(reportType) {
         });
         
         if (result && result.success) {
-            const link = document.createElement('a');
-            link.href = result.downloadUrl;
-            link.download = result.fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            triggerFileDownload(result);
             
             showNotification(result.reportType + ' generated successfully!', 'success');
         } else {
