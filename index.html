@@ -304,6 +304,60 @@
             gap: 10px;
         }
         
+        /* Business switcher (Admin only) - lets one account own several
+           completely independent businesses and switch between them. */
+        .business-switcher-dropdown {
+            position: absolute;
+            top: 115%;
+            right: 0;
+            background: var(--secondary);
+            border: 1px solid #334155;
+            border-radius: 10px;
+            min-width: 230px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+            z-index: 2500;
+            padding: 8px 0;
+        }
+        
+        .business-switcher-dropdown.hidden {
+            display: none;
+        }
+        
+        .business-switcher-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .business-switcher-item:hover {
+            background: rgba(56, 189, 248, 0.1);
+        }
+        
+        .business-switcher-item.active {
+            color: var(--accent);
+            font-weight: 600;
+        }
+        
+        .business-switcher-item.add-new {
+            border-top: 1px solid #334155;
+            color: var(--accent);
+            margin-top: 4px;
+            padding-top: 12px;
+        }
+        
+        #addBusinessInlineBox {
+            padding: 10px 16px 4px;
+        }
+        
+        #addBusinessInlineBox input {
+            width: 100%;
+            margin-bottom: 0;
+        }
+        
         .header-btn {
             padding: 8px 15px;
             border-radius: var(--border-radius);
@@ -1175,6 +1229,22 @@
             transform: translateY(0);
         }
         
+        /* Prevent the browser's pull-to-refresh gesture from firing while
+           scrolling inside the Record Sale form - it's easy to trigger by
+           accident while adding several items, and it would wipe the
+           in-progress cart if the page actually reloaded because of it. */
+        #addSaleModal {
+            overscroll-behavior-y: contain;
+        }
+        
+        #addSaleModal .confirmation-content {
+            overscroll-behavior-y: contain;
+        }
+        
+        body.sale-modal-open {
+            overscroll-behavior-y: contain;
+        }
+        
         .confirmation-icon {
             width: 60px;
             height: 60px;
@@ -1653,22 +1723,6 @@
         
         .table-container table {
             min-width: 800px;
-        }
-        
-        /* Quick select dropdown */
-        #fractionQuickSelect {
-            padding: 12px 15px;
-            border: 2px solid #334155;
-            border-radius: var(--border-radius);
-            background: var(--primary);
-            color: white;
-            font-size: 15px;
-            cursor: pointer;
-        }
-        
-        #fractionQuickSelect option {
-            background: var(--primary);
-            color: white;
         }
         
         /* Radio buttons styling */
@@ -4288,7 +4342,26 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
     <div class="main-content" id="mainContent">
         <div class="top-header" id="topHeader">
             <div class="header-left"><div class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()">☰</div><div class="page-title" id="pageTitle">Dashboard</div></div>
-            <div class="header-right"><div class="header-btn" id="headerAddStockBtn" onclick="openAddStockModal()">+ Add Stock</div><div class="header-btn" onclick="openAddSaleModal()">$ Quick Sale</div></div>
+            <div class="header-right">
+                <div class="business-switcher" id="businessSwitcherWrapper" style="position:relative; display:none;">
+                    <div class="header-btn" onclick="toggleBusinessSwitcher()" id="businessSwitcherBtn" style="display:flex; align-items:center; gap:6px;">
+                        <span id="businessSwitcherCurrentName">Business</span> <i class="fas fa-chevron-down" style="font-size:0.7rem;"></i>
+                    </div>
+                    <div class="business-switcher-dropdown hidden" id="businessSwitcherDropdown">
+                        <div id="businessSwitcherList"></div>
+                        <div class="business-switcher-item add-new" onclick="showAddBusinessInline()"><i class="fas fa-plus"></i> Add New Business</div>
+                        <div id="addBusinessInlineBox" class="hidden">
+                            <input type="text" id="newBusinessNameInput" placeholder="New business name">
+                            <div style="display:flex; gap:6px; margin-top:8px;">
+                                <button onclick="confirmAddBusiness()" class="btn-secondary" id="confirmAddBusinessBtn" style="flex:1;"><span id="confirmAddBusinessText">Add</span><span class="spinner small" id="addBusinessSpinner" style="display:none;"></span></button>
+                                <button onclick="hideAddBusinessInline()" class="btn-secondary" style="flex:1;">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-btn" id="headerAddStockBtn" onclick="openAddStockModal()">+ Add Stock</div>
+                <div class="header-btn" onclick="openAddSaleModal()">$ Quick Sale</div>
+            </div>
         </div>
         
         <div class="content-area" id="contentArea">
@@ -4631,7 +4704,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 
 <div class="confirmation-modal fullscreen-modal" id="editStockModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title">Edit Stock Entry</h2><input type="hidden" id="editStockTimestamp"><input type="hidden" id="editStockOriginalProduct"><input type="hidden" id="editStockOriginalBranch"><div class="form-group"><label>Product Name</label><input type="text" id="editStockProduct" placeholder="Product name" required></div><div class="form-group"><label>Quantity</label><input type="number" id="editStockQuantity" placeholder="Enter quantity" min="0" step="0.01" required></div><div class="input-group"><div><label>Buy Price (per unit)</label><input type="number" id="editStockBuyPrice" placeholder="Buy price" min="0" step="0.01" required></div><div><label>Sell Price (per unit)</label><input type="number" id="editStockSellPrice" placeholder="Sell price" min="0" step="0.01" required></div></div><div class="form-group" style="position: relative;"><label>Category (Optional)</label><div class="suggestions-container"><input type="text" id="editStockCategory" placeholder="e.g., Electronics, Clothing" autocomplete="off" oninput="searchEditCategoriesAutocomplete()" onfocus="showEditCategorySuggestions()" onblur="hideSuggestionsWithDelay('editCategorySuggestions')"><div id="editCategorySuggestions" class="suggestions-box"></div></div></div><div class="confirmation-buttons"><button class="confirmation-btn confirm success" onclick="updateStock()" id="updateStockBtn"><i class="fas fa-save"></i> <span id="updateStockText">Update Stock</span><span class="spinner small" id="updateStockSpinner" style="display: none;"></span></button></div></div></div>
 
-<div class="confirmation-modal fullscreen-modal" id="addSaleModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title" style="display:flex; justify-content:space-between; align-items:center;"><span>Record Sale</span><span onclick="toggleSaleModalLock()" id="saleLockToggleBtn" style="cursor:pointer; font-size:0.85rem; font-weight:normal; display:flex; align-items:center; gap:6px; color:#94a3b8;"><i class="fas fa-lock-open" id="saleLockIcon"></i> <span id="saleLockLabel">Lock</span></span></h2><div id="saleLockedBanner" class="hidden" style="background:rgba(239,68,68,0.1); border:1px solid var(--danger); color: var(--danger); padding:10px; border-radius:8px; margin-bottom:15px; text-align:center;"><i class="fas fa-lock"></i> This form is locked. Tap "Unlock" above to record a sale.</div><div class="form-group" id="saleBranchGroup" style="display: none;"><label>Select Branch</label><select id="saleBranchSelect" class="product-select" onchange="handleSaleBranchChange()"><option value="MAIN">Main Branch</option></select></div><div class="form-group"><label>Product Type</label><div style="display: flex; gap: 20px; margin-bottom: 15px;"><label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="radio" name="productType" value="stock" checked onchange="toggleProductInputMode()"> <span>Stock Product</span></label><label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="radio" name="productType" value="nonstock" onchange="toggleProductInputMode()"> <span>Non-Stock Service</span></label></div></div><div id="stockProductSection"><div class="form-group" style="position: relative;"><label>Select Product</label><div class="suggestions-container"><input type="text" id="saleProductSelect" placeholder="Type to search product..." autocomplete="off" style="padding-right: 32px;" oninput="searchSaleProductsAutocomplete()" onfocus="showSaleProductSuggestions()" onblur="hideSuggestionsWithDelay('saleProductSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('saleProductSelect','saleProductSuggestions')"><i class="fas fa-times"></i></span><div id="saleProductSuggestions" class="suggestions-box"></div></div></div></div><div id="nonStockProductSection" style="display: none;"><div class="form-group" style="position: relative;"><label>Service/Product Name</label><div class="suggestions-container"><input type="text" id="nonStockProduct" placeholder="e.g., Printing, Copying, Typing" autocomplete="off" style="padding-right: 32px;" oninput="handleNonStockProductInput(); searchNonStockProductsAutocomplete();" onfocus="showNonStockProductSuggestions()" onblur="hideSuggestionsWithDelay('nonStockProductSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('nonStockProduct','nonStockProductSuggestions')"><i class="fas fa-times"></i></span><div id="nonStockProductSuggestions" class="suggestions-box"></div></div></div><div class="form-group" style="position: relative;"><label>Unit <span style="color: var(--danger);">*</span></label><div class="suggestions-container"><input type="text" id="nonStockUnit" placeholder="Type or select: Session, Hour, Job, Pcs..." autocomplete="off" style="padding-right: 32px;" oninput="searchNonStockUnitAutocomplete()" onfocus="showNonStockUnitSuggestions()" onblur="hideSuggestionsWithDelay('nonStockUnitSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('nonStockUnit','nonStockUnitSuggestions')"><i class="fas fa-times"></i></span><div id="nonStockUnitSuggestions" class="suggestions-box"></div></div></div></div><div class="form-group"><label>Quantity</label><div style="display: flex; gap: 10px;"><input type="text" id="saleQuantity" placeholder="Enter quantity (e.g., 1, 0.5, 1/2, 3/4)" oninput="parseFractionalQuantity(); calculateSaleTotal(); validateSaleQuantity();" style="flex: 2;"><select id="fractionQuickSelect" onchange="applyFractionQuickSelect()" style="flex: 1;"><option value="">Quick Select</option><option value="1/2">½ (Half)</option><option value="1/4">¼ (Quarter)</option><option value="3/4">¾ (Three Quarters)</option><option value="1/3">⅓ (One Third)</option><option value="2/3">⅔ (Two Thirds)</option><option value="1">1 (One)</option><option value="2">2 (Two)</option></select></div><small style="color: #94a3b8; display: block; margin-top: 5px;">You can enter: 2, 0.5, 1/2, 3/4, etc.</small></div><div id="saleStockInfo" class="stock-indicator" style="display: none;">Available Stock: <span id="saleAvailableStock">0</span></div><div class="form-group"><label>Unit Price</label><input type="number" id="saleUnitPrice" placeholder="Price per unit" min="0" step="0.01" oninput="calculateSaleTotal()" required></div><div class="form-group"><label>Total Amount</label><input type="number" id="saleTotal" placeholder="Total amount" readonly></div><div class="form-group" style="position: relative;"><label>Customer Name</label><div class="suggestions-container"><input type="text" id="saleCustomer" placeholder="Customer name (optional)" autocomplete="off" style="padding-right: 32px;" oninput="searchCustomersAutocomplete()" onfocus="showCustomerSuggestions()" onblur="hideCustomerSuggestionsWithDelay()"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('saleCustomer','customerSuggestions')"><i class="fas fa-times"></i></span><div id="customerSuggestions" class="suggestions-box" style="display: none;"></div></div></div><div class="form-group"><label>Payment Method</label><select id="salePaymentMethod"><option value="cash">Cash</option><option value="card">Credit/Debit Card</option><option value="mobile">Mobile Money</option><option value="bank">Bank Transfer</option></select></div><div id="productValidationMessage" style="color: var(--danger); font-size: 0.9rem; margin-bottom: 15px; display: none;">Please select either a stock product OR enter a non-stock service, not both.</div><div class="confirmation-buttons"><button class="confirmation-btn confirm" onclick="submitSale()" id="submitSaleBtn"><i class="fas fa-save"></i> <span id="submitSaleText">Record Sale</span><span class="spinner small" id="saleSpinner" style="display: none;"></span></button></div><div style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 15px;"><h3 style="font-size: 1rem; color: #cbd5e1; margin-bottom: 10px;"><i class="fas fa-history"></i> Recent Sales</h3><div id="recentSalesInModal"></div></div></div></div>
+<div class="confirmation-modal fullscreen-modal" id="addSaleModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title" style="display:flex; justify-content:space-between; align-items:center;"><span>Record Sale</span><span onclick="toggleSaleModalLock()" id="saleLockToggleBtn" style="cursor:pointer; font-size:0.85rem; font-weight:normal; display:flex; align-items:center; gap:6px; color:#94a3b8;"><i class="fas fa-lock-open" id="saleLockIcon"></i> <span id="saleLockLabel">Lock</span></span></h2><div id="saleLockedBanner" class="hidden" style="background:rgba(239,68,68,0.1); border:1px solid var(--danger); color: var(--danger); padding:10px; border-radius:8px; margin-bottom:15px; text-align:center;"><i class="fas fa-lock"></i> This form is locked. Tap "Unlock" above to record a sale.</div><div class="form-group" id="saleBranchGroup" style="display: none;"><label>Select Branch</label><select id="saleBranchSelect" class="product-select" onchange="handleSaleBranchChange()"><option value="MAIN">Main Branch</option></select></div><div class="form-group" style="position: relative;"><label>Customer Name</label><div class="suggestions-container"><input type="text" id="saleCustomer" placeholder="Customer name (optional)" autocomplete="off" style="padding-right: 32px;" oninput="searchCustomersAutocomplete(); renderSaleCartSummary();" onfocus="showCustomerSuggestions()" onblur="hideCustomerSuggestionsWithDelay()"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('saleCustomer','customerSuggestions')"><i class="fas fa-times"></i></span><div id="customerSuggestions" class="suggestions-box" style="display: none;"></div></div></div><div class="form-group"><label>Payment Method</label><select id="salePaymentMethod" onchange="saveSaleCartToStorage()"><option value="cash">Cash</option><option value="card">Credit/Debit Card</option><option value="mobile">Mobile Money</option><option value="bank">Bank Transfer</option></select></div><div style="border-top:1px solid #334155; margin:15px 0; padding-top:15px;"><h3 style="font-size:0.95rem; color:#cbd5e1; margin-bottom:10px;"><i class="fas fa-plus-circle"></i> Add an item to this sale</h3><div class="form-group"><label>Product Type</label><div style="display: flex; gap: 20px; margin-bottom: 15px;"><label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="radio" name="productType" value="stock" checked onchange="toggleProductInputMode()"> <span>Stock Product</span></label><label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="radio" name="productType" value="nonstock" onchange="toggleProductInputMode()"> <span>Non-Stock Service</span></label></div></div><div id="stockProductSection"><div class="form-group" style="position: relative;"><label>Select Product</label><div class="suggestions-container"><input type="text" id="saleProductSelect" placeholder="Type to search product..." autocomplete="off" style="padding-right: 32px;" oninput="searchSaleProductsAutocomplete()" onfocus="showSaleProductSuggestions()" onblur="hideSuggestionsWithDelay('saleProductSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('saleProductSelect','saleProductSuggestions')"><i class="fas fa-times"></i></span><div id="saleProductSuggestions" class="suggestions-box"></div></div></div></div><div id="nonStockProductSection" style="display: none;"><div class="form-group" style="position: relative;"><label>Service/Product Name</label><div class="suggestions-container"><input type="text" id="nonStockProduct" placeholder="e.g., Printing, Copying, Typing" autocomplete="off" style="padding-right: 32px;" oninput="handleNonStockProductInput(); searchNonStockProductsAutocomplete();" onfocus="showNonStockProductSuggestions()" onblur="hideSuggestionsWithDelay('nonStockProductSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('nonStockProduct','nonStockProductSuggestions')"><i class="fas fa-times"></i></span><div id="nonStockProductSuggestions" class="suggestions-box"></div></div></div><div class="form-group" style="position: relative;"><label>Unit <span style="color: var(--danger);">*</span></label><div class="suggestions-container"><input type="text" id="nonStockUnit" placeholder="Type or select: Session, Hour, Job, Pcs..." autocomplete="off" style="padding-right: 32px;" oninput="searchNonStockUnitAutocomplete()" onfocus="showNonStockUnitSuggestions()" onblur="hideSuggestionsWithDelay('nonStockUnitSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('nonStockUnit','nonStockUnitSuggestions')"><i class="fas fa-times"></i></span><div id="nonStockUnitSuggestions" class="suggestions-box"></div></div></div></div><div class="form-group"><label>Quantity</label><div style="display: flex; gap: 8px; align-items:center;"><button type="button" onclick="adjustSaleQuantity(-1)" class="btn-secondary" style="flex:0 0 auto; width:42px; padding:8px 0; font-size:1.1rem;"><i class="fas fa-minus"></i></button><input type="text" id="saleQuantity" placeholder="e.g., 1, 0.5, 1/2, 3/4" oninput="parseFractionalQuantity(); calculateSaleTotal(); validateSaleQuantity();" style="flex:1; text-align:center;"><button type="button" onclick="adjustSaleQuantity(1)" class="btn-secondary" style="flex:0 0 auto; width:42px; padding:8px 0; font-size:1.1rem;"><i class="fas fa-plus"></i></button></div><small style="color: #94a3b8; display: block; margin-top: 5px;">Tap - / + to adjust by 1, or type an exact amount (e.g. 0.5, 1/2, 3/4)</small></div><div id="saleStockInfo" class="stock-indicator" style="display: none;">Available Stock: <span id="saleAvailableStock">0</span></div><div class="form-group"><label>Unit Price</label><input type="number" id="saleUnitPrice" placeholder="Price per unit" min="0" step="0.01" oninput="calculateSaleTotal()" required></div><div class="form-group"><label>Item Subtotal</label><input type="number" id="saleTotal" placeholder="Subtotal" readonly></div><div id="productValidationMessage" style="color: var(--danger); font-size: 0.9rem; margin-bottom: 15px; display: none;">Please select either a stock product OR enter a non-stock service, not both.</div><button type="button" class="btn-secondary" onclick="addSaleItemToCart()" style="width:100%; margin-bottom:15px;" id="addToCartBtn"><i class="fas fa-cart-plus"></i> Add to Sale</button></div><div id="saleCartSummaryCard" class="hidden" style="background: rgba(56,189,248,0.06); border:1px solid var(--accent); border-radius:10px; padding:12px; margin-bottom:15px;"><h3 style="font-size:0.95rem; color:#cbd5e1; margin-bottom:10px;"><i class="fas fa-receipt"></i> Sale Summary<span id="saleCartCustomerLabel" style="color:#94a3b8; font-weight:normal;"></span></h3><div id="saleCartItemsList"></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px solid #334155;"><strong style="color:#cbd5e1;">Grand Total</strong><strong style="color: var(--accent); font-size:1.2rem;" id="saleCartGrandTotal">TZS 0</strong></div></div><div class="confirmation-buttons"><button class="confirmation-btn confirm" onclick="completeSale()" id="submitSaleBtn"><i class="fas fa-save"></i> <span id="submitSaleText">Complete Sale</span><span class="spinner small" id="saleSpinner" style="display: none;"></span></button></div><div style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 15px;"><h3 style="font-size: 1rem; color: #cbd5e1; margin-bottom: 10px;"><i class="fas fa-history"></i> Recent Sales</h3><div id="recentSalesInModal"></div></div></div></div>
 
 <div class="confirmation-modal fullscreen-modal" id="editSaleModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title">Edit Sale Entry</h2><input type="hidden" id="editSaleRowIndex"><input type="hidden" id="editSaleOriginalDate"><input type="hidden" id="editSaleOriginalBranch"><div class="form-group" style="position: relative;"><label>Product Name</label><div class="suggestions-container"><input type="text" id="editSaleProduct" placeholder="Product name" autocomplete="off" oninput="searchEditSaleProductsAutocomplete()" onfocus="showEditSaleProductsSuggestions()" onblur="hideSuggestionsWithDelay('editSaleProductsSuggestions')"><div id="editSaleProductsSuggestions" class="suggestions-box"></div></div></div><div class="form-group"><label>Quantity</label><input type="number" id="editSaleQuantity" placeholder="Enter quantity" min="0" step="0.01" oninput="calculateEditSaleTotal()" required></div><div class="form-group"><label>Unit Price</label><input type="number" id="editSaleUnitPrice" placeholder="Price per unit" min="0" step="0.01" oninput="calculateEditSaleTotal()" required></div><div class="form-group"><label>Total Amount</label><input type="number" id="editSaleTotal" placeholder="Total amount" readonly></div><div class="form-group" style="position: relative;"><label>Customer Name</label><div class="suggestions-container"><input type="text" id="editSaleCustomer" placeholder="Customer name" autocomplete="off" oninput="searchEditCustomersAutocomplete()" onfocus="showEditCustomerSuggestions()" onblur="hideSuggestionsWithDelay('editCustomerSuggestions')"><div id="editCustomerSuggestions" class="suggestions-box"></div></div></div><div class="form-group"><label>Payment Method</label><select id="editSalePaymentMethod"><option value="cash">Cash</option><option value="card">Credit/Debit Card</option><option value="mobile">Mobile Money</option><option value="bank">Bank Transfer</option></select></div><div class="confirmation-buttons"><button class="confirmation-btn confirm success" onclick="updateSale()" id="updateSaleBtn"><i class="fas fa-save"></i> <span id="updateSaleText">Update Sale</span><span class="spinner small" id="updateSaleSpinner" style="display: none;"></span></button></div></div></div>
 
@@ -4726,7 +4799,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 
     <script>
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbywdb-fsWVQ4F9S_ZFZpTKVVU59kmGbQe-0-2tv9ZaajhYULC4PXHNBydGtCVDFWt96SA/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwDtN4m18YW1NNnsqTZds9GJ9gWQMvsOMvz3Idv-_PL9tpBwTpAo3YGyzBIDx6MQ-yKQw/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -5350,6 +5423,14 @@ let debtPhotoBase64 = null;
     localStorage.setItem('smartTradeIsExpired', currentUser.isExpired);
     localStorage.setItem('smartTradeAdminBusiness', currentUser.adminBusiness || '');
     
+    // One account can own several independent businesses - keep the list
+    // (returned at login) so the business-switcher menu can show it.
+    if (response.businesses) {
+        currentUser.businesses = response.businesses;
+        localStorage.setItem('smartTradeBusinessesList', JSON.stringify(response.businesses));
+    }
+    setupBusinessSwitcher();
+    
     if (response.products) {
         productsCache = response.products;
         saveProductsCache();
@@ -5389,6 +5470,13 @@ let debtPhotoBase64 = null;
         currentUser.subscriptionValid = localStorage.getItem('smartTradeSubscriptionValid') !== 'false';
         currentUser.isExpired = localStorage.getItem('smartTradeIsExpired') === 'true';
         currentUser.adminBusiness = localStorage.getItem('smartTradeAdminBusiness') || null;
+        
+        try {
+            currentUser.businesses = JSON.parse(localStorage.getItem('smartTradeBusinessesList') || '[]');
+        } catch (e) {
+            currentUser.businesses = [];
+        }
+        setupBusinessSwitcher();
         
         if (currentUser.token && currentUser.databaseId) {
             showApp();
@@ -8560,6 +8648,169 @@ function installModalPinGuards() {
 
 let pendingModalRestrictions = [];
 
+// ============================================
+// MULTI-BUSINESS SWITCHER (Admin only)
+// One Admin account (one email+password) can own several completely
+// independent businesses - each with its own Stock, Sales, Settings,
+// everything separate. This lets them jump between businesses instantly
+// without logging out, and add a new one without re-entering a password
+// (they're already authenticated).
+// ============================================
+
+function setupBusinessSwitcher() {
+    const wrapper = document.getElementById('businessSwitcherWrapper');
+    if (!wrapper) return;
+    
+    if (currentUser.userType !== 'admin') {
+        wrapper.style.display = 'none';
+        return;
+    }
+    
+    wrapper.style.display = 'block';
+    const nameEl = document.getElementById('businessSwitcherCurrentName');
+    if (nameEl) nameEl.textContent = currentUser.business || 'My Business';
+}
+
+function toggleBusinessSwitcher() {
+    const dropdown = document.getElementById('businessSwitcherDropdown');
+    if (!dropdown) return;
+    
+    const isHidden = dropdown.classList.contains('hidden');
+    if (isHidden) {
+        renderBusinessSwitcherList();
+        hideAddBusinessInline();
+        dropdown.classList.remove('hidden');
+    } else {
+        dropdown.classList.add('hidden');
+    }
+}
+
+function renderBusinessSwitcherList() {
+    const list = document.getElementById('businessSwitcherList');
+    if (!list) return;
+    
+    const businesses = (currentUser.businesses && currentUser.businesses.length > 0)
+        ? currentUser.businesses
+        : [{ business: currentUser.business, databaseId: currentUser.databaseId }];
+    
+    let html = '';
+    businesses.forEach(b => {
+        const isActive = b.databaseId === currentUser.databaseId;
+        html += `
+            <div class="business-switcher-item ${isActive ? 'active' : ''}" onclick="selectBusiness('${b.databaseId}')">
+                <i class="fas ${isActive ? 'fa-check-circle' : 'fa-store'}" style="${isActive ? '' : 'opacity:0.4;'}"></i> ${escapeHtml(b.business)}
+            </div>
+        `;
+    });
+    list.innerHTML = html;
+}
+
+function showAddBusinessInline() {
+    document.getElementById('addBusinessInlineBox').classList.remove('hidden');
+    document.getElementById('newBusinessNameInput').value = '';
+    document.getElementById('newBusinessNameInput').focus();
+}
+
+function hideAddBusinessInline() {
+    const box = document.getElementById('addBusinessInlineBox');
+    if (box) box.classList.add('hidden');
+}
+
+async function selectBusiness(databaseId) {
+    if (databaseId === currentUser.databaseId) {
+        toggleBusinessSwitcher();
+        return;
+    }
+    
+    if (!isOnline) {
+        showNotification('You need internet connection to switch business.', 'error');
+        return;
+    }
+    
+    toggleBusinessSwitcher();
+    
+    try {
+        const result = await apiCall('switchBusiness', { targetDatabaseId: databaseId });
+        if (result.success) {
+            applyBusinessSwitchResult(result);
+        } else {
+            showNotification(result.error || 'Failed to switch business', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error. Please try again.', 'error');
+    }
+}
+
+async function confirmAddBusiness() {
+    const name = document.getElementById('newBusinessNameInput').value.trim();
+    
+    if (!name) {
+        showNotification('Please enter a business name', 'error');
+        return;
+    }
+    if (!isOnline) {
+        showNotification('You need internet connection to add a business.', 'error');
+        return;
+    }
+    
+    setButtonLoading('confirmAddBusinessBtn', 'addBusinessSpinner', 'confirmAddBusinessText', true, 'Adding...');
+    
+    try {
+        const result = await apiCall('addBusiness', { business: name });
+        if (result.success) {
+            if (!currentUser.businesses) currentUser.businesses = [];
+            currentUser.businesses.push({ business: result.business, databaseId: result.databaseId });
+            showNotification(`"${result.business}" added! Switching to it now...`, 'success');
+            
+            const switchResult = await apiCall('switchBusiness', { targetDatabaseId: result.databaseId });
+            if (switchResult.success) {
+                applyBusinessSwitchResult(switchResult);
+                return; // page is reloading - don't restore the button state below
+            } else {
+                showNotification(switchResult.error || 'Business added, but could not switch to it automatically. Please select it from the menu.', 'info');
+            }
+        } else {
+            showNotification(result.error || 'Failed to add business', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error. Please try again.', 'error');
+    }
+    
+    setButtonLoading('confirmAddBusinessBtn', 'addBusinessSpinner', 'confirmAddBusinessText', false);
+}
+
+// Applies a successful switchBusiness() response exactly like logging
+// into that business fresh - clears every cached piece of the PREVIOUS
+// business's data first (so nothing can leak across businesses), then
+// reloads the page so the whole app re-initializes cleanly in the new
+// business's context.
+function applyBusinessSwitchResult(result) {
+    const businessesToKeep = currentUser.businesses;
+    clearBusinessDataCachesForSwitch();
+    
+    result.businesses = businessesToKeep;
+    saveSession(result);
+    
+    showNotification(`Switched to ${result.business}`, 'success');
+    setTimeout(() => window.location.reload(), 500);
+}
+
+function clearBusinessDataCachesForSwitch() {
+    const authKeysToKeep = [
+        'smartTradeToken', 'smartTradeBusiness', 'smartTradeEmail', 'smartTradeDatabaseId',
+        'smartTradeLogoUrl', 'smartTradeAltLogoUrl', 'smartTradeDirectLogoUrl', 'smartTradeTheme',
+        'smartTradeLanguage', 'smartTradeCurrentPage', 'smartTradeUserType', 'smartTradeSellerId',
+        'smartTradeSellerName', 'smartTradeBranchId', 'smartTradeBranchName', 'smartTradeSubscriptionValid',
+        'smartTradeIsExpired', 'smartTradeAdminBusiness', 'smartTradeBusinessesList'
+    ];
+    
+    Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('smartTrade') && !authKeysToKeep.includes(key)) {
+            localStorage.removeItem(key);
+        }
+    });
+}
+
 function setupModalRestrictionsUI() {
     const card = document.getElementById('modalRestrictionsCard');
     if (!card) return;
@@ -8953,7 +9204,8 @@ function toggleSaleModalLock() {
     // Update stock cache
     if (stockCache.data) {
         const existingCacheIndex = stockCache.data.findIndex(item => 
-            item.product === data.product && (item.branchId || 'MAIN') === data.branchId
+            item.product === data.product && (item.branchId || 'MAIN') === data.branchId &&
+            ((item.unit || '') === (data.unit || '') || !item.unit)
         );
         
         if (existingCacheIndex !== -1) {
@@ -10367,6 +10619,8 @@ function updateAllCaches(result) {
         // Live per-branch product cache used by the Sale search field below.
         // Rebuilt whenever the branch changes or the modal opens.
         let saleProductsInBranchCache = {};
+        let selectedSaleProduct = null;
+        let selectedSaleProductUnit = null;
         
         function pluralizeUnit(unit, qty) {
             if (!unit) return '';
@@ -10399,12 +10653,14 @@ function updateAllCaches(result) {
     if (!searchInput) return;
     
     searchInput.value = '';
+    selectedSaleProduct = null;
+    selectedSaleProductUnit = null;
     
-    // Filter products by branch - qty AND unit both come from this same
-    // per-branch pass over stockCache.data, so they can never disagree with
-    // each other (previously unit was looked up separately from
-    // productsCache, which could be stale/branch-agnostic and silently fall
-    // back to the old "- Stock: X" wording for some products but not others).
+    // Filter products by branch - a product name can have more than one
+    // UNIT variant (e.g. "Rice" sold both by the Kg and by the Bag) and
+    // those must never be summed together or confused for one another,
+    // since their quantities aren't comparable. Each product name maps to
+    // an ARRAY of unit variants instead of a single flat total.
     let productsInBranch = {};
     
     if (stockCache.data) {
@@ -10412,11 +10668,16 @@ function updateAllCaches(result) {
             const itemBranchId = item.branchId || 'MAIN';
             if (itemBranchId === branchId && item.product) {
                 const productName = item.product;
+                const itemUnit = item.unit || '';
                 if (!productsInBranch[productName]) {
-                    productsInBranch[productName] = { qty: 0, unit: '' };
+                    productsInBranch[productName] = [];
                 }
-                productsInBranch[productName].qty += item.quantity || 0;
-                if (item.unit) productsInBranch[productName].unit = item.unit;
+                let variant = productsInBranch[productName].find(v => v.unit === itemUnit);
+                if (!variant) {
+                    variant = { unit: itemUnit, qty: 0 };
+                    productsInBranch[productName].push(variant);
+                }
+                variant.qty += item.quantity || 0;
             }
         });
     }
@@ -10435,6 +10696,11 @@ function searchSaleProductsAutocomplete() {
     if (hideSuggestionsTimer) {
         clearTimeout(hideSuggestionsTimer);
     }
+    
+    // Typing manually invalidates any specific unit variant chosen earlier
+    // by clicking a suggestion - re-picking a suggestion restores it.
+    selectedSaleProduct = null;
+    selectedSaleProductUnit = null;
     
     const allNames = Object.keys(saleProductsInBranchCache).sort();
     
@@ -10465,27 +10731,34 @@ function searchSaleProductsAutocomplete() {
     
     let html = '';
     matches.forEach(product => {
-        const entry = saleProductsInBranchCache[product] || { qty: 0, unit: '' };
-        const stock = entry.qty;
-        const unit = entry.unit;
-        const label = formatSaleProductLabel(product, stock, unit);
-        
-        html += `
-            <div class="suggestion-item" onclick="selectSaleProductSuggestion('${product.replace(/'/g, "\\'")}')">
-                <div class="suggestion-name" style="${stock === 0 ? 'color:#ef4444;' : stock < 10 ? 'color:#f59e0b;' : ''}">
-                    <i class="fas fa-box"></i> ${label}
+        const variants = saleProductsInBranchCache[product] || [{ qty: 0, unit: '' }];
+        // One row per unit variant - a product with two different units in
+        // stock shows as two separate, clearly-labelled options.
+        variants.forEach(variant => {
+            const stock = variant.qty;
+            const unit = variant.unit;
+            const label = formatSaleProductLabel(product, stock, unit);
+            
+            html += `
+                <div class="suggestion-item" onclick="selectSaleProductSuggestion('${product.replace(/'/g, "\\'")}', '${(unit || '').replace(/'/g, "\\'")}')">
+                    <div class="suggestion-name" style="${stock === 0 ? 'color:#ef4444;' : stock < 10 ? 'color:#f59e0b;' : ''}">
+                        <i class="fas fa-box"></i> ${label}
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        });
     });
     
     suggestionsBox.innerHTML = html;
     suggestionsBox.style.display = 'block';
 }
 
-function selectSaleProductSuggestion(product) {
+function selectSaleProductSuggestion(product, unit) {
     const input = document.getElementById('saleProductSelect');
     if (input) input.value = product;
+    
+    selectedSaleProduct = product;
+    selectedSaleProductUnit = unit || '';
     
     const suggestionsBox = document.getElementById('saleProductSuggestions');
     if (suggestionsBox) suggestionsBox.style.display = 'none';
@@ -10949,8 +11222,10 @@ function calculateTotalPurchasesFromCache() {
                     // Product existed - update cache by finding and updating
                     if (stockCache.data) {
                         // Find the existing entry for this product in this branch
+                        // with the SAME unit (a different unit is a different item).
                         const existingIndex = stockCache.data.findIndex(item => 
-                            item.product === product && (item.branchId || 'MAIN') === branchId
+                            item.product === product && (item.branchId || 'MAIN') === branchId &&
+                            ((item.unit || '') === (unit || '') || !item.unit)
                         );
                         
                         if (existingIndex !== -1) {
@@ -11296,6 +11571,7 @@ function calculateTotalPurchasesFromCache() {
     const modal = document.getElementById('addSaleModal');
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
+    document.body.classList.add('sale-modal-open');
     
     // Set default branch for admin
     if (currentUser.userType === 'admin') {
@@ -11318,13 +11594,20 @@ function calculateTotalPurchasesFromCache() {
     document.getElementById('nonStockProduct').value = '';
     document.getElementById('nonStockUnit').value = '';
     document.getElementById('saleQuantity').value = '';
-    document.getElementById('fractionQuickSelect').value = '';
     document.getElementById('saleUnitPrice').value = '';
     document.getElementById('saleTotal').value = '';
-    document.getElementById('saleCustomer').value = '';
-    document.getElementById('salePaymentMethod').value = 'cash';
     document.getElementById('saleStockInfo').style.display = 'none';
     document.getElementById('productValidationMessage').style.display = 'none';
+    
+    // Restore any in-progress sale (items already added, customer name,
+    // payment method) instead of wiping it - so nothing is ever lost by
+    // closing/reopening this modal or even a full page refresh. It's only
+    // cleared once the sale is actually completed.
+    const restored = loadSaleCartFromStorage();
+    document.getElementById('saleCustomer').value = restored.customer;
+    document.getElementById('salePaymentMethod').value = restored.paymentMethod;
+    
+    renderSaleCartSummary();
     renderRecentSalesInModal();
     applySaleModalLockUI();
 }
@@ -11333,6 +11616,7 @@ function calculateTotalPurchasesFromCache() {
             const modal = document.getElementById('addSaleModal');
             modal.classList.remove('show');
             document.body.style.overflow = '';
+            document.body.classList.remove('sale-modal-open');
         }
         
         function handleSaleBranchChange() {
@@ -11447,12 +11731,23 @@ async function updateStock() {
         function updateStockInfoForProduct(product, branchId) {
     if (!product || !branchId) return;
     
-    // Calculate stock for this product in this branch
+    // Use the exact unit variant the Seller picked (if any) - a product
+    // can have more than one unit in stock (e.g. Rice by the Kg and by
+    // the Bag), and blending them into one combined total would be wrong.
+    let unit = '';
+    if (selectedSaleProduct === product && selectedSaleProductUnit !== null) {
+        unit = selectedSaleProductUnit;
+    } else {
+        const variants = saleProductsInBranchCache[product];
+        unit = (variants && variants[0]) ? variants[0].unit : '';
+    }
+    
+    // Calculate stock for this exact product + unit in this branch
     let stock = 0;
     if (stockCache.data) {
         stockCache.data.forEach(item => {
             const itemBranchId = item.branchId || 'MAIN';
-            if (item.product === product && itemBranchId === branchId) {
+            if (item.product === product && itemBranchId === branchId && (item.unit || '') === (unit || '')) {
                 stock += item.quantity || 0;
             }
         });
@@ -11460,18 +11755,17 @@ async function updateStock() {
     
     const availableSpan = document.getElementById('saleAvailableStock');
     const stockInfo = document.getElementById('saleStockInfo');
-    
-    availableSpan.textContent = formatQuantity(stock);
+    const unitLabel = unit ? ` ${pluralizeUnit(unit, stock)}` : '';
     
     if (stock === 0) {
         stockInfo.className = 'stock-indicator empty';
-        stockInfo.innerHTML = '⚠️ Out of Stock in this branch';
+        stockInfo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Out of Stock in this branch`;
     } else if (stock < 10) {
         stockInfo.className = 'stock-indicator low';
-        stockInfo.innerHTML = `⚠️ Low Stock: ${formatQuantity(stock)} available`;
+        stockInfo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Low Stock: ${formatQuantity(stock)}${unitLabel} available`;
     } else {
         stockInfo.className = 'stock-indicator';
-        stockInfo.innerHTML = `✅ Available Stock: <span id="saleAvailableStock">${formatQuantity(stock)}</span>`;
+        stockInfo.innerHTML = `<i class="fas fa-check-circle"></i> Available Stock: <span id="saleAvailableStock">${formatQuantity(stock)}${unitLabel}</span>`;
     }
     
     stockInfo.style.display = 'block';
@@ -11808,16 +12102,15 @@ async function updateStock() {
             return 0;
         }
         
-        function applyFractionQuickSelect() {
-            const select = document.getElementById('fractionQuickSelect');
-            const quantityInput = document.getElementById('saleQuantity');
-            
-            if (select.value) {
-                quantityInput.value = select.value;
-                parseFractionalQuantity();
-                calculateSaleTotal();
-                validateSaleQuantity();
-            }
+        // Tap - / + to nudge the quantity by 1 (never below 0) - the text
+        // field itself still accepts exact/fractional typing (0.5, 1/2...).
+        function adjustSaleQuantity(delta) {
+            const current = parseFractionalQuantity() || 0;
+            const next = Math.max(0, current + delta);
+            document.getElementById('saleQuantity').value = (Number.isInteger(next) ? next : next.toFixed(2));
+            parseFractionalQuantity();
+            calculateSaleTotal();
+            validateSaleQuantity();
         }
         
         function validateProductSelection() {
@@ -11908,6 +12201,7 @@ async function updateStock() {
         function selectCustomerSuggestion(name) {
             document.getElementById('saleCustomer').value = name;
             document.getElementById('customerSuggestions').style.display = 'none';
+            renderSaleCartSummary();
         }
         
         function showCustomerSuggestions() {
@@ -11924,234 +12218,390 @@ async function updateStock() {
         
         
         
-        async function submitSale() {
-    if (saleModalLocked) {
-        showNotification('This form is locked. Tap "Unlock" to record a sale.', 'error');
-        return;
-    }
-    if (!validateProductSelection()) return;
-    
-    const stockRadio = document.querySelector('input[name="productType"][value="stock"]').checked;
-    const nonStockRadio = document.querySelector('input[name="productType"][value="nonstock"]').checked;
-    
-    let product = '';
-    let isStockProduct = false;
-    
-    if (stockRadio) {
-        product = document.getElementById('saleProductSelect').value;
-        isStockProduct = true;
-    } else {
-        product = document.getElementById('nonStockProduct').value.trim();
-        isStockProduct = false;
-    }
-    
-    // Determine branch
-    let branchId = 'MAIN';
-    if (currentUser.userType === 'admin') {
-        branchId = document.getElementById('saleBranchSelect').value;
-    } else {
-        branchId = currentUser.branchId || 'MAIN';
-    }
-    
-    const quantity = parseFractionalQuantity();
-    const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value);
-    const total = parseFloat(document.getElementById('saleTotal').value);
-    const customer = document.getElementById('saleCustomer').value.trim();
-    const paymentMethod = document.getElementById('salePaymentMethod').value;
-    const nonStockUnit = document.getElementById('nonStockUnit').value.trim();
-    
-    if (!product || !quantity || !unitPrice) {
-        showNotification('Please fill all required fields', 'error');
-        return;
-    }
-    
-    if (!isStockProduct && !nonStockUnit) {
-        showNotification('Please select a Unit for this service (e.g. Session, Hour, Job)', 'error');
-        return;
-    }
-    
-    if (quantity <= 0) {
-        showNotification('Quantity must be greater than 0', 'error');
-        return;
-    }
-    
-    if (unitPrice <= 0) {
-        showNotification('Unit price must be greater than 0', 'error');
-        return;
-    }
-    
-    if (isStockProduct) {
-        // Check stock in this branch
-        let available = 0;
-        if (stockCache.data) {
-            stockCache.data.forEach(item => {
-                if (item.product === product && (item.branchId || 'MAIN') === branchId) {
-                    available += Number(item.quantity) || 0;
-                }
-            });
+        let currentSaleCart = [];
+        
+        // Persists the in-progress sale (items + customer + payment
+        // method) so it's never lost - not by closing/reopening this
+        // modal, and not even by a full page refresh/reload. It's only
+        // cleared once the sale is actually completed.
+        function saveSaleCartToStorage() {
+            const customer = document.getElementById('saleCustomer')?.value || '';
+            const paymentMethod = document.getElementById('salePaymentMethod')?.value || 'cash';
+            localStorage.setItem('smartTradeSaleCart', JSON.stringify({
+                items: currentSaleCart,
+                customer: customer,
+                paymentMethod: paymentMethod
+            }));
         }
         
-        if (available < quantity) {
-            showNotification(`Insufficient stock at ${branchId} branch! Available: ${available}`, 'error');
-            return;
-        }
-    }
-    
-    setButtonLoading('submitSaleBtn', 'saleSpinner', 'submitSaleText', true);
-    
-    // Check if this is a new customer that needs to be saved
-    const isNewCustomer = customer && (!customersCache.data || !customersCache.data.some(c => c.name.toLowerCase() === customer.toLowerCase()));
-    
-    // If it's a new customer, save them first (if online)
-    let customerId = null;
-    if (isNewCustomer && customer && isOnline) {
-        try {
-            const customerResult = await apiCall('addCustomer', {
-                name: customer,
-                phone: '',
-                email: '',
-                address: '',
-                notes: 'Added during sale'
-            });
-            
-            if (customerResult.success) {
-                customerId = customerResult.customerId;
-                console.log('New customer saved:', customer);
-                
-                // Refresh customers cache
-                await loadCustomers();
+        function loadSaleCartFromStorage() {
+            const saved = localStorage.getItem('smartTradeSaleCart');
+            if (!saved) {
+                currentSaleCart = [];
+                return { customer: '', paymentMethod: 'cash' };
             }
-        } catch (error) {
-            console.error('Failed to save new customer:', error);
+            try {
+                const parsed = JSON.parse(saved);
+                currentSaleCart = Array.isArray(parsed.items) ? parsed.items : [];
+                return { customer: parsed.customer || '', paymentMethod: parsed.paymentMethod || 'cash' };
+            } catch (e) {
+                currentSaleCart = [];
+                return { customer: '', paymentMethod: 'cash' };
+            }
         }
-    }
-    
-    const saleUnit = isStockProduct ? (saleProductsInBranchCache[product]?.unit || productsCache[product]?.unit || '') : nonStockUnit;
-    
-    const saleData = {
-        product,
-        qty: quantity,
-        unitPrice,
-        total: total || quantity * unitPrice,
-        customer,
-        paymentMethod,
-        isStockProduct: isStockProduct,
-        branchId: branchId,
-        timestamp: new Date().toISOString(),
-        sellerId: currentUser.sellerId,
-        customerId: customerId,
-        unit: saleUnit
-    };
-    
-    if (isOnline) {
-        try {
-            const result = await apiCall('addSale', saleData);
+        
+        function clearSaleCartStorage() {
+            localStorage.removeItem('smartTradeSaleCart');
+        }
+        
+        // Validates the currently-entered item and adds it to the cart -
+        // this does NOT submit anything to the server yet. Several items
+        // (for the same customer) can be queued up before "Complete Sale".
+        function addSaleItemToCart() {
+            if (saleModalLocked) {
+                showNotification('This form is locked. Tap "Unlock" to record a sale.', 'error');
+                return;
+            }
+            if (!validateProductSelection()) return;
             
-            if (result.success) {
-                // Update local cache
-                if (isStockProduct && productsCache[product]) {
-                    productsCache[product].quantity -= quantity;
-                    saveProductsCache();
-                }
-                
-                if (isStockProduct && stockCache.data) {
-                    let remainingToReduce = quantity;
-                    
-                    const sortedStock = [...stockCache.data]
-                        .filter(item => item.product === product && (item.branchId || 'MAIN') === branchId && item.quantity > 0)
-                        .sort((a, b) => new Date(a.date) - new Date(b.date));
-                    
-                    for (let i = 0; i < sortedStock.length && remainingToReduce > 0; i++) {
-                        const stockItem = sortedStock[i];
-                        const index = stockCache.data.findIndex(item => 
-                            item.date === stockItem.date && 
-                            item.product === stockItem.product && 
-                            item.quantity === stockItem.quantity
-                        );
-                        
-                        if (index !== -1) {
-                            const reduceBy = Math.min(stockCache.data[index].quantity, remainingToReduce);
-                            stockCache.data[index].quantity -= reduceBy;
-                            stockCache.data[index].value = stockCache.data[index].quantity * stockCache.data[index].buyPrice;
-                            remainingToReduce -= reduceBy;
-                        }
-                    }
-                    
-                    stockCache.summary = calculateStockSummary(stockCache.data);
-                    saveStockCache();
-                }
-                
-                // Add to sales cache with sellerId
-                if (salesCache.data) {
-                    const newSale = {
-                        date: new Date().toISOString(),
-                        product: product,
-                        quantity: quantity,
-                        unitPrice: unitPrice,
-                        total: total || quantity * unitPrice,
-                        customer: customer || "Walk-in",
-                        paymentMethod: paymentMethod,
-                        type: isStockProduct ? 'stock' : 'service',
-                        sellerId: currentUser.sellerId,
-                        sellerName: currentUser.userType === 'seller' ? currentUser.sellerName : 'Admin',
-                        branchId: branchId,
-                        unit: saleUnit
-                    };
-                    
-                    salesCache.data.push(newSale);
-                    sortDataDescending(salesCache.data);
-                    
-                    // Filter for display based on user type
-                    if (currentUser.userType === 'seller') {
-                        salesCache.filtered = salesCache.data.filter(s => s.sellerId === currentUser.sellerId);
-                    } else {
-                        salesCache.filtered = salesCache.data;
-                    }
-                    
-                    saveSalesCache();
-                }
-                
-                showNotification('Sale recorded successfully', 'success');
-                
-                // Reset the form for the next sale instead of closing -
-                // these modals stay open like a dashboard page now.
-                document.getElementById('saleProductSelect').value = '';
-                document.getElementById('nonStockProduct').value = '';
-                document.getElementById('nonStockUnit').value = '';
-                document.getElementById('saleQuantity').value = '';
-                document.getElementById('fractionQuickSelect').value = '';
-                document.getElementById('saleUnitPrice').value = '';
-                document.getElementById('saleTotal').value = '';
-                document.getElementById('saleCustomer').value = '';
-                document.getElementById('saleStockInfo').style.display = 'none';
-                renderRecentSalesInModal();
-                
-                // Refresh data
-                loadSales();
-                loadDashboard(); // Hii itaupdate profit mara moja
-                
-                if (isStockProduct) {
-                    updateProductDropdowns();
-                    updateSaleProductDropdownForBranch(branchId);
+            const stockRadio = document.querySelector('input[name="productType"][value="stock"]').checked;
+            
+            let product = '';
+            let isStockProduct = false;
+            
+            if (stockRadio) {
+                product = document.getElementById('saleProductSelect').value;
+                isStockProduct = true;
+            } else {
+                product = document.getElementById('nonStockProduct').value.trim();
+                isStockProduct = false;
+            }
+            
+            let branchId = 'MAIN';
+            if (currentUser.userType === 'admin') {
+                branchId = document.getElementById('saleBranchSelect').value;
+            } else {
+                branchId = currentUser.branchId || 'MAIN';
+            }
+            
+            const quantity = parseFractionalQuantity();
+            const unitPrice = parseFloat(document.getElementById('saleUnitPrice').value);
+            const nonStockUnit = document.getElementById('nonStockUnit').value.trim();
+            
+            if (!product || !quantity || !unitPrice) {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+            
+            if (!isStockProduct && !nonStockUnit) {
+                showNotification('Please select a Unit for this service (e.g. Session, Hour, Job)', 'error');
+                return;
+            }
+            
+            if (quantity <= 0) {
+                showNotification('Quantity must be greater than 0', 'error');
+                return;
+            }
+            
+            if (unitPrice <= 0) {
+                showNotification('Unit price must be greater than 0', 'error');
+                return;
+            }
+            
+            // Resolve the exact unit variant being sold - prefer the one
+            // explicitly picked from the suggestions list (handles a
+            // product that has more than one unit in stock, e.g. Rice sold
+            // both by the Kg and by the Bag); fall back to a plain lookup
+            // for products that only ever have one unit.
+            let saleUnit = '';
+            if (isStockProduct) {
+                if (selectedSaleProduct === product && selectedSaleProductUnit !== null) {
+                    saleUnit = selectedSaleProductUnit;
                 } else {
-                    registerNonStockProductLocally(product, saleUnit);
+                    const variants = saleProductsInBranchCache[product];
+                    saleUnit = (variants && variants[0]) ? variants[0].unit : (productsCache[product]?.unit || '');
                 }
             } else {
-                showNotification('Failed to record sale: ' + (result.error || 'Unknown error'), 'error');
+                saleUnit = nonStockUnit;
             }
-        } catch (error) {
-            console.error('Error submitting sale:', error);
-            saveSaleOffline(saleData, isNewCustomer);
+            
+            if (isStockProduct) {
+                let available = 0;
+                if (stockCache.data) {
+                    stockCache.data.forEach(item => {
+                        if (item.product === product && (item.branchId || 'MAIN') === branchId && (item.unit || '') === (saleUnit || '')) {
+                            available += Number(item.quantity) || 0;
+                        }
+                    });
+                }
+                // Account for the same product+unit already queued in this
+                // cart, so the total across multiple cart lines can't
+                // exceed stock.
+                const alreadyInCart = currentSaleCart
+                    .filter(it => it.isStockProduct && it.product === product && it.branchId === branchId && (it.unit || '') === (saleUnit || ''))
+                    .reduce((sum, it) => sum + it.qty, 0);
+                
+                if (available - alreadyInCart < quantity) {
+                    showNotification(`Insufficient stock at ${branchId} branch! Available: ${available - alreadyInCart}${saleUnit ? ' ' + pluralizeUnit(saleUnit, available - alreadyInCart) : ''}`, 'error');
+                    return;
+                }
+            }
+            
+            currentSaleCart.push({
+                product,
+                qty: quantity,
+                unitPrice,
+                subtotal: quantity * unitPrice,
+                isStockProduct,
+                branchId,
+                unit: saleUnit
+            });
+            
+            // Clear only the item-specific fields - Customer/Payment Method
+            // stay filled in since they apply to the whole sale.
+            document.getElementById('saleProductSelect').value = '';
+            document.getElementById('nonStockProduct').value = '';
+            document.getElementById('nonStockUnit').value = '';
+            document.getElementById('saleQuantity').value = '';
+            document.getElementById('saleUnitPrice').value = '';
+            document.getElementById('saleTotal').value = '';
+            document.getElementById('saleStockInfo').style.display = 'none';
+            
+            renderSaleCartSummary();
+            showNotification(`${product} added to this sale`, 'success');
         }
-    } else {
-        saveSaleOffline(saleData, isNewCustomer);
-    }
-    
-    setButtonLoading('submitSaleBtn', 'saleSpinner', 'submitSaleText', false);
-    
-    // Clear pending new customer
-    window.pendingNewCustomer = null;
-}
+        
+        function removeSaleCartItem(index) {
+            currentSaleCart.splice(index, 1);
+            renderSaleCartSummary();
+        }
+        
+        function renderSaleCartSummary() {
+            saveSaleCartToStorage();
+            
+            const card = document.getElementById('saleCartSummaryCard');
+            const list = document.getElementById('saleCartItemsList');
+            const grandTotalEl = document.getElementById('saleCartGrandTotal');
+            const customerLabelEl = document.getElementById('saleCartCustomerLabel');
+            
+            if (currentSaleCart.length === 0) {
+                card.classList.add('hidden');
+                return;
+            }
+            
+            card.classList.remove('hidden');
+            
+            const customer = document.getElementById('saleCustomer').value.trim();
+            customerLabelEl.textContent = customer ? ` - ${customer}` : '';
+            
+            let html = '';
+            let grandTotal = 0;
+            currentSaleCart.forEach((item, idx) => {
+                grandTotal += item.subtotal;
+                html += `
+                    <div class="request-item-row">
+                        <div><strong>${escapeHtml(item.product)}</strong> <span style="color:#94a3b8;">- ${formatQuantity(item.qty)} ${pluralizeUnit(item.unit, item.qty)} &times; ${formatCurrency(item.unitPrice)} = ${formatCurrency(item.subtotal)}</span></div>
+                        <span onclick="removeSaleCartItem(${idx})" style="color: var(--danger); cursor:pointer;" title="Remove this item"><i class="fas fa-trash"></i></span>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+            grandTotalEl.textContent = formatCurrency(grandTotal);
+        }
+        
+        // Submits ALL items currently in the cart as one sale to one
+        // customer - the customer record is only created/looked-up ONCE,
+        // then each item is recorded the exact same way a single sale
+        // always was (same online/offline handling per item).
+        function completeSale() {
+            if (saleModalLocked) {
+                showNotification('This form is locked. Tap "Unlock" to record a sale.', 'error');
+                return;
+            }
+            
+            if (currentSaleCart.length === 0) {
+                showNotification('Please add at least one item to this sale', 'error');
+                return;
+            }
+            
+            const grandTotal = currentSaleCart.reduce((sum, it) => sum + it.subtotal, 0);
+            const customerName = document.getElementById('saleCustomer').value.trim() || 'Walk-in';
+            
+            showConfirmationModal(
+                'Complete Sale',
+                `Complete this sale for ${customerName} - ${currentSaleCart.length} item(s), total ${formatCurrency(grandTotal)}?`,
+                async () => { await completeSaleConfirmed(); }
+            );
+        }
+        
+        async function completeSaleConfirmed() {
+            setButtonLoading('submitSaleBtn', 'saleSpinner', 'submitSaleText', true, 'Completing Sale...');
+            
+            const customer = document.getElementById('saleCustomer').value.trim();
+            const paymentMethod = document.getElementById('salePaymentMethod').value;
+            
+            const isNewCustomer = customer && (!customersCache.data || !customersCache.data.some(c => c.name.toLowerCase() === customer.toLowerCase()));
+            let customerId = null;
+            
+            if (isNewCustomer && customer && isOnline) {
+                try {
+                    const customerResult = await apiCall('addCustomer', {
+                        name: customer,
+                        phone: '',
+                        email: '',
+                        address: '',
+                        notes: 'Added during sale'
+                    });
+                    
+                    if (customerResult.success) {
+                        customerId = customerResult.customerId;
+                        await loadCustomers();
+                    }
+                } catch (error) {
+                    console.error('Failed to save new customer:', error);
+                }
+            }
+            
+            const itemsToProcess = [...currentSaleCart];
+            let successCount = 0;
+            let offlineCount = 0;
+            
+            for (const item of itemsToProcess) {
+                const result = await processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer);
+                if (result === 'online') successCount++;
+                else if (result === 'offline') offlineCount++;
+            }
+            
+            if (successCount > 0 && offlineCount === 0) {
+                showNotification(`Sale completed - ${successCount} item(s) recorded`, 'success');
+            } else if (offlineCount > 0 && successCount === 0) {
+                showNotification(`Sale saved offline - ${offlineCount} item(s). Will sync when online.`, 'info');
+            } else if (successCount > 0 && offlineCount > 0) {
+                showNotification(`Sale completed - ${successCount} recorded, ${offlineCount} saved offline`, 'info');
+            }
+            
+            // Reset everything for the next sale - the modal stays open
+            // like a dashboard page.
+            currentSaleCart = [];
+            document.getElementById('saleCustomer').value = '';
+            renderSaleCartSummary();
+            clearSaleCartStorage();
+            renderRecentSalesInModal();
+            
+            loadSales();
+            loadDashboard();
+            
+            setButtonLoading('submitSaleBtn', 'saleSpinner', 'submitSaleText', false);
+            window.pendingNewCustomer = null;
+        }
+        
+        // Records exactly one cart item (online with offline fallback) -
+        // returns 'online' or 'offline' so completeSale() can summarize.
+        async function processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer) {
+            const { product, qty: quantity, unitPrice, subtotal: total, isStockProduct, branchId, unit: saleUnit } = item;
+            
+            const saleData = {
+                product,
+                qty: quantity,
+                unitPrice,
+                total,
+                customer,
+                paymentMethod,
+                isStockProduct: isStockProduct,
+                branchId: branchId,
+                timestamp: new Date().toISOString(),
+                sellerId: currentUser.sellerId,
+                customerId: customerId,
+                unit: saleUnit
+            };
+            
+            if (isOnline) {
+                try {
+                    const result = await apiCall('addSale', saleData);
+                    
+                    if (result.success) {
+                        if (isStockProduct && productsCache[product]) {
+                            productsCache[product].quantity -= quantity;
+                            saveProductsCache();
+                        }
+                        
+                        if (isStockProduct && stockCache.data) {
+                            let remainingToReduce = quantity;
+                            
+                            const sortedStock = [...stockCache.data]
+                                .filter(s => s.product === product && (s.branchId || 'MAIN') === branchId && (s.unit || '') === (saleUnit || '') && s.quantity > 0)
+                                .sort((a, b) => new Date(a.date) - new Date(b.date));
+                            
+                            for (let i = 0; i < sortedStock.length && remainingToReduce > 0; i++) {
+                                const stockItem = sortedStock[i];
+                                const index = stockCache.data.findIndex(s => 
+                                    s.date === stockItem.date && 
+                                    s.product === stockItem.product && 
+                                    s.quantity === stockItem.quantity
+                                );
+                                
+                                if (index !== -1) {
+                                    const reduceBy = Math.min(stockCache.data[index].quantity, remainingToReduce);
+                                    stockCache.data[index].quantity -= reduceBy;
+                                    stockCache.data[index].value = stockCache.data[index].quantity * stockCache.data[index].buyPrice;
+                                    remainingToReduce -= reduceBy;
+                                }
+                            }
+                            
+                            stockCache.summary = calculateStockSummary(stockCache.data);
+                            saveStockCache();
+                        }
+                        
+                        if (salesCache.data) {
+                            const newSale = {
+                                date: new Date().toISOString(),
+                                product: product,
+                                quantity: quantity,
+                                unitPrice: unitPrice,
+                                total: total,
+                                customer: customer || "Walk-in",
+                                paymentMethod: paymentMethod,
+                                type: isStockProduct ? 'stock' : 'service',
+                                sellerId: currentUser.sellerId,
+                                sellerName: currentUser.userType === 'seller' ? currentUser.sellerName : 'Admin',
+                                branchId: branchId,
+                                unit: saleUnit
+                            };
+                            
+                            salesCache.data.push(newSale);
+                            sortDataDescending(salesCache.data);
+                            
+                            if (currentUser.userType === 'seller') {
+                                salesCache.filtered = salesCache.data.filter(s => s.sellerId === currentUser.sellerId);
+                            } else {
+                                salesCache.filtered = salesCache.data;
+                            }
+                            
+                            saveSalesCache();
+                        }
+                        
+                        if (isStockProduct) {
+                            updateProductDropdowns();
+                            updateSaleProductDropdownForBranch(branchId);
+                        } else {
+                            registerNonStockProductLocally(product, saleUnit);
+                        }
+                        
+                        return 'online';
+                    } else {
+                        showNotification(`Failed to record ${product}: ` + (result.error || 'Unknown error'), 'error');
+                        return null;
+                    }
+                } catch (error) {
+                    console.error('Error submitting sale item:', error);
+                    saveSaleOffline(saleData, isNewCustomer);
+                    return 'offline';
+                }
+            } else {
+                saveSaleOffline(saleData, isNewCustomer);
+                return 'offline';
+            }
+        }
         
         
         function saveSaleOffline(data, isNewCustomer = false) {
@@ -12188,7 +12638,7 @@ async function updateStock() {
                     let remainingToReduce = data.qty;
                     
                     const sortedStock = [...stockCache.data]
-                        .filter(item => item.product === data.product && (item.branchId || 'MAIN') === data.branchId && item.quantity > 0)
+                        .filter(item => item.product === data.product && (item.branchId || 'MAIN') === data.branchId && (item.unit || '') === (data.unit || '') && item.quantity > 0)
                         .sort((a, b) => new Date(a.date) - new Date(b.date));
                     
                     for (let i = 0; i < sortedStock.length && remainingToReduce > 0; i++) {
@@ -12252,20 +12702,6 @@ async function updateStock() {
             } else {
                 registerNonStockProductLocally(data.product, data.unit);
             }
-            
-            // Reset the form for the next sale instead of closing.
-            document.getElementById('saleProductSelect').value = '';
-            document.getElementById('nonStockProduct').value = '';
-            document.getElementById('nonStockUnit').value = '';
-            document.getElementById('saleQuantity').value = '';
-            document.getElementById('fractionQuickSelect').value = '';
-            document.getElementById('saleUnitPrice').value = '';
-            document.getElementById('saleTotal').value = '';
-            document.getElementById('saleCustomer').value = '';
-            document.getElementById('saleStockInfo').style.display = 'none';
-            renderRecentSalesInModal();
-            
-            showNotification('Sale saved offline. Will sync when online.', 'info');
         }
         
         function applySalesFilters() {
@@ -13765,7 +14201,7 @@ function showEditCustomerSuggestions() {
                 // completed right now, not necessarily the whole approved amount.
                 const branchId = req.branchId || 'MAIN';
                 if (!stockCache.data) stockCache.data = [];
-                const existingIndex = stockCache.data.findIndex(s => s.product === item.product && (s.branchId || 'MAIN') === branchId);
+                const existingIndex = stockCache.data.findIndex(s => s.product === item.product && (s.branchId || 'MAIN') === branchId && ((s.unit || '') === (item.unit || '') || !s.unit));
                 const buyPrice = item.price || item.suggestedBuyPrice || 0;
                 const sellPrice = item.sellPrice || buyPrice * 1.2;
                 
@@ -16777,13 +17213,23 @@ function showEditCategorySuggestions() {
         let historyReady = false;
         setTimeout(() => { historyReady = true; }, 1500);
         
+        // Modals excluded from the auto-reopen-after-refresh behavior below -
+        // Record Sale already keeps its own cart data safe independently
+        // (see saveSaleCartToStorage/loadSaleCartFromStorage), so it doesn't
+        // need to be forced back open on every single app launch too. That
+        // was surprising users who simply switched away from the app once
+        // and found it popping open again days later.
+        const MODALS_EXCLUDED_FROM_AUTO_REOPEN = ['addSaleModal'];
+        
         const fullscreenModalObserver = new MutationObserver(() => {
             const openModal = document.querySelector('.confirmation-modal.fullscreen-modal.show');
             const bar = document.getElementById('fullscreenModalBar');
             
             if (openModal) {
                 if (bar) bar.classList.add('show');
-                localStorage.setItem('smartTradeOpenModal', openModal.id);
+                if (!MODALS_EXCLUDED_FROM_AUTO_REOPEN.includes(openModal.id)) {
+                    localStorage.setItem('smartTradeOpenModal', openModal.id);
+                }
                 if (!modalHistoryPushed && !isHandlingPopstate) {
                     history.pushState({ smartTradeModal: openModal.id }, '', location.href);
                     modalHistoryPushed = true;
@@ -16823,6 +17269,13 @@ function showEditCategorySuggestions() {
         function restoreOpenModalAfterRefresh() {
             const modalId = localStorage.getItem('smartTradeOpenModal');
             if (!modalId) return;
+            
+            // Defensive: also skip here in case a browser already has a
+            // stale value saved from before this exclusion existed.
+            if (MODALS_EXCLUDED_FROM_AUTO_REOPEN.includes(modalId)) {
+                localStorage.removeItem('smartTradeOpenModal');
+                return;
+            }
             
             const openerName = 'open' + modalId.charAt(0).toUpperCase() + modalId.slice(1);
             try {
@@ -18893,11 +19346,13 @@ function handleDebtNonStockProductInput() {
 function updateDebtStockInfo(product, branchId) {
     if (!product || !branchId) return;
     
+    const unit = productsCache[product]?.unit || '';
+    
     let stock = 0;
     if (stockCache.data) {
         stockCache.data.forEach(item => {
             const itemBranchId = item.branchId || 'MAIN';
-            if (item.product === product && itemBranchId === branchId) {
+            if (item.product === product && itemBranchId === branchId && (item.unit || '') === unit) {
                 stock += item.quantity || 0;
             }
         });
@@ -18905,18 +19360,17 @@ function updateDebtStockInfo(product, branchId) {
     
     const availableSpan = document.getElementById('debtAvailableStock');
     const stockInfo = document.getElementById('debtStockInfo');
-    
-    availableSpan.textContent = formatQuantity(stock);
+    const unitLabel = unit ? ` ${pluralizeUnit(unit, stock)}` : '';
     
     if (stock === 0) {
         stockInfo.className = 'stock-indicator empty';
-        stockInfo.innerHTML = '⚠️ Out of Stock in this branch';
+        stockInfo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Out of Stock in this branch`;
     } else if (stock < 10) {
         stockInfo.className = 'stock-indicator low';
-        stockInfo.innerHTML = `⚠️ Low Stock: ${formatQuantity(stock)} available`;
+        stockInfo.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Low Stock: ${formatQuantity(stock)}${unitLabel} available`;
     } else {
         stockInfo.className = 'stock-indicator';
-        stockInfo.innerHTML = `✅ Available Stock: <span id="debtAvailableStock">${formatQuantity(stock)}</span>`;
+        stockInfo.innerHTML = `<i class="fas fa-check-circle"></i> Available Stock: <span id="debtAvailableStock">${formatQuantity(stock)}${unitLabel}</span>`;
     }
     
     stockInfo.style.display = 'block';
@@ -20493,6 +20947,16 @@ document.addEventListener('DOMContentLoaded', function() {
     loadCachedData();
     installModalPinGuards();
     initFullscreenModalTracking();
+    
+    // Close the business-switcher dropdown when clicking anywhere outside it.
+    document.addEventListener('click', function(event) {
+        const wrapper = document.getElementById('businessSwitcherWrapper');
+        const dropdown = document.getElementById('businessSwitcherDropdown');
+        if (!wrapper || !dropdown || dropdown.classList.contains('hidden')) return;
+        if (!wrapper.contains(event.target)) {
+            dropdown.classList.add('hidden');
+        }
+    });
     
     setInterval(checkAndSync, 30000);
     setInterval(pollModalRestrictions, 3000);
