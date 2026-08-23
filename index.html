@@ -20,6 +20,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <!-- Load Cropper.js from CDN with fallback -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <!-- SheetJS - used only for the Stock page's "Download/Upload Template" bulk-import feature -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
     <style>
         :root {
@@ -4373,7 +4375,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
             </div>
             
             <!-- Stock Page -->
-            <div class="page hidden" id="stockPage"><div class="card"><div class="card-header"><div class="card-title">Stock Inventory</div><button onclick="openAddStockModal()" class="btn-success" id="stockPageAddBtn"><i class="fas fa-plus"></i> Add Stock</button></div><div id="stockTable"><p class="text-center" style="color: #94a3b8; padding: 20px;">Loading stock data...</p></div></div></div>
+            <div class="page hidden" id="stockPage"><div class="card"><div class="card-header"><div class="card-title">Stock Inventory</div><div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;"><button onclick="downloadStockTemplate()" class="btn-sm btn-secondary" id="stockTemplateDownloadBtn" title="Download Excel template for bulk product entry"><i class="fas fa-file-excel"></i> Template</button><button onclick="document.getElementById('stockTemplateFileInput').click()" class="btn-sm btn-secondary" id="stockTemplateUploadBtn" title="Upload a filled Excel template to add many products at once"><i class="fas fa-file-upload"></i> Import</button><input type="file" id="stockTemplateFileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleStockTemplateFile(event)"><button onclick="openAddStockModal()" class="btn-success" id="stockPageAddBtn"><i class="fas fa-plus"></i> Add Stock</button></div></div><div id="stockTable"><p class="text-center" style="color: #94a3b8; padding: 20px;">Loading stock data...</p></div></div></div>
             
             <!-- Sales Page -->
             <div class="page hidden" id="salesPage"><div class="card"><div class="card-header"><div class="card-title">Sales Records</div><button onclick="openAddSaleModal()" class="btn-success"><i class="fas fa-plus"></i> Record Sale</button></div><div class="filter-section"><div class="filter-group"><label>Filter by Product</label><select id="salesProductFilter" onchange="applySalesFilters()"><option value="">All Products</option></select></div><div class="filter-group"><label>From Date</label><input type="date" id="salesDateFrom" onchange="applySalesFilters()"></div><div class="filter-group"><label>To Date</label><input type="date" id="salesDateTo" onchange="applySalesFilters()"></div><div class="filter-actions"><button class="filter-btn" onclick="applySalesFilters()"><i class="fas fa-filter"></i> Apply</button><button class="filter-btn clear" onclick="clearSalesFilters()"><i class="fas fa-times"></i> Clear</button></div></div><div id="salesSummary" class="summary-box"></div><div class="table-container"><table id="salesTable"><thead><tr><th>Date</th><th>Seller</th><th>Branch</th><th>Product</th><th>Quantity</th><th>Unit Price</th><th>Total</th><th>Customer</th><th>Payment Method</th></tr></thead><tbody id="salesTableBody"><tr><td colspan="9" class="text-center" style="color: #94a3b8; padding: 40px;">Loading sales data...</td></tr></tbody></table></div></div></div>
@@ -4702,7 +4704,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 <div id="fullscreenModalBar"><span class="modal-nav-btn" onclick="universalModalClose()" title="Back"><i class="fas fa-chevron-left"></i></span><span class="modal-nav-btn" onclick="universalModalClose()" title="Close"><i class="fas fa-times"></i></span></div>
 <div class="confirmation-modal fullscreen-modal" id="addStockModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title">Add Stock Item</h2><div class="form-group" id="stockBranchGroup" style="display: none;"><label>Select Branch</label><select id="stockBranchSelect" class="product-select"><option value="MAIN">Main Branch</option></select></div><div class="form-group" style="position: relative;"><label style="display: flex; justify-content: space-between; align-items: center;"><span>Product</span><span onclick="toggleAddProductInline()" style="color: var(--accent); cursor: pointer; font-weight: normal; font-size: 0.85rem;"><i class="fas fa-plus-circle"></i> Add Product</span></label><div class="suggestions-container"><input type="text" id="stockProduct" placeholder="Type to search existing product..." autocomplete="off" style="padding-right: 32px;" oninput="searchStockProductsAutocomplete()" onfocus="showStockProductSuggestions()" onblur="hideSuggestionsWithDelay('stockProductSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('stockProduct','stockProductSuggestions')"><i class="fas fa-times"></i></span><div id="stockProductSuggestions" class="suggestions-box"></div></div><div id="stockAddProductInline" style="display:none; margin-top:8px; padding:10px; background:rgba(255,255,255,0.04); border-radius:8px;"><input type="text" id="stockNewProductName" placeholder="Enter new product name" autocomplete="off" style="margin-bottom:8px;"><div style="display:flex; gap:8px;"><button type="button" class="btn-sm btn-success" onclick="confirmAddProductInline()"><i class="fas fa-check"></i> Add</button><button type="button" class="btn-sm btn-secondary" onclick="cancelAddProductInline()"><i class="fas fa-times"></i> Cancel</button></div></div></div><div class="form-group" style="position: relative;"><label style="display: flex; justify-content: space-between; align-items: center;"><span>Unit <span style="color: var(--danger);">*</span></span><span onclick="toggleAddUnitInline()" style="color: var(--accent); cursor: pointer; font-weight: normal; font-size: 0.85rem;"><i class="fas fa-plus-circle"></i> Add Unit</span></label><div class="suggestions-container"><input type="text" id="stockUnit" placeholder="Type or select: Kg, Box, Pcs, Carton..." autocomplete="off" style="padding-right: 32px;" oninput="searchStockUnitAutocomplete()" onfocus="showStockUnitSuggestions()" onblur="hideSuggestionsWithDelay('stockUnitSuggestions')" required><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('stockUnit','stockUnitSuggestions')"><i class="fas fa-times"></i></span><div id="stockUnitSuggestions" class="suggestions-box"></div></div><div id="stockAddUnitInline" style="display:none; margin-top:8px; padding:10px; background:rgba(255,255,255,0.04); border-radius:8px;"><input type="text" id="stockNewUnitName" placeholder="Enter new unit name (e.g. Debe, Gunia)" autocomplete="off" style="margin-bottom:8px;"><div style="display:flex; gap:8px;"><button type="button" class="btn-sm btn-success" onclick="confirmAddUnitInline()"><i class="fas fa-check"></i> Add</button><button type="button" class="btn-sm btn-secondary" onclick="cancelAddUnitInline()"><i class="fas fa-times"></i> Cancel</button></div></div><small style="color: #94a3b8; display: block; margin-top: 5px;" id="stockUnitHint">Required - how this product is measured or counted</small></div><div class="form-group"><label>Quantity</label><input type="number" id="stockQuantity" placeholder="Enter quantity" min="1" required></div><div class="input-group"><div><label>Buy Price (per unit)</label><input type="number" id="stockBuyPrice" placeholder="Buy price" min="0" step="0.01" required></div><div><label>Sell Price (per unit)</label><input type="number" id="stockSellPrice" placeholder="Sell price" min="0" step="0.01" required></div></div><div class="form-group" style="position: relative;"><label>Category (Optional)</label><div class="suggestions-container"><input type="text" id="stockCategory" placeholder="e.g., Electronics, Clothing" autocomplete="off" style="padding-right: 32px;" oninput="searchCategoriesAutocomplete()" onfocus="showCategorySuggestions()" onblur="hideSuggestionsWithDelay('categorySuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('stockCategory','categorySuggestions')"><i class="fas fa-times"></i></span><div id="categorySuggestions" class="suggestions-box"></div></div></div><div class="confirmation-buttons"><button class="confirmation-btn confirm" onclick="submitStock()" id="submitStockBtn"><i class="fas fa-save"></i> <span id="submitStockText">Save Stock</span><span class="spinner small" id="stockSpinner" style="display: none;"></span></button></div><div style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 15px;"><h3 style="font-size: 1rem; color: #cbd5e1; margin-bottom: 10px;"><i class="fas fa-history"></i> Recent Stock</h3><div id="recentStockInModal"></div></div></div></div>
 
-<div class="confirmation-modal fullscreen-modal" id="editStockModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title">Edit Stock Entry</h2><input type="hidden" id="editStockTimestamp"><input type="hidden" id="editStockOriginalProduct"><input type="hidden" id="editStockOriginalBranch"><div class="form-group"><label>Product Name</label><input type="text" id="editStockProduct" placeholder="Product name" required></div><div class="form-group"><label>Quantity</label><input type="number" id="editStockQuantity" placeholder="Enter quantity" min="0" step="0.01" required></div><div class="input-group"><div><label>Buy Price (per unit)</label><input type="number" id="editStockBuyPrice" placeholder="Buy price" min="0" step="0.01" required></div><div><label>Sell Price (per unit)</label><input type="number" id="editStockSellPrice" placeholder="Sell price" min="0" step="0.01" required></div></div><div class="form-group" style="position: relative;"><label>Category (Optional)</label><div class="suggestions-container"><input type="text" id="editStockCategory" placeholder="e.g., Electronics, Clothing" autocomplete="off" oninput="searchEditCategoriesAutocomplete()" onfocus="showEditCategorySuggestions()" onblur="hideSuggestionsWithDelay('editCategorySuggestions')"><div id="editCategorySuggestions" class="suggestions-box"></div></div></div><div class="confirmation-buttons"><button class="confirmation-btn confirm success" onclick="updateStock()" id="updateStockBtn"><i class="fas fa-save"></i> <span id="updateStockText">Update Stock</span><span class="spinner small" id="updateStockSpinner" style="display: none;"></span></button></div></div></div>
+<div class="confirmation-modal fullscreen-modal" id="editStockModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title">Edit Stock Entry</h2><input type="hidden" id="editStockTimestamp"><input type="hidden" id="editStockOriginalProduct"><input type="hidden" id="editStockOriginalBranch"><div class="form-group" id="editStockBranchGroup" style="display: none;"><label>Branch</label><select id="editStockBranchSelect" class="product-select"><option value="MAIN">Main Branch</option></select></div><div class="form-group" style="position: relative;"><label style="display: flex; justify-content: space-between; align-items: center;"><span>Product</span><span onclick="toggleEditStockAddProductInline()" style="color: var(--accent); cursor: pointer; font-weight: normal; font-size: 0.85rem;"><i class="fas fa-plus-circle"></i> Add Product</span></label><div class="suggestions-container"><input type="text" id="editStockProduct" placeholder="Type to search existing product..." autocomplete="off" style="padding-right: 32px;" oninput="searchEditStockProductAutocomplete()" onfocus="showEditStockProductSuggestions()" onblur="hideSuggestionsWithDelay('editStockProductSuggestions')" required><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('editStockProduct','editStockProductSuggestions')"><i class="fas fa-times"></i></span><div id="editStockProductSuggestions" class="suggestions-box"></div></div><div id="editStockAddProductInline" style="display:none; margin-top:8px; padding:10px; background:rgba(255,255,255,0.04); border-radius:8px;"><input type="text" id="editStockNewProductName" placeholder="Enter new product name" autocomplete="off" style="margin-bottom:8px;"><div style="display:flex; gap:8px;"><button type="button" class="btn-sm btn-success" onclick="confirmEditStockAddProductInline()"><i class="fas fa-check"></i> Add</button><button type="button" class="btn-sm btn-secondary" onclick="cancelEditStockAddProductInline()"><i class="fas fa-times"></i> Cancel</button></div></div></div><div class="form-group" style="position: relative;"><label style="display: flex; justify-content: space-between; align-items: center;"><span>Unit <span style="color: var(--danger);">*</span></span><span onclick="toggleEditStockAddUnitInline()" style="color: var(--accent); cursor: pointer; font-weight: normal; font-size: 0.85rem;"><i class="fas fa-plus-circle"></i> Add Unit</span></label><div class="suggestions-container"><input type="text" id="editStockUnit" placeholder="Type or select: Kg, Box, Pcs, Carton..." autocomplete="off" style="padding-right: 32px;" oninput="searchEditStockUnitAutocomplete()" onfocus="showEditStockUnitSuggestions()" onblur="hideSuggestionsWithDelay('editStockUnitSuggestions')" required><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('editStockUnit','editStockUnitSuggestions')"><i class="fas fa-times"></i></span><div id="editStockUnitSuggestions" class="suggestions-box"></div></div><div id="editStockAddUnitInline" style="display:none; margin-top:8px; padding:10px; background:rgba(255,255,255,0.04); border-radius:8px;"><input type="text" id="editStockNewUnitName" placeholder="Enter new unit name (e.g. Debe, Gunia)" autocomplete="off" style="margin-bottom:8px;"><div style="display:flex; gap:8px;"><button type="button" class="btn-sm btn-success" onclick="confirmEditStockAddUnitInline()"><i class="fas fa-check"></i> Add</button><button type="button" class="btn-sm btn-secondary" onclick="cancelEditStockAddUnitInline()"><i class="fas fa-times"></i> Cancel</button></div></div><small style="color: #94a3b8; display: block; margin-top: 5px;">Required - how this product is measured or counted. Changing the unit turns this into a separate stock entry.</small></div><div class="form-group"><label>Quantity</label><input type="number" id="editStockQuantity" placeholder="Enter quantity" min="0" step="0.01" required></div><div class="input-group"><div><label>Buy Price (per unit)</label><input type="number" id="editStockBuyPrice" placeholder="Buy price" min="0" step="0.01" required></div><div><label>Sell Price (per unit)</label><input type="number" id="editStockSellPrice" placeholder="Sell price" min="0" step="0.01" required></div></div><div class="form-group" style="position: relative;"><label>Category (Optional)</label><div class="suggestions-container"><input type="text" id="editStockCategory" placeholder="e.g., Electronics, Clothing" autocomplete="off" oninput="searchEditCategoriesAutocomplete()" onfocus="showEditCategorySuggestions()" onblur="hideSuggestionsWithDelay('editCategorySuggestions')"><div id="editCategorySuggestions" class="suggestions-box"></div></div></div><div class="confirmation-buttons"><button class="confirmation-btn confirm success" onclick="updateStock()" id="updateStockBtn"><i class="fas fa-save"></i> <span id="updateStockText">Update Stock</span><span class="spinner small" id="updateStockSpinner" style="display: none;"></span></button></div></div></div>
 
 <div class="confirmation-modal fullscreen-modal" id="addSaleModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title" style="display:flex; justify-content:space-between; align-items:center;"><span>Record Sale</span><span onclick="toggleSaleModalLock()" id="saleLockToggleBtn" style="cursor:pointer; font-size:0.85rem; font-weight:normal; display:flex; align-items:center; gap:6px; color:#94a3b8;"><i class="fas fa-lock-open" id="saleLockIcon"></i> <span id="saleLockLabel">Lock</span></span></h2><div id="saleLockedBanner" class="hidden" style="background:rgba(239,68,68,0.1); border:1px solid var(--danger); color: var(--danger); padding:10px; border-radius:8px; margin-bottom:15px; text-align:center;"><i class="fas fa-lock"></i> This form is locked. Tap "Unlock" above to record a sale.</div><div class="form-group" id="saleBranchGroup" style="display: none;"><label>Select Branch</label><select id="saleBranchSelect" class="product-select" onchange="handleSaleBranchChange()"><option value="MAIN">Main Branch</option></select></div><div class="form-group" style="position: relative;"><label>Customer Name</label><div class="suggestions-container"><input type="text" id="saleCustomer" placeholder="Customer name (optional)" autocomplete="off" style="padding-right: 32px;" oninput="searchCustomersAutocomplete(); renderSaleCartSummary();" onfocus="showCustomerSuggestions()" onblur="hideCustomerSuggestionsWithDelay()"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('saleCustomer','customerSuggestions')"><i class="fas fa-times"></i></span><div id="customerSuggestions" class="suggestions-box" style="display: none;"></div></div></div><div class="form-group"><label>Payment Method</label><select id="salePaymentMethod" onchange="saveSaleCartToStorage()"><option value="cash">Cash</option><option value="card">Credit/Debit Card</option><option value="mobile">Mobile Money</option><option value="bank">Bank Transfer</option></select></div><div style="border-top:1px solid #334155; margin:15px 0; padding-top:15px;"><h3 style="font-size:0.95rem; color:#cbd5e1; margin-bottom:10px;"><i class="fas fa-plus-circle"></i> Add an item to this sale</h3><div class="form-group"><label>Product Type</label><div style="display: flex; gap: 20px; margin-bottom: 15px;"><label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="radio" name="productType" value="stock" checked onchange="toggleProductInputMode()"> <span>Stock Product</span></label><label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="radio" name="productType" value="nonstock" onchange="toggleProductInputMode()"> <span>Non-Stock Service</span></label></div></div><div id="stockProductSection"><div class="form-group" style="position: relative;"><label>Select Product</label><div class="suggestions-container"><input type="text" id="saleProductSelect" placeholder="Type to search product..." autocomplete="off" style="padding-right: 32px;" oninput="searchSaleProductsAutocomplete()" onfocus="showSaleProductSuggestions()" onblur="hideSuggestionsWithDelay('saleProductSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('saleProductSelect','saleProductSuggestions')"><i class="fas fa-times"></i></span><div id="saleProductSuggestions" class="suggestions-box"></div></div></div></div><div id="nonStockProductSection" style="display: none;"><div class="form-group" style="position: relative;"><label>Service/Product Name</label><div class="suggestions-container"><input type="text" id="nonStockProduct" placeholder="e.g., Printing, Copying, Typing" autocomplete="off" style="padding-right: 32px;" oninput="handleNonStockProductInput(); searchNonStockProductsAutocomplete();" onfocus="showNonStockProductSuggestions()" onblur="hideSuggestionsWithDelay('nonStockProductSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('nonStockProduct','nonStockProductSuggestions')"><i class="fas fa-times"></i></span><div id="nonStockProductSuggestions" class="suggestions-box"></div></div></div><div class="form-group" style="position: relative;"><label>Unit <span style="color: var(--danger);">*</span></label><div class="suggestions-container"><input type="text" id="nonStockUnit" placeholder="Type or select: Session, Hour, Job, Pcs..." autocomplete="off" style="padding-right: 32px;" oninput="searchNonStockUnitAutocomplete()" onfocus="showNonStockUnitSuggestions()" onblur="hideSuggestionsWithDelay('nonStockUnitSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('nonStockUnit','nonStockUnitSuggestions')"><i class="fas fa-times"></i></span><div id="nonStockUnitSuggestions" class="suggestions-box"></div></div></div></div><div class="form-group"><label>Quantity</label><div style="display: flex; gap: 8px; align-items:center;"><button type="button" onclick="adjustSaleQuantity(-1)" class="btn-secondary" style="flex:0 0 auto; width:42px; padding:8px 0; font-size:1.1rem;"><i class="fas fa-minus"></i></button><input type="text" id="saleQuantity" placeholder="e.g., 1, 0.5, 1/2, 3/4" oninput="parseFractionalQuantity(); calculateSaleTotal(); validateSaleQuantity();" style="flex:1; text-align:center;"><button type="button" onclick="adjustSaleQuantity(1)" class="btn-secondary" style="flex:0 0 auto; width:42px; padding:8px 0; font-size:1.1rem;"><i class="fas fa-plus"></i></button></div><small style="color: #94a3b8; display: block; margin-top: 5px;">Tap - / + to adjust by 1, or type an exact amount (e.g. 0.5, 1/2, 3/4)</small></div><div id="saleStockInfo" class="stock-indicator" style="display: none;">Available Stock: <span id="saleAvailableStock">0</span></div><div class="form-group"><label>Unit Price</label><input type="number" id="saleUnitPrice" placeholder="Price per unit" min="0" step="0.01" oninput="calculateSaleTotal()" required></div><div class="form-group"><label>Item Subtotal</label><input type="number" id="saleTotal" placeholder="Subtotal" readonly></div><div id="productValidationMessage" style="color: var(--danger); font-size: 0.9rem; margin-bottom: 15px; display: none;">Please select either a stock product OR enter a non-stock service, not both.</div><button type="button" class="btn-secondary" onclick="addSaleItemToCart()" style="width:100%; margin-bottom:15px;" id="addToCartBtn"><i class="fas fa-cart-plus"></i> Add to Sale</button></div><div id="saleCartSummaryCard" class="hidden" style="background: rgba(56,189,248,0.06); border:1px solid var(--accent); border-radius:10px; padding:12px; margin-bottom:15px;"><h3 style="font-size:0.95rem; color:#cbd5e1; margin-bottom:10px;"><i class="fas fa-receipt"></i> Sale Summary<span id="saleCartCustomerLabel" style="color:#94a3b8; font-weight:normal;"></span></h3><div id="saleCartItemsList"></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px solid #334155;"><strong style="color:#cbd5e1;">Grand Total</strong><strong style="color: var(--accent); font-size:1.2rem;" id="saleCartGrandTotal">TZS 0</strong></div></div><div class="confirmation-buttons"><button class="confirmation-btn confirm" onclick="completeSale()" id="submitSaleBtn"><i class="fas fa-save"></i> <span id="submitSaleText">Complete Sale</span><span class="spinner small" id="saleSpinner" style="display: none;"></span></button></div><div style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 15px;"><h3 style="font-size: 1rem; color: #cbd5e1; margin-bottom: 10px;"><i class="fas fa-history"></i> Recent Sales</h3><div id="recentSalesInModal"></div></div></div></div>
 
@@ -4799,7 +4801,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 
     <script>
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbx9fyA5qwliAIjBkRs4ZHeldopu5VK5zh50H-bsMM0eLEE-oaTKfqkCRFwAHUg8iw4SJQ/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxWjF3HBfFkRWCc_uJZQG55Tepbf0xCcvO27Dad0SRcEJ0WrL42Mdh7gdnqJqvqyUzc/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -9878,6 +9880,228 @@ async function confirmAddUnitInline() {
 }
 
 // ============================================
+// EDIT STOCK: Product / Unit search + inline "Add" (mirrors the Add Stock
+// modal's equivalents above, using the editStock* element ids instead).
+// ============================================
+
+function searchEditStockProductAutocomplete() {
+    const input = document.getElementById('editStockProduct');
+    if (!input) return;
+    
+    const searchTerm = input.value.trim().toLowerCase();
+    const suggestionsBox = document.getElementById('editStockProductSuggestions');
+    
+    if (hideSuggestionsTimer) clearTimeout(hideSuggestionsTimer);
+    
+    const allNames = Object.keys(productsCache).sort();
+    const productNames = (searchTerm
+        ? allNames.filter(name => name.toLowerCase().includes(searchTerm))
+        : allNames
+    ).slice(0, 8);
+    
+    if (productNames.length === 0) {
+        suggestionsBox.innerHTML = `
+            <div class="suggestion-item" style="color: #94a3b8; cursor: default;">
+                <div class="suggestion-name"><i class="fas fa-info-circle"></i> No matching product - use "+ Add Product" above</div>
+            </div>
+        `;
+        suggestionsBox.style.display = 'block';
+        return;
+    }
+    
+    let html = '';
+    productNames.forEach(product => {
+        const productData = productsCache[product] || {};
+        const lastPrice = productData.sellPrice ? formatCurrency(productData.sellPrice) : '—';
+        const stock = productData.quantity || 0;
+        const unit = productData.unit || '';
+        const stockLabel = unit ? `${formatQuantity(stock)} ${pluralizeUnit(unit, stock)}` : `${stock}`;
+        
+        html += `
+            <div class="suggestion-item" onclick="selectEditStockProductSuggestion('${product.replace(/'/g, "\\'")}')">
+                <div class="suggestion-name"><i class="fas fa-box"></i> ${product}</div>
+                <div class="suggestion-detail">
+                    <span><i class="fas fa-tag"></i> Last price: ${lastPrice}</span>
+                    <span><i class="fas fa-cubes"></i> Stock: ${stockLabel}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    suggestionsBox.innerHTML = html;
+    suggestionsBox.style.display = 'block';
+}
+
+function selectEditStockProductSuggestion(productName) {
+    const input = document.getElementById('editStockProduct');
+    if (input) input.value = productName;
+    
+    const suggestionsBox = document.getElementById('editStockProductSuggestions');
+    if (suggestionsBox) suggestionsBox.style.display = 'none';
+}
+
+function showEditStockProductSuggestions() {
+    searchEditStockProductAutocomplete();
+}
+
+function toggleEditStockAddProductInline() {
+    const box = document.getElementById('editStockAddProductInline');
+    if (!box) return;
+    const showing = box.style.display !== 'none';
+    if (showing) {
+        cancelEditStockAddProductInline();
+    } else {
+        box.style.display = 'block';
+        document.getElementById('editStockNewProductName').value = '';
+        document.getElementById('editStockNewProductName').focus();
+        const suggestionsBox = document.getElementById('editStockProductSuggestions');
+        if (suggestionsBox) suggestionsBox.style.display = 'none';
+    }
+}
+
+function cancelEditStockAddProductInline() {
+    const box = document.getElementById('editStockAddProductInline');
+    if (box) box.style.display = 'none';
+    const nameInput = document.getElementById('editStockNewProductName');
+    if (nameInput) nameInput.value = '';
+}
+
+function confirmEditStockAddProductInline() {
+    const nameInput = document.getElementById('editStockNewProductName');
+    const name = (nameInput?.value || '').trim();
+    
+    if (!name) {
+        showNotification('Please enter a product name', 'error');
+        return;
+    }
+    
+    if (productsCache[name]) {
+        showNotification(`"${name}" already exists - select it from the search instead`, 'info');
+    }
+    
+    document.getElementById('editStockProduct').value = name;
+    cancelEditStockAddProductInline();
+}
+
+function searchEditStockUnitAutocomplete() {
+    const input = document.getElementById('editStockUnit');
+    if (!input) return;
+    
+    if (unitsCache.length === 0) loadUnitsCacheFromStorage();
+    
+    const searchTerm = input.value.trim().toLowerCase();
+    const suggestionsBox = document.getElementById('editStockUnitSuggestions');
+    
+    if (hideSuggestionsTimer) clearTimeout(hideSuggestionsTimer);
+    
+    const sortedUnits = [...unitsCache].sort();
+    const matches = (searchTerm
+        ? sortedUnits.filter(u => u.toLowerCase().includes(searchTerm))
+        : sortedUnits
+    ).slice(0, 8);
+    
+    if (matches.length === 0) {
+        suggestionsBox.innerHTML = `
+            <div class="suggestion-item" style="color: #94a3b8; cursor: default;">
+                <div class="suggestion-name"><i class="fas fa-info-circle"></i> No matching unit - use "+ Add Unit" above</div>
+            </div>
+        `;
+        suggestionsBox.style.display = 'block';
+        return;
+    }
+    
+    let html = '';
+    matches.forEach(unit => {
+        html += `
+            <div class="suggestion-item" onclick="selectEditStockUnitSuggestion('${unit.replace(/'/g, "\\'")}')">
+                <div class="suggestion-name"><i class="fas fa-ruler-combined"></i> ${unit}</div>
+            </div>
+        `;
+    });
+    
+    suggestionsBox.innerHTML = html;
+    suggestionsBox.style.display = 'block';
+}
+
+function selectEditStockUnitSuggestion(unit) {
+    document.getElementById('editStockUnit').value = unit;
+    document.getElementById('editStockUnitSuggestions').style.display = 'none';
+}
+
+function showEditStockUnitSuggestions() {
+    searchEditStockUnitAutocomplete();
+}
+
+function toggleEditStockAddUnitInline() {
+    const box = document.getElementById('editStockAddUnitInline');
+    if (!box) return;
+    const showing = box.style.display !== 'none';
+    if (showing) {
+        cancelEditStockAddUnitInline();
+    } else {
+        box.style.display = 'block';
+        document.getElementById('editStockNewUnitName').value = '';
+        document.getElementById('editStockNewUnitName').focus();
+        const suggestionsBox = document.getElementById('editStockUnitSuggestions');
+        if (suggestionsBox) suggestionsBox.style.display = 'none';
+    }
+}
+
+function cancelEditStockAddUnitInline() {
+    const box = document.getElementById('editStockAddUnitInline');
+    if (box) box.style.display = 'none';
+    const nameInput = document.getElementById('editStockNewUnitName');
+    if (nameInput) nameInput.value = '';
+}
+
+async function confirmEditStockAddUnitInline() {
+    const nameInput = document.getElementById('editStockNewUnitName');
+    const name = (nameInput?.value || '').trim();
+    
+    if (!name) {
+        showNotification('Please enter a unit name', 'error');
+        return;
+    }
+    
+    if (unitsCache.some(u => u.toLowerCase() === name.toLowerCase())) {
+        showNotification(`"${name}" already exists`, 'info');
+        document.getElementById('editStockUnit').value = name;
+        cancelEditStockAddUnitInline();
+        return;
+    }
+    
+    unitsCache.push(name);
+    saveUnitsCache();
+    document.getElementById('editStockUnit').value = name;
+    cancelEditStockAddUnitInline();
+    
+    if (isOnline && currentUser.databaseId) {
+        try {
+            const result = await apiCall('addUnit', { unit: name });
+            if (result && result.success) {
+                applyUnitsFromServer(result.units);
+                showNotification(`Unit "${name}" added`, 'success');
+            } else {
+                if (!offlineData.units) offlineData.units = [];
+                offlineData.units.push(name);
+                saveOfflineData();
+                showNotification(`Unit "${name}" saved locally. Will sync when possible.`, 'info');
+            }
+        } catch (error) {
+            if (!offlineData.units) offlineData.units = [];
+            offlineData.units.push(name);
+            saveOfflineData();
+            showNotification(`Unit "${name}" saved locally. Will sync when online.`, 'info');
+        }
+    } else {
+        if (!offlineData.units) offlineData.units = [];
+        offlineData.units.push(name);
+        saveOfflineData();
+        showNotification(`Unit "${name}" saved offline. Will sync when online.`, 'info');
+    }
+}
+
+// ============================================
 // SUPPLIER PRODUCTS AUTOCOMPLETE
 // ============================================
 
@@ -11821,13 +12045,21 @@ async function updateStock() {
     const originalProduct = document.getElementById('editStockOriginalProduct').value;
     const originalBranch = document.getElementById('editStockOriginalBranch').value;
     const product = document.getElementById('editStockProduct').value.trim();
+    const unit = document.getElementById('editStockUnit').value.trim();
     const quantity = parseFloat(document.getElementById('editStockQuantity').value);
     const buyPrice = parseFloat(document.getElementById('editStockBuyPrice').value);
     const sellPrice = parseFloat(document.getElementById('editStockSellPrice').value);
     const category = document.getElementById('editStockCategory').value.trim();
+    const branchSelect = document.getElementById('editStockBranchSelect');
+    const newBranch = (branchSelect && branchSelect.closest('.form-group').style.display !== 'none') ? branchSelect.value : originalBranch;
     
     if (!product || !quantity || !buyPrice || !sellPrice) {
         showNotification('Please fill all required fields', 'error');
+        return;
+    }
+    
+    if (!unit) {
+        showNotification('Please select a Unit', 'error');
         return;
     }
     
@@ -11841,19 +12073,25 @@ async function updateStock() {
         return;
     }
     
+    if (category) registerCategoryIfNew(category);
+    
     setButtonLoading('updateStockBtn', 'updateStockSpinner', 'updateStockText', true);
     
+    const payload = {
+        timestamp: timestamp,
+        product: originalProduct, // Original product name for identification
+        branchId: originalBranch,  // Original branch for identification
+        newProduct: product,       // New product name (if changed)
+        newBranchId: newBranch !== originalBranch ? newBranch : undefined,
+        unit: unit,
+        quantity: quantity,
+        buyPrice: buyPrice,
+        sellPrice: sellPrice,
+        category: category
+    };
+    
     try {
-        const result = await apiCall('updateStock', {
-            timestamp: timestamp,
-            product: originalProduct, // Original product name for identification
-            branchId: originalBranch,  // Original branch for identification
-            newProduct: product,       // New product name (if changed)
-            quantity: quantity,
-            buyPrice: buyPrice,
-            sellPrice: sellPrice,
-            category: category
-        });
+        const result = await apiCall('updateStock', payload);
         
         if (result.success) {
             // Update local cache - tafuta kwa timestamp
@@ -11870,8 +12108,10 @@ async function updateStock() {
                 if (index !== -1) {
                     // Update the item
                     stockCache.data[index] = {
-                        ...stockCache.data[index], // Keep original date, branchId, sellerId
+                        ...stockCache.data[index], // Keep original date, sellerId
                         product: product,
+                        unit: unit,
+                        branchId: newBranch,
                         quantity: quantity,
                         buyPrice: buyPrice,
                         sellPrice: sellPrice,
@@ -11908,10 +12148,7 @@ async function updateStock() {
         // apply it to the local cache right away, same as every "Add"
         // flow already does, instead of just failing outright.
         if (!offlineData.stockEdits) offlineData.stockEdits = [];
-        offlineData.stockEdits.push({
-            timestamp, product: originalProduct, branchId: originalBranch,
-            newProduct: product, quantity, buyPrice, sellPrice, category
-        });
+        offlineData.stockEdits.push(payload);
         saveOfflineData();
         
         if (stockCache.data) {
@@ -11923,7 +12160,7 @@ async function updateStock() {
             if (index !== -1) {
                 stockCache.data[index] = {
                     ...stockCache.data[index],
-                    product, quantity, buyPrice, sellPrice,
+                    product, unit, branchId: newBranch, quantity, buyPrice, sellPrice,
                     value: quantity * buyPrice, category
                 };
                 stockCache.summary = calculateStockSummary(stockCache.data);
@@ -15826,7 +16063,110 @@ function showEditSupplierSuggestions() {
         }
         
         
-     function displayStockTable(data, summary) {
+     // ============================================
+// BULK STOCK IMPORT via Excel Template
+// Lets an Admin register many products (with their Units) at once instead
+// of one-by-one - download a small template, fill it in Excel, upload it
+// back here.
+// ============================================
+
+function downloadStockTemplate() {
+    if (typeof XLSX === 'undefined') {
+        showNotification('Template feature is unavailable right now. Check your internet connection and try again.', 'error');
+        return;
+    }
+    
+    const headers = ['Product', 'Unit', 'Quantity', 'Buy Price', 'Sell Price', 'Category'];
+    const sampleRows = [
+        ['Rice', 'Kg', 50, 1800, 2200, 'Groceries'],
+        ['Cooking Oil', 'Litres', 20, 3500, 4200, 'Groceries']
+    ];
+    
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...sampleRows]);
+    worksheet['!cols'] = [{ wch: 22 }, { wch: 12 }, { wch: 10 }, { wch: 12 }, { wch: 12 }, { wch: 18 }];
+    
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Stock Template');
+    
+    XLSX.writeFile(workbook, 'SmartTrade_Stock_Template.xlsx');
+}
+
+async function handleStockTemplateFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = ''; // allow re-selecting the same file again later
+    
+    if (typeof XLSX === 'undefined') {
+        showNotification('Template feature is unavailable right now. Check your internet connection and try again.', 'error');
+        return;
+    }
+    
+    if (!isOnline) {
+        showNotification('You need internet connection to import a template.', 'error');
+        return;
+    }
+    
+    try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+        
+        if (rows.length === 0) {
+            showNotification('The file has no data rows to import', 'error');
+            return;
+        }
+        
+        const branchSelect = document.getElementById('stockBranchSelect');
+        const branchId = (currentUser.userType === 'admin')
+            ? (branchSelect?.value || 'MAIN')
+            : (currentUser.branchId || 'MAIN');
+        
+        const items = [];
+        let skipped = 0;
+        
+        rows.forEach(row => {
+            const product = String(row['Product'] || '').trim();
+            const unit = String(row['Unit'] || '').trim();
+            const quantity = parseFloat(row['Quantity']);
+            const buyPrice = parseFloat(row['Buy Price']);
+            const sellPrice = parseFloat(row['Sell Price']);
+            const category = String(row['Category'] || '').trim();
+            
+            if (!product || !unit || !quantity || !buyPrice || !sellPrice) {
+                skipped++;
+                return;
+            }
+            
+            items.push({ product, unit, quantity, buyPrice, sellPrice, category, branchId });
+        });
+        
+        if (items.length === 0) {
+            showNotification('No valid rows found - make sure Product, Unit, Quantity, Buy Price and Sell Price are all filled in.', 'error');
+            return;
+        }
+        
+        showNotification(`Importing ${items.length} product(s)...`, 'info');
+        
+        const result = await apiCall('bulkAddStock', { branchId, items });
+        
+        if (result.success) {
+            let msg = `${result.added} product(s) imported successfully`;
+            if (skipped > 0) msg += ` (${skipped} row(s) skipped - missing fields)`;
+            showNotification(msg, 'success');
+            await refreshAllData();
+            loadStock();
+            loadDashboard();
+        } else {
+            showNotification(result.error || 'Failed to import products', 'error');
+        }
+    } catch (error) {
+        console.error('Error importing stock template:', error);
+        showNotification('Could not read the file. Make sure it matches the downloaded template.', 'error');
+    }
+}
+
+function displayStockTable(data, summary) {
     const container = document.getElementById('stockTable');
     const isAdmin = currentUser.userType === 'admin';
     
@@ -15903,7 +16243,7 @@ function showEditSupplierSuggestions() {
                 ${isAdmin ? `
                 <td>
                     <div class="action-buttons">
-                        <button class="btn-sm btn-secondary" onclick="editStock('${timestamp}', '${safeProduct}', ${item.quantity}, ${item.buyPrice}, ${item.sellPrice}, '${safeCategory}', '${branchId}', '${item.sellerId || ''}')">
+                        <button class="btn-sm btn-secondary" onclick="editStock('${timestamp}', '${safeProduct}', ${item.quantity}, ${item.buyPrice}, ${item.sellPrice}, '${safeCategory}', '${branchId}', '${item.sellerId || ''}', '${(item.unit || '').replace(/'/g, "\\'")}')">
                             <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn-sm btn-danger" onclick="deleteStock('${timestamp}', '${safeProduct}', '${branchId}')">
@@ -15925,8 +16265,8 @@ function showEditSupplierSuggestions() {
     container.innerHTML = html;
 }
 
-function editStock(timestamp, product, quantity, buyPrice, sellPrice, category, branchId, sellerId) {
-    console.log('Editing stock:', { timestamp, product, branchId });
+function editStock(timestamp, product, quantity, buyPrice, sellPrice, category, branchId, sellerId, unit) {
+    console.log('Editing stock:', { timestamp, product, branchId, unit });
     
     // Store the unique identifiers
     document.getElementById('editStockTimestamp').value = timestamp;
@@ -15934,10 +16274,29 @@ function editStock(timestamp, product, quantity, buyPrice, sellPrice, category, 
     document.getElementById('editStockOriginalBranch').value = branchId;
     
     document.getElementById('editStockProduct').value = product;
+    document.getElementById('editStockUnit').value = unit || '';
     document.getElementById('editStockQuantity').value = quantity;
     document.getElementById('editStockBuyPrice').value = buyPrice;
     document.getElementById('editStockSellPrice').value = sellPrice;
     document.getElementById('editStockCategory').value = category || '';
+    
+    // Branch selector - Admin only, mirrors Add Stock's branch group
+    const branchGroup = document.getElementById('editStockBranchGroup');
+    if (currentUser.userType === 'admin' && branchesCache.data && branchesCache.data.length > 0) {
+        branchGroup.style.display = 'block';
+        const select = document.getElementById('editStockBranchSelect');
+        let options = '';
+        branchesCache.data.forEach(b => {
+            options += `<option value="${b.id}" ${b.id === branchId ? 'selected' : ''}>${escapeHtml(b.name)}</option>`;
+        });
+        select.innerHTML = options || '<option value="MAIN">Main Branch</option>';
+        if (!branchesCache.data.some(b => b.id === branchId)) select.value = 'MAIN';
+    } else {
+        branchGroup.style.display = 'none';
+    }
+    
+    cancelEditStockAddProductInline();
+    cancelEditStockAddUnitInline();
     
     const modal = document.getElementById('editStockModal');
     modal.classList.add('show');
