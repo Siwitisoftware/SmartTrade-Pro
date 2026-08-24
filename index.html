@@ -1373,6 +1373,35 @@
         .confirmation-modal.fullscreen-modal.show .confirmation-content {
             transform: none;
         }
+
+        /* Scanner camera preview - keep it a compact framed box just big
+           enough to aim at a QR code, instead of the <video> filling
+           almost the whole phone screen (its natural size follows the
+           camera's resolution, which is huge on most phones). */
+        .scanner-frame-hint {
+            width: 100%;
+            max-width: 320px;
+            height: 240px;
+            margin: 0 auto;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            border: 2px solid var(--accent);
+            background: #000;
+            position: relative;
+        }
+
+        .scanner-frame-hint video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        @media (max-width: 380px) {
+            .scanner-frame-hint {
+                height: 200px;
+            }
+        }
         
         /* The action button is now the main call-to-action on these
            full-page forms (Cancel was removed), so it needs to look solid
@@ -4811,7 +4840,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 
     <script>
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbyXVouCn3rwSlopVP_9hFfhG7kqyoZrNtWcYoqn-ukifPJL7xnmKqa2vkpSUyEWYgpubQ/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxQ6JNTh1MyykyrR6Y7WbknErGcwOoqtembDbNHLpiEPR2notBkH53Om44qUPb3ESxqkg/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -5806,6 +5835,7 @@ let debtPhotoBase64 = null;
           
 
             setupOnlineStatusListener();
+            precacheOfflineLibraries();
 
             
             const overlay = document.querySelector('.overlay');
@@ -12754,8 +12784,9 @@ async function updateStock() {
                 showNotification('This form is locked. Tap "Unlock" to record a sale.', 'error');
                 return;
             }
+            if (typeof jsQR === 'undefined') await ensureOfflineLibrary('jsQR');
             if (typeof jsQR === 'undefined') {
-                showNotification('Maktaba ya scanner haijapakia. Angalia mtandao wako.', 'error');
+                showNotification('Maktaba ya scanner haijapakia. Fungua mfumo mara moja ukiwa na mtandao ili ihifadhiwe kwa matumizi ya offline, kisha jaribu tena.', 'error');
                 return;
             }
 
@@ -13308,7 +13339,13 @@ async function updateStock() {
                 timestamp: new Date().toISOString(),
                 sellerId: currentUser.sellerId,
                 customerId: customerId,
-                unit: saleUnit
+                unit: saleUnit,
+                // Unique per-item ID generated on this device. Sent to the
+                // server on sync so it can recognise and skip a sale it has
+                // already saved - protects against duplicate entries if a
+                // sync request times out or gets retried (e.g. the QR
+                // scanner recording several sales in a row while offline).
+                offlineId: 'SALE_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9)
             };
             
             if (isOnline) {
@@ -16529,6 +16566,76 @@ async function handleStockTemplateFile(event) {
    stockCache to get the live price/stock rather than
    trusting only what was printed on the label.
    ============================================== */
+
+/* ==============================================
+   OFFLINE LIBRARY CACHE
+   QRious (QR generation), jsQR (QR scanning) and jsPDF
+   (label sheet export) are loaded from a CDN in <head>. If the
+   very first page load ever happened offline, or the browser
+   dropped them from its HTTP cache, those <script> tags silently
+   fail and the whole QR Codes / Scan Product features go blank
+   with no way to recover until back online. To make them work
+   offline too, we proactively save a copy of each library into
+   the Cache Storage API (which has a much bigger, more durable
+   quota than localStorage) whenever we have a connection, and
+   fall back to that copy - injecting it as an inline <script> -
+   any time the CDN version didn't load.
+   ============================================== */
+const OFFLINE_LIB_CACHE_NAME = 'smarttrade-offline-libs-v1';
+const OFFLINE_LIBRARIES = [
+    { global: 'QRious', url: 'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js' },
+    { global: 'jsQR', url: 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js' },
+    { global: 'jspdf', url: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js' }
+];
+
+async function precacheOfflineLibraries() {
+    if (!('caches' in window) || !navigator.onLine) return;
+    try {
+        const cache = await caches.open(OFFLINE_LIB_CACHE_NAME);
+        for (const lib of OFFLINE_LIBRARIES) {
+            try {
+                const already = await cache.match(lib.url);
+                if (already) continue;
+                const res = await fetch(lib.url, { mode: 'cors' });
+                if (res && res.ok) await cache.put(lib.url, res.clone());
+            } catch (e) {
+                console.warn('Could not precache offline QR/PDF library:', lib.url, e);
+            }
+        }
+    } catch (e) {
+        console.warn('Offline QR/PDF library precache failed:', e);
+    }
+}
+
+// Call before using QRious / jsQR / jsPDF: if the CDN <script> tag never
+// loaded (typically because we're offline), this pulls a previously
+// cached copy from Cache Storage and injects it so the feature still
+// works. Returns true once the global is available, false if there's
+// no cached copy to fall back to (e.g. never been online before).
+async function ensureOfflineLibrary(globalName) {
+    if (typeof window[globalName] !== 'undefined') return true;
+    if (!('caches' in window)) return false;
+    const lib = OFFLINE_LIBRARIES.find(l => l.global === globalName);
+    if (!lib) return false;
+    try {
+        const cache = await caches.open(OFFLINE_LIB_CACHE_NAME);
+        const cached = await cache.match(lib.url);
+        if (!cached) return false;
+        const code = await cached.text();
+        await new Promise((resolve) => {
+            const script = document.createElement('script');
+            script.textContent = code;
+            script.onload = resolve;
+            document.head.appendChild(script);
+            resolve();
+        });
+        return typeof window[globalName] !== 'undefined';
+    } catch (e) {
+        console.error('Failed to load offline library from cache:', globalName, e);
+        return false;
+    }
+}
+
 let qrCodesProductList = [];
 
 function openQrCodesModal() {
@@ -16622,8 +16729,11 @@ function setAllQrQuantities() {
 }
 
 async function generateStockQrPdf() {
+    if (typeof QRious === 'undefined') await ensureOfflineLibrary('QRious');
+    if (typeof window.jspdf === 'undefined') await ensureOfflineLibrary('jspdf');
+
     if (typeof QRious === 'undefined' || typeof window.jspdf === 'undefined') {
-        showNotification('Maktaba ya QR/PDF haijapakia. Angalia mtandao wako kisha jaribu tena.', 'error');
+        showNotification('Maktaba ya QR/PDF haijapakia. Fungua mfumo mara moja ukiwa na mtandao ili zihifadhiwe kwa matumizi ya offline, kisha jaribu tena.', 'error');
         return;
     }
 
@@ -23054,6 +23164,7 @@ function setupOnlineStatusListener() {
         console.log('Device came online - checking subscription...');
         isOnline = true;
         updateSyncIndicator();
+        precacheOfflineLibraries();
         // Immediately check subscription when coming online
         if (currentUser && currentUser.email && currentUser.email !== 'daxsystems.tz.co@gmail.com') {
             setTimeout(function() {
