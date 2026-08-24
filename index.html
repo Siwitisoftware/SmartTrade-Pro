@@ -4801,7 +4801,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 
     <script>
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbxWjF3HBfFkRWCc_uJZQG55Tepbf0xCcvO27Dad0SRcEJ0WrL42Mdh7gdnqJqvqyUzc/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbww8vxeHEwbkwqm8XP3HL4gc0f9FRn2WAbiP-v96wCMn9faz7wTVgDeyd_MXBrltuhFTw/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -5569,6 +5569,13 @@ let debtPhotoBase64 = null;
         // Sellers request stock/purchases for Admin approval instead of
         // adding directly - hide the direct-add entry points.
         ['headerAddStockBtn', 'quickAddStockBtn', 'stockPageAddBtn', 'quickRecordPurchaseBtn'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+        
+        // Sellers hawaruhusiwi kupakua/kupakia kiolezo cha Stock (bulk import) -
+        // ficha button za Template na Import kwenye ukurasa wa Stock.
+        ['stockTemplateDownloadBtn', 'stockTemplateUploadBtn'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
