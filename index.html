@@ -4840,7 +4840,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 
     <script>
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbzpyCv-0-RupQEweAoyKF_NdJqFVackpEb7UuZq3UGKEeqanJffdkiaHMb__-bNt6Sq8Q/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbzlbrGKpC2j3XQp_12UsCilA9XKQqCThKVIgh5J5MzqZncp2yq3x_m3ow2insGF5h1_1g/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -12779,14 +12779,25 @@ async function updateStock() {
         let saleScannerActive = false;
         let saleScannerLastCode = null;
         let saleScannerLastTime = 0;
+        // True while the scanner window is actively being dragged - the
+        // camera scan loop checks this to skip its heavy per-frame work
+        // (canvas draw + getImageData + jsQR decode) so dragging stays
+        // smooth instead of competing with it for the main thread.
+        let scannerModalDragActive = false;
 
         /* ==============================================
            SCANNER MODAL - DRAGGABLE
-           Lets the person drag the "Scan Product QR" window by its
-           title bar to wherever suits them on screen, instead of it
-           being pinned to the center. Only this modal behaves this
-           way - every other modal keeps its normal centered layout.
-           Position resets to center each time the modal is reopened.
+           Lets the person drag the "Scan Product QR" window from
+           anywhere on it (not just the title bar) to wherever suits
+           them on screen, instead of it being pinned to the center.
+           Dragging from the whole window - rather than only the thin
+           title bar - matters because the "You are offline" toast
+           (top-right, above every modal) can sit right over the title
+           bar and block drags from starting there while offline; any
+           other empty spot on the window still works.
+           Only this modal behaves this way - every other modal keeps
+           its normal centered layout. Position resets to center each
+           time the modal is reopened.
            ============================================== */
         function setupScannerModalDragging() {
             const modal = document.getElementById('saleScannerModal');
@@ -12795,14 +12806,23 @@ async function updateStock() {
             const handle = modal.querySelector('.confirmation-title');
             if (!content || !handle) return;
 
+            content.style.touchAction = 'none';
             handle.style.cursor = 'move';
-            handle.style.touchAction = 'none';
+
+            // Elements that must keep their normal behaviour (tap/scroll/
+            // select) instead of starting a window drag.
+            const NON_DRAG_SELECTOR = 'video, canvas, button, input, a, select, textarea, label, #saleScannerLog, #saleScannerLog *';
 
             let dragging = false;
             let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+            let contentWidth = 0, contentHeight = 0;
+            let pendingLeft = null, pendingTop = null, moveScheduled = false;
 
             function onPointerDown(e) {
-                // Don't start a drag if the person tapped the Close button
+                // Don't start a drag from interactive elements (buttons,
+                // inputs, the video preview, the close button, the scan
+                // log, etc.) - only empty space on the window drags it.
+                if (e.target.closest(NON_DRAG_SELECTOR)) return;
                 const closeBtn = handle.querySelector('span[onclick="closeSaleScannerModal()"]');
                 if (closeBtn && closeBtn.contains(e.target)) return;
 
@@ -12818,11 +12838,19 @@ async function updateStock() {
                 content.style.left = rect.left + 'px';
                 content.style.top = rect.top + 'px';
                 content.style.transform = 'none';
+                // Suspend the open/close transition for the duration of
+                // the drag so every move applies instantly instead of
+                // easing over the CSS transition and feeling heavy/laggy.
+                content.style.transition = 'none';
 
                 startLeft = rect.left;
                 startTop = rect.top;
+                contentWidth = rect.width;
+                contentHeight = rect.height;
                 startX = point.clientX;
                 startY = point.clientY;
+
+                scannerModalDragActive = true;
 
                 document.addEventListener('mousemove', onPointerMove);
                 document.addEventListener('touchmove', onPointerMove, { passive: false });
@@ -12840,25 +12868,38 @@ async function updateStock() {
 
                 // Keep at least a bit of the window on-screen so it can
                 // never be dragged somewhere it can no longer be reached.
-                const rect = content.getBoundingClientRect();
+                // Uses the width/height captured once at drag-start rather
+                // than re-measuring the DOM on every move, which avoids
+                // forcing a layout reflow on each pointer event.
                 const minVisible = 40;
-                newLeft = Math.min(Math.max(newLeft, minVisible - rect.width), window.innerWidth - minVisible);
+                newLeft = Math.min(Math.max(newLeft, minVisible - contentWidth), window.innerWidth - minVisible);
                 newTop = Math.min(Math.max(newTop, 0), window.innerHeight - minVisible);
 
-                content.style.left = newLeft + 'px';
-                content.style.top = newTop + 'px';
+                pendingLeft = newLeft;
+                pendingTop = newTop;
+                if (!moveScheduled) {
+                    moveScheduled = true;
+                    requestAnimationFrame(() => {
+                        moveScheduled = false;
+                        if (!dragging) return;
+                        content.style.left = pendingLeft + 'px';
+                        content.style.top = pendingTop + 'px';
+                    });
+                }
             }
 
             function onPointerUp() {
                 dragging = false;
+                scannerModalDragActive = false;
+                content.style.transition = '';
                 document.removeEventListener('mousemove', onPointerMove);
                 document.removeEventListener('touchmove', onPointerMove);
                 document.removeEventListener('mouseup', onPointerUp);
                 document.removeEventListener('touchend', onPointerUp);
             }
 
-            handle.addEventListener('mousedown', onPointerDown);
-            handle.addEventListener('touchstart', onPointerDown, { passive: true });
+            content.addEventListener('mousedown', onPointerDown);
+            content.addEventListener('touchstart', onPointerDown, { passive: true });
         }
 
         // Puts the scanner window back in its default centered spot -
@@ -13024,23 +13065,30 @@ async function updateStock() {
         function scanSaleQrLoop() {
             if (!saleScannerActive) return;
 
-            const video = document.getElementById('saleScannerVideo');
-            const canvas = document.getElementById('saleScannerCanvas');
+            // Skip the heavy decode work (canvas draw + getImageData +
+            // jsQR, which runs on every frame) while the window is being
+            // dragged, so the drag stays light/responsive instead of
+            // fighting the scan loop for the main thread. Scanning simply
+            // resumes on the next frame once the drag ends.
+            if (!scannerModalDragActive) {
+                const video = document.getElementById('saleScannerVideo');
+                const canvas = document.getElementById('saleScannerCanvas');
 
-            if (video && canvas && video.readyState === video.HAVE_ENOUGH_DATA) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                if (video && canvas && video.readyState === video.HAVE_ENOUGH_DATA) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                try {
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
-                    if (code && code.data) {
-                        handleSaleQrDecoded(code.data);
+                    try {
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+                        if (code && code.data) {
+                            handleSaleQrDecoded(code.data);
+                        }
+                    } catch (e) {
+                        // Ignore transient decode errors and keep scanning
                     }
-                } catch (e) {
-                    // Ignore transient decode errors and keep scanning
                 }
             }
 
@@ -16767,7 +16815,7 @@ let qrCodesProductList = [];
 
 function openQrCodesModal() {
     if (!stockCache.data || stockCache.data.length === 0) {
-        showNotification('Hakuna bidhaa kwenye Stock kwa sasa', 'error');
+        showNotification('No products in Stock right now', 'error');
         return;
     }
 
