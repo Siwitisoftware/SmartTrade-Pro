@@ -4743,9 +4743,9 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 
 <div class="confirmation-modal fullscreen-modal" id="addSaleModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title" style="display:flex; justify-content:space-between; align-items:center;"><span>Record Sale</span><span onclick="toggleSaleModalLock()" id="saleLockToggleBtn" style="cursor:pointer; font-size:0.85rem; font-weight:normal; display:flex; align-items:center; gap:6px; color:#94a3b8;"><i class="fas fa-lock-open" id="saleLockIcon"></i> <span id="saleLockLabel">Lock</span></span></h2><div id="saleLockedBanner" class="hidden" style="background:rgba(239,68,68,0.1); border:1px solid var(--danger); color: var(--danger); padding:10px; border-radius:8px; margin-bottom:15px; text-align:center;"><i class="fas fa-lock"></i> This form is locked. Tap "Unlock" above to record a sale.</div><div class="form-group" id="saleBranchGroup" style="display: none;"><label>Select Branch</label><select id="saleBranchSelect" class="product-select" onchange="handleSaleBranchChange()"><option value="MAIN">Main Branch</option></select></div><div class="form-group" style="position: relative;"><label>Customer Name</label><div class="suggestions-container"><input type="text" id="saleCustomer" placeholder="Customer name (optional)" autocomplete="off" style="padding-right: 32px;" oninput="searchCustomersAutocomplete(); renderSaleCartSummary();" onfocus="showCustomerSuggestions()" onblur="hideCustomerSuggestionsWithDelay()"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('saleCustomer','customerSuggestions')"><i class="fas fa-times"></i></span><div id="customerSuggestions" class="suggestions-box" style="display: none;"></div></div></div><div class="form-group"><label>Payment Method</label><select id="salePaymentMethod" onchange="saveSaleCartToStorage()"><option value="cash">Cash</option><option value="card">Credit/Debit Card</option><option value="mobile">Mobile Money</option><option value="bank">Bank Transfer</option></select></div><div style="border-top:1px solid #334155; margin:15px 0; padding-top:15px;"><h3 style="font-size:0.95rem; color:#cbd5e1; margin-bottom:10px;"><i class="fas fa-plus-circle"></i> Add an item to this sale</h3><button type="button" class="btn-secondary" onclick="openSaleScannerModal()" style="width:100%; margin-bottom:15px;" id="saleScanQrBtn"><i class="fas fa-qrcode"></i> Scan Product QR Code</button><div class="form-group"><label>Product Type</label><div style="display: flex; gap: 20px; margin-bottom: 15px;"><label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="radio" name="productType" value="stock" checked onchange="toggleProductInputMode()"> <span>Stock Product</span></label><label style="display: flex; align-items: center; gap: 8px; cursor: pointer;"><input type="radio" name="productType" value="nonstock" onchange="toggleProductInputMode()"> <span>Non-Stock Service</span></label></div></div><div id="stockProductSection"><div class="form-group" style="position: relative;"><label>Select Product</label><div class="suggestions-container"><input type="text" id="saleProductSelect" placeholder="Type to search product..." autocomplete="off" style="padding-right: 32px;" oninput="searchSaleProductsAutocomplete()" onfocus="showSaleProductSuggestions()" onblur="hideSuggestionsWithDelay('saleProductSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('saleProductSelect','saleProductSuggestions')"><i class="fas fa-times"></i></span><div id="saleProductSuggestions" class="suggestions-box"></div></div></div></div><div id="nonStockProductSection" style="display: none;"><div class="form-group" style="position: relative;"><label>Service/Product Name</label><div class="suggestions-container"><input type="text" id="nonStockProduct" placeholder="e.g., Printing, Copying, Typing" autocomplete="off" style="padding-right: 32px;" oninput="handleNonStockProductInput(); searchNonStockProductsAutocomplete();" onfocus="showNonStockProductSuggestions()" onblur="hideSuggestionsWithDelay('nonStockProductSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('nonStockProduct','nonStockProductSuggestions')"><i class="fas fa-times"></i></span><div id="nonStockProductSuggestions" class="suggestions-box"></div></div></div><div class="form-group" style="position: relative;"><label>Unit <span style="color: var(--danger);">*</span></label><div class="suggestions-container"><input type="text" id="nonStockUnit" placeholder="Type or select: Session, Hour, Job, Pcs..." autocomplete="off" style="padding-right: 32px;" oninput="searchNonStockUnitAutocomplete()" onfocus="showNonStockUnitSuggestions()" onblur="hideSuggestionsWithDelay('nonStockUnitSuggestions')"><span class="search-clear-btn" onmousedown="event.preventDefault(); clearSearchField('nonStockUnit','nonStockUnitSuggestions')"><i class="fas fa-times"></i></span><div id="nonStockUnitSuggestions" class="suggestions-box"></div></div></div></div><div class="form-group"><label>Quantity</label><div style="display: flex; gap: 8px; align-items:center;"><button type="button" onclick="adjustSaleQuantity(-1)" class="btn-secondary" style="flex:0 0 auto; width:42px; padding:8px 0; font-size:1.1rem;"><i class="fas fa-minus"></i></button><input type="text" id="saleQuantity" placeholder="e.g., 1, 0.5, 1/2, 3/4" oninput="parseFractionalQuantity(); calculateSaleTotal(); validateSaleQuantity();" style="flex:1; text-align:center;"><button type="button" onclick="adjustSaleQuantity(1)" class="btn-secondary" style="flex:0 0 auto; width:42px; padding:8px 0; font-size:1.1rem;"><i class="fas fa-plus"></i></button></div><small style="color: #94a3b8; display: block; margin-top: 5px;">Tap - / + to adjust by 1, or type an exact amount (e.g. 0.5, 1/2, 3/4)</small></div><div id="saleStockInfo" class="stock-indicator" style="display: none;">Available Stock: <span id="saleAvailableStock">0</span></div><div class="form-group"><label>Unit Price</label><input type="number" id="saleUnitPrice" placeholder="Price per unit" min="0" step="0.01" oninput="calculateSaleTotal()" required></div><div class="form-group"><label>Item Subtotal</label><input type="number" id="saleTotal" placeholder="Subtotal" readonly></div><div id="productValidationMessage" style="color: var(--danger); font-size: 0.9rem; margin-bottom: 15px; display: none;">Please select either a stock product OR enter a non-stock service, not both.</div><button type="button" class="btn-secondary" onclick="addSaleItemToCart()" style="width:100%; margin-bottom:15px;" id="addToCartBtn"><i class="fas fa-cart-plus"></i> Add to Sale</button></div><div id="saleCartSummaryCard" class="hidden" style="background: rgba(56,189,248,0.06); border:1px solid var(--accent); border-radius:10px; padding:12px; margin-bottom:15px;"><h3 style="font-size:0.95rem; color:#cbd5e1; margin-bottom:10px;"><i class="fas fa-receipt"></i> Sale Summary<span id="saleCartCustomerLabel" style="color:#94a3b8; font-weight:normal;"></span></h3><div id="saleCartItemsList"></div><div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-top:10px; border-top:1px solid #334155;"><strong style="color:#cbd5e1;">Grand Total</strong><strong style="color: var(--accent); font-size:1.2rem;" id="saleCartGrandTotal">TZS 0</strong></div></div><div class="confirmation-buttons"><button class="confirmation-btn confirm" onclick="completeSale()" id="submitSaleBtn"><i class="fas fa-save"></i> <span id="submitSaleText">Complete Sale</span><span class="spinner small" id="saleSpinner" style="display: none;"></span></button></div><div style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 15px;"><h3 style="font-size: 1rem; color: #cbd5e1; margin-bottom: 10px;"><i class="fas fa-history"></i> Recent Sales</h3><div id="recentSalesInModal"></div></div></div></div>
 
-<div class="confirmation-modal" id="saleScannerModal"><div class="confirmation-content" style="max-width: 420px;"><h2 class="confirmation-title" style="display:flex; justify-content:space-between; align-items:center;"><span><i class="fas fa-qrcode"></i> Scan Product QR</span><span onclick="closeSaleScannerModal()" style="cursor:pointer; font-size:0.9rem; font-weight:normal; color:#94a3b8;"><i class="fas fa-times"></i> Close</span></h2><div class="scanner-frame-hint"><video id="saleScannerVideo" autoplay playsinline muted></video></div><canvas id="saleScannerCanvas" style="display:none;"></canvas><p id="saleScannerStatus" style="text-align:center; color:#94a3b8; margin-top:12px; min-height:20px;">Inaanzisha kamera...</p><div style="margin-top:10px;"><input type="file" id="saleScannerPhotoInput" accept="image/*" capture="environment" style="display:none;" onchange="handleSaleScannerPhotoCapture(event)"><button type="button" class="btn-secondary" style="width:100%;" onclick="document.getElementById('saleScannerPhotoInput').click()"><i class="fas fa-camera"></i> Piga Picha ya QR Badala Yake</button><p style="text-align:center; color:#64748b; font-size:0.78rem; margin-top:6px;">Tumia hii ikiwa kamera ya moja kwa moja haifunguki - itafungua programu ya kamera ya simu yako moja kwa moja.</p></div><div style="margin-top:10px; max-height:180px; overflow-y:auto; border-top:1px solid #334155; padding-top:10px;" id="saleScannerLog"></div><div class="confirmation-buttons" style="margin-top:15px;"><button type="button" class="confirmation-btn cancel" onclick="closeSaleScannerModal()"><i class="fas fa-check"></i> Done Scanning</button></div></div></div>
+<div class="confirmation-modal" id="saleScannerModal"><div class="confirmation-content" style="max-width: 420px;"><h2 class="confirmation-title" style="display:flex; justify-content:space-between; align-items:center;" title="Drag to move this window"><span><i class="fas fa-qrcode"></i> Scan Product QR <i class="fas fa-arrows-alt" style="font-size:0.75rem; color:#64748b; margin-left:6px;"></i></span><span onclick="closeSaleScannerModal()" style="cursor:pointer; font-size:0.9rem; font-weight:normal; color:#94a3b8;"><i class="fas fa-times"></i> Close</span></h2><div class="scanner-frame-hint"><video id="saleScannerVideo" autoplay playsinline muted></video></div><canvas id="saleScannerCanvas" style="display:none;"></canvas><p id="saleScannerStatus" style="text-align:center; color:#94a3b8; margin-top:12px; min-height:20px;">Starting camera...</p><div style="margin-top:10px;"><input type="file" id="saleScannerPhotoInput" accept="image/*" capture="environment" style="display:none;" onchange="handleSaleScannerPhotoCapture(event)"><button type="button" class="btn-secondary" style="width:100%;" onclick="document.getElementById('saleScannerPhotoInput').click()"><i class="fas fa-camera"></i> Take a Photo of QR Instead</button><p style="text-align:center; color:#64748b; font-size:0.78rem; margin-top:6px;">Use this if the live camera doesn't open - it will launch your phone's camera app directly.</p></div><div style="margin-top:10px; max-height:180px; overflow-y:auto; border-top:1px solid #334155; padding-top:10px;" id="saleScannerLog"></div><div class="confirmation-buttons" style="margin-top:15px;"><button type="button" class="confirmation-btn cancel" onclick="closeSaleScannerModal()"><i class="fas fa-check"></i> Done Scanning</button></div></div></div>
 
-<div class="confirmation-modal fullscreen-modal" id="qrCodesModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title">Download Product QR Codes</h2><p style="color:#94a3b8; font-size:0.85rem; margin-top:-10px; margin-bottom:15px;">Chagua idadi ya QR code kwa kila bidhaa, kisha pakua PDF ya kubandika kwenye bidhaa dukani.</p><div class="form-group" style="position: relative;"><label>Search Product</label><input type="text" id="qrCodesSearchInput" placeholder="Type to filter products..." autocomplete="off" oninput="searchQrCodesProducts()"></div><div class="form-group" style="display:flex; gap:8px; align-items:flex-end;"><div style="flex:1;"><label>Set quantity for all visible</label><input type="number" id="qrBulkQty" min="0" placeholder="e.g. 5"></div><button type="button" class="btn-sm btn-secondary" onclick="setAllQrQuantities()"><i class="fas fa-check-double"></i> Apply</button></div><div id="qrCodesProductsList" style="max-height: 320px; overflow-y: auto; border-top:1px solid #334155; margin-top:10px;"><p class="text-center" style="color:#94a3b8; padding:20px;">Loading...</p></div><div class="confirmation-buttons" style="margin-top:15px;"><button class="confirmation-btn confirm" onclick="generateStockQrPdf()" id="generateQrBtn"><i class="fas fa-download"></i> <span id="generateQrText">Generate &amp; Download PDF</span><span class="spinner small" id="generateQrSpinner" style="display: none;"></span></button></div></div></div>
+<div class="confirmation-modal fullscreen-modal" id="qrCodesModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title">Download Product QR Codes</h2><p style="color:#94a3b8; font-size:0.85rem; margin-top:-10px; margin-bottom:15px;">Choose the QR code quantity for each product, then download the PDF to print and stick on your products in-store.</p><div class="form-group" style="position: relative;"><label>Search Product</label><input type="text" id="qrCodesSearchInput" placeholder="Type to filter products..." autocomplete="off" oninput="searchQrCodesProducts()"></div><div class="form-group" style="display:flex; gap:8px; align-items:flex-end;"><div style="flex:1;"><label>Set quantity for all visible</label><input type="number" id="qrBulkQty" min="0" placeholder="e.g. 5"></div><button type="button" class="btn-sm btn-secondary" onclick="setAllQrQuantities()"><i class="fas fa-check-double"></i> Apply</button></div><div id="qrCodesProductsList" style="max-height: 320px; overflow-y: auto; border-top:1px solid #334155; margin-top:10px;"><p class="text-center" style="color:#94a3b8; padding:20px;">Loading...</p></div><div class="confirmation-buttons" style="margin-top:15px;"><button class="confirmation-btn confirm" onclick="generateStockQrPdf()" id="generateQrBtn"><i class="fas fa-download"></i> <span id="generateQrText">Generate &amp; Download PDF</span><span class="spinner small" id="generateQrSpinner" style="display: none;"></span></button></div></div></div>
 
 <div class="confirmation-modal fullscreen-modal" id="editSaleModal"><div class="confirmation-content" style="max-width: 600px;"><h2 class="confirmation-title">Edit Sale Entry</h2><input type="hidden" id="editSaleRowIndex"><input type="hidden" id="editSaleOriginalDate"><input type="hidden" id="editSaleOriginalBranch"><div class="form-group" style="position: relative;"><label>Product Name</label><div class="suggestions-container"><input type="text" id="editSaleProduct" placeholder="Product name" autocomplete="off" oninput="searchEditSaleProductsAutocomplete()" onfocus="showEditSaleProductsSuggestions()" onblur="hideSuggestionsWithDelay('editSaleProductsSuggestions')"><div id="editSaleProductsSuggestions" class="suggestions-box"></div></div></div><div class="form-group"><label>Quantity</label><input type="number" id="editSaleQuantity" placeholder="Enter quantity" min="0" step="0.01" oninput="calculateEditSaleTotal()" required></div><div class="form-group"><label>Unit Price</label><input type="number" id="editSaleUnitPrice" placeholder="Price per unit" min="0" step="0.01" oninput="calculateEditSaleTotal()" required></div><div class="form-group"><label>Total Amount</label><input type="number" id="editSaleTotal" placeholder="Total amount" readonly></div><div class="form-group" style="position: relative;"><label>Customer Name</label><div class="suggestions-container"><input type="text" id="editSaleCustomer" placeholder="Customer name" autocomplete="off" oninput="searchEditCustomersAutocomplete()" onfocus="showEditCustomerSuggestions()" onblur="hideSuggestionsWithDelay('editCustomerSuggestions')"><div id="editCustomerSuggestions" class="suggestions-box"></div></div></div><div class="form-group"><label>Payment Method</label><select id="editSalePaymentMethod"><option value="cash">Cash</option><option value="card">Credit/Debit Card</option><option value="mobile">Mobile Money</option><option value="bank">Bank Transfer</option></select></div><div class="confirmation-buttons"><button class="confirmation-btn confirm success" onclick="updateSale()" id="updateSaleBtn"><i class="fas fa-save"></i> <span id="updateSaleText">Update Sale</span><span class="spinner small" id="updateSaleSpinner" style="display: none;"></span></button></div></div></div>
 
@@ -4840,7 +4840,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 
     <script>
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbxNLtQrC9QwjlM7Qo-iXsYw38bLQzaJ6iXfpwgWAbS2RRiWsdpGo0YMbStZaYm8qT3P/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbzpyCv-0-RupQEweAoyKF_NdJqFVackpEb7UuZq3UGKEeqanJffdkiaHMb__-bNt6Sq8Q/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -5836,6 +5836,7 @@ let debtPhotoBase64 = null;
 
             setupOnlineStatusListener();
             precacheOfflineLibraries();
+            setupScannerModalDragging();
 
             
             const overlay = document.querySelector('.overlay');
@@ -12769,7 +12770,7 @@ async function updateStock() {
            Two capture paths are offered because getUserMedia
            (live camera) needs a browser permission prompt that
            can fail on non-HTTPS hosting or certain devices; the
-           "Piga Picha ya QR" button instead opens the phone's
+           "Take a Photo of QR" button instead opens the phone's
            native camera app via <input type=file capture>,
            which sidesteps that prompt entirely.
            ============================================== */
@@ -12779,6 +12780,101 @@ async function updateStock() {
         let saleScannerLastCode = null;
         let saleScannerLastTime = 0;
 
+        /* ==============================================
+           SCANNER MODAL - DRAGGABLE
+           Lets the person drag the "Scan Product QR" window by its
+           title bar to wherever suits them on screen, instead of it
+           being pinned to the center. Only this modal behaves this
+           way - every other modal keeps its normal centered layout.
+           Position resets to center each time the modal is reopened.
+           ============================================== */
+        function setupScannerModalDragging() {
+            const modal = document.getElementById('saleScannerModal');
+            if (!modal) return;
+            const content = modal.querySelector('.confirmation-content');
+            const handle = modal.querySelector('.confirmation-title');
+            if (!content || !handle) return;
+
+            handle.style.cursor = 'move';
+            handle.style.touchAction = 'none';
+
+            let dragging = false;
+            let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+            function onPointerDown(e) {
+                // Don't start a drag if the person tapped the Close button
+                const closeBtn = handle.querySelector('span[onclick="closeSaleScannerModal()"]');
+                if (closeBtn && closeBtn.contains(e.target)) return;
+
+                const point = e.touches ? e.touches[0] : e;
+                dragging = true;
+
+                const rect = content.getBoundingClientRect();
+                // Detach from the flex-centered layout and pin it to its
+                // current on-screen spot, so dragging moves it from
+                // exactly where it already is instead of jumping.
+                content.style.position = 'fixed';
+                content.style.margin = '0';
+                content.style.left = rect.left + 'px';
+                content.style.top = rect.top + 'px';
+                content.style.transform = 'none';
+
+                startLeft = rect.left;
+                startTop = rect.top;
+                startX = point.clientX;
+                startY = point.clientY;
+
+                document.addEventListener('mousemove', onPointerMove);
+                document.addEventListener('touchmove', onPointerMove, { passive: false });
+                document.addEventListener('mouseup', onPointerUp);
+                document.addEventListener('touchend', onPointerUp);
+            }
+
+            function onPointerMove(e) {
+                if (!dragging) return;
+                if (e.cancelable) e.preventDefault();
+                const point = e.touches ? e.touches[0] : e;
+
+                let newLeft = startLeft + (point.clientX - startX);
+                let newTop = startTop + (point.clientY - startY);
+
+                // Keep at least a bit of the window on-screen so it can
+                // never be dragged somewhere it can no longer be reached.
+                const rect = content.getBoundingClientRect();
+                const minVisible = 40;
+                newLeft = Math.min(Math.max(newLeft, minVisible - rect.width), window.innerWidth - minVisible);
+                newTop = Math.min(Math.max(newTop, 0), window.innerHeight - minVisible);
+
+                content.style.left = newLeft + 'px';
+                content.style.top = newTop + 'px';
+            }
+
+            function onPointerUp() {
+                dragging = false;
+                document.removeEventListener('mousemove', onPointerMove);
+                document.removeEventListener('touchmove', onPointerMove);
+                document.removeEventListener('mouseup', onPointerUp);
+                document.removeEventListener('touchend', onPointerUp);
+            }
+
+            handle.addEventListener('mousedown', onPointerDown);
+            handle.addEventListener('touchstart', onPointerDown, { passive: true });
+        }
+
+        // Puts the scanner window back in its default centered spot -
+        // called each time it's opened so a previous drag doesn't leave
+        // it somewhere awkward (or off-screen after a resize/rotation).
+        function resetScannerModalPosition() {
+            const modal = document.getElementById('saleScannerModal');
+            const content = modal ? modal.querySelector('.confirmation-content') : null;
+            if (!content) return;
+            content.style.position = '';
+            content.style.left = '';
+            content.style.top = '';
+            content.style.margin = '';
+            content.style.transform = '';
+        }
+
         async function openSaleScannerModal() {
             if (saleModalLocked) {
                 showNotification('This form is locked. Tap "Unlock" to record a sale.', 'error');
@@ -12786,12 +12882,13 @@ async function updateStock() {
             }
             if (typeof jsQR === 'undefined') await ensureOfflineLibrary('jsQR');
             if (typeof jsQR === 'undefined') {
-                showNotification('Maktaba ya scanner haijapakia. Fungua mfumo mara moja ukiwa na mtandao ili ihifadhiwe kwa matumizi ya offline, kisha jaribu tena.', 'error');
+                showNotification('Scanner library not loaded. Open the app once while online so it can be saved for offline use, then try again.', 'error');
                 return;
             }
 
             const modal = document.getElementById('saleScannerModal');
             modal.classList.add('show');
+            resetScannerModalPosition();
 
             const status = document.getElementById('saleScannerStatus');
 
@@ -12806,9 +12903,9 @@ async function updateStock() {
                 if (status) {
                     status.style.color = '';
                     if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                        status.textContent = 'Kamera ya moja kwa moja inahitaji HTTPS. Tumia "Piga Picha ya QR" hapa chini.';
+                        status.textContent = 'Live camera requires HTTPS. Use "Take a Photo of QR" below.';
                     } else {
-                        status.textContent = 'Tumia "Piga Picha ya QR" hapa chini.';
+                        status.textContent = 'Use "Take a Photo of QR" below.';
                     }
                 }
                 const log = document.getElementById('saleScannerLog');
@@ -12816,7 +12913,7 @@ async function updateStock() {
                 return;
             }
 
-            if (status) { status.textContent = 'Inaanzisha kamera...'; status.style.color = ''; }
+            if (status) { status.textContent = 'Starting camera...'; status.style.color = ''; }
             const log = document.getElementById('saleScannerLog');
             if (log) log.innerHTML = '';
 
@@ -12848,33 +12945,33 @@ async function updateStock() {
                 saleScannerLastCode = null;
                 saleScannerLastTime = 0;
 
-                if (status) status.textContent = 'Elekeza kamera kwenye QR code ya bidhaa...';
+                if (status) status.textContent = 'Point the camera at the product QR code...';
                 scanSaleQrLoop();
             } catch (err) {
                 console.error('Camera error:', err);
-                let msg = 'Imeshindwa kufungua kamera. Jaribu tena.';
+                let msg = 'Failed to open camera. Try again.';
                 switch (err.name) {
                     case 'NotAllowedError':
                     case 'PermissionDeniedError':
-                        msg = 'Umekataa ruhusa ya kamera. Nenda kwenye mipangilio ya kivinjari chako, ruhusu Camera kwa tovuti hii, kisha jaribu tena.';
+                        msg = 'Camera permission denied. Go to your browser settings, allow Camera for this site, then try again.';
                         break;
                     case 'NotFoundError':
                     case 'DevicesNotFoundError':
-                        msg = 'Hakuna kamera iliyopatikana kwenye kifaa hiki.';
+                        msg = 'No camera found on this device.';
                         break;
                     case 'NotReadableError':
                     case 'TrackStartError':
-                        msg = 'Kamera inatumiwa na programu nyingine kwa sasa. Ifunge hiyo programu kisha jaribu tena.';
+                        msg = 'Camera is currently being used by another app. Close that app then try again.';
                         break;
                     case 'SecurityError':
-                        msg = 'Scanner inahitaji tovuti ya HTTPS ili kutumia kamera.';
+                        msg = 'Scanner requires an HTTPS site to use the camera.';
                         break;
                 }
                 showNotification(msg, 'error');
                 // Keep the modal open (instead of closing it) so the person can
-                // immediately use the "Piga Picha ya QR" fallback button below,
+                // immediately use the "Take a Photo of QR" fallback button below,
                 // which does not go through getUserMedia at all.
-                if (status) { status.textContent = 'Kamera ya moja kwa moja haipatikani. Tumia "Piga Picha ya QR" hapa chini.'; status.style.color = 'var(--danger)'; }
+                if (status) { status.textContent = 'Live camera unavailable. Use "Take a Photo of QR" below.'; status.style.color = 'var(--danger)'; }
             }
         }
 
@@ -12885,7 +12982,7 @@ async function updateStock() {
             event.target.value = '';
 
             const status = document.getElementById('saleScannerStatus');
-            if (status) { status.textContent = 'Inasoma picha...'; status.style.color = ''; }
+            if (status) { status.textContent = 'Reading photo...'; status.style.color = ''; }
 
             const img = new Image();
             const objectUrl = URL.createObjectURL(file);
@@ -12907,19 +13004,19 @@ async function updateStock() {
                         saleScannerLastCode = null;
                         handleSaleQrDecoded(code.data);
                     } else {
-                        flashScannerStatus('Haikuweza kusoma QR kwenye picha hiyo. Jaribu tena kwa mwanga zaidi.', true);
+                        flashScannerStatus('Could not read a QR code in that photo. Try again with more light.', true);
                     }
                 } catch (e) {
                     console.error('Photo QR decode error:', e);
-                    flashScannerStatus('Imeshindwa kusoma picha hiyo.', true);
+                    flashScannerStatus('Failed to read that photo.', true);
                 } finally {
                     URL.revokeObjectURL(objectUrl);
-                    if (status && saleScannerLastCode === null) status.textContent = 'Piga picha nyingine ya QR, au tumia kamera ya moja kwa moja.';
+                    if (status && saleScannerLastCode === null) status.textContent = 'Take another photo of the QR code, or use the live camera.';
                 }
             };
             img.onerror = function () {
                 URL.revokeObjectURL(objectUrl);
-                flashScannerStatus('Imeshindwa kufungua picha hiyo.', true);
+                flashScannerStatus('Failed to open that photo.', true);
             };
             img.src = objectUrl;
         }
@@ -12960,7 +13057,7 @@ async function updateStock() {
             saleScannerLastTime = now;
 
             if (!text.startsWith('ST1:')) {
-                flashScannerStatus('QR hii siyo ya bidhaa ya mfumo huu', true);
+                flashScannerStatus('This QR code is not a product from this system', true);
                 return;
             }
 
@@ -12968,7 +13065,7 @@ async function updateStock() {
             try {
                 payload = JSON.parse(text.slice(4));
             } catch (e) {
-                flashScannerStatus('QR haisomeki vizuri', true);
+                flashScannerStatus('QR code could not be read properly', true);
                 return;
             }
 
@@ -12982,7 +13079,7 @@ async function updateStock() {
             status.style.color = isError ? 'var(--danger)' : 'var(--success)';
             setTimeout(() => {
                 if (saleScannerActive) {
-                    status.textContent = 'Elekeza kamera kwenye QR code ya bidhaa...';
+                    status.textContent = 'Point the camera at the product QR code...';
                     status.style.color = '';
                 }
             }, 1200);
@@ -12993,7 +13090,7 @@ async function updateStock() {
             const unit = payload.u || '';
 
             if (!product) {
-                flashScannerStatus('QR haina taarifa sahihi za bidhaa', true);
+                flashScannerStatus('QR code does not contain valid product information', true);
                 return;
             }
 
@@ -13018,7 +13115,7 @@ async function updateStock() {
             }
 
             if (liveSellPrice === null) {
-                flashScannerStatus(`${product} haipatikani kwenye tawi hili`, true);
+                flashScannerStatus(`${product} not found in this branch`, true);
                 showNotification(`${product} not found in this branch's stock`, 'error');
                 return;
             }
@@ -13030,7 +13127,7 @@ async function updateStock() {
                 .reduce((sum, it) => sum + it.qty, 0);
 
             if (available - alreadyInCart < 1) {
-                flashScannerStatus(`Stock haitoshi kwa ${product}`, true);
+                flashScannerStatus(`Insufficient stock for ${product}`, true);
                 showNotification(`Insufficient stock for ${product}`, 'error');
                 return;
             }
@@ -13052,7 +13149,7 @@ async function updateStock() {
             }
 
             renderSaleCartSummary();
-            flashScannerStatus(`Bidhaa "${product}" imeongezwa kwenye Cart`, false);
+            flashScannerStatus(`"${product}" added to Cart`, false);
 
             if (navigator.vibrate) {
                 try { navigator.vibrate(80); } catch (e) { /* ignore */ }
@@ -16733,7 +16830,7 @@ function renderQrCodesProductsList(filterTerm) {
     });
 
     if (shown === 0) {
-        container.innerHTML = '<p class="text-center" style="color:#94a3b8; padding:20px;">Hakuna bidhaa zinazolingana</p>';
+        container.innerHTML = '<p class="text-center" style="color:#94a3b8; padding:20px;">No matching products</p>';
         return;
     }
 
@@ -16744,7 +16841,7 @@ function setAllQrQuantities() {
     const bulkInput = document.getElementById('qrBulkQty');
     const val = parseInt(bulkInput ? bulkInput.value : '', 10);
     if (isNaN(val) || val < 0) {
-        showNotification('Weka idadi sahihi', 'error');
+        showNotification('Enter a valid quantity', 'error');
         return;
     }
 
@@ -16755,7 +16852,7 @@ function setAllQrQuantities() {
         if (input) input.value = val;
     });
 
-    showNotification('Idadi imewekwa', 'success');
+    showNotification('Quantity applied', 'success');
 }
 
 async function generateStockQrPdf() {
@@ -16763,7 +16860,7 @@ async function generateStockQrPdf() {
     if (typeof window.jspdf === 'undefined') await ensureOfflineLibrary('jspdf');
 
     if (typeof QRious === 'undefined' || typeof window.jspdf === 'undefined') {
-        showNotification('Maktaba ya QR/PDF haijapakia. Fungua mfumo mara moja ukiwa na mtandao ili zihifadhiwe kwa matumizi ya offline, kisha jaribu tena.', 'error');
+        showNotification('QR/PDF library not loaded. Open the app once while online so it can be saved for offline use, then try again.', 'error');
         return;
     }
 
@@ -16775,12 +16872,12 @@ async function generateStockQrPdf() {
     });
 
     if (labels.length === 0) {
-        showNotification('Weka idadi ya QR code kwa angalau bidhaa moja', 'error');
+        showNotification('Enter a QR code quantity for at least one product', 'error');
         return;
     }
 
     if (labels.length > 3000) {
-        showNotification('Idadi kubwa mno kwa mara moja (max 3000). Punguza idadi kisha jaribu tena.', 'error');
+        showNotification('Too many at once (max 3000). Reduce the quantity then try again.', 'error');
         return;
     }
 
@@ -16837,17 +16934,17 @@ async function generateStockQrPdf() {
             // Yield to the browser periodically so the tab doesn't freeze
             // and the person can see progress on large batches.
             if (i % 40 === 39) {
-                if (genText) genText.textContent = `Inatengeneza ${i + 1}/${labels.length}...`;
+                if (genText) genText.textContent = `Generating ${i + 1}/${labels.length}...`;
                 await new Promise(r => setTimeout(r, 0));
             }
         }
 
-        doc.save(`QR_Codes_Bidhaa_${new Date().toISOString().slice(0, 10)}.pdf`);
-        showNotification(`QR Codes ${labels.length} zimetengenezwa kwa mafanikio!`, 'success');
+        doc.save(`QR_Codes_Products_${new Date().toISOString().slice(0, 10)}.pdf`);
+        showNotification(`${labels.length} QR Codes generated successfully!`, 'success');
         hideQrCodesModal();
     } catch (err) {
         console.error('QR PDF generation error:', err);
-        showNotification('Imeshindwa kutengeneza QR Codes. Jaribu tena.', 'error');
+        showNotification('Failed to generate QR Codes. Try again.', 'error');
     } finally {
         if (genBtn) genBtn.disabled = false;
         if (genSpinner) genSpinner.style.display = 'none';
