@@ -19,7 +19,7 @@
  * ============================================
  */
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const CACHE_NAME = `smarttrade-cache-${CACHE_VERSION}`;
 
 // Core "app shell" files to have ready immediately after install, so the
