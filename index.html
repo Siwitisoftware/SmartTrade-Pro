@@ -4410,7 +4410,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
             </div>
             
             <!-- Stock Page -->
-            <div class="page hidden" id="stockPage"><div class="card"><div class="card-header"><div class="card-title">Stock Inventory</div><div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;"><button onclick="downloadStockTemplate()" class="btn-sm btn-secondary" id="stockTemplateDownloadBtn" title="Download Excel template for bulk product entry"><i class="fas fa-file-excel"></i> Template</button><button onclick="document.getElementById('stockTemplateFileInput').click()" class="btn-sm btn-secondary" id="stockTemplateUploadBtn" title="Upload a filled Excel template - matching Product+Unit rows add to existing stock quantity; leave Price blank/0 to keep the current price"><i class="fas fa-file-upload"></i> Import</button><input type="file" id="stockTemplateFileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleStockTemplateFile(event)"><button onclick="openQrCodesModal()" class="btn-sm btn-secondary" id="stockQrCodesBtn" title="Download QR code labels to stick on products"><i class="fas fa-qrcode"></i> QR Codes</button><button onclick="openAddStockModal()" class="btn-success" id="stockPageAddBtn"><i class="fas fa-plus"></i> Add Stock</button></div></div><div id="stockTable"><p class="text-center" style="color: #94a3b8; padding: 20px;">Loading stock data...</p></div></div></div>
+            <div class="page hidden" id="stockPage"><div class="card"><div class="card-header"><div class="card-title">Stock Inventory</div><div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;"><button onclick="downloadStockTemplate()" class="btn-sm btn-secondary" id="stockTemplateDownloadBtn" title="Download Excel template for bulk product entry"><i class="fas fa-file-excel"></i> Template</button><button onclick="document.getElementById('stockTemplateFileInput').click()" class="btn-sm btn-secondary" id="stockTemplateUploadBtn" title="Upload a filled Excel template - matching Product+Unit rows add to existing stock quantity; leave Price blank/0 to keep the current price; a new product with Quantity 0 is registered with 0 stock"><i class="fas fa-file-upload"></i> Import</button><input type="file" id="stockTemplateFileInput" accept=".xlsx,.xls" style="display:none;" onchange="handleStockTemplateFile(event)"><button onclick="openQrCodesModal()" class="btn-sm btn-secondary" id="stockQrCodesBtn" title="Download QR code labels to stick on products"><i class="fas fa-qrcode"></i> QR Codes</button><button onclick="openAddStockModal()" class="btn-success" id="stockPageAddBtn"><i class="fas fa-plus"></i> Add Stock</button></div></div><div id="stockTable"><p class="text-center" style="color: #94a3b8; padding: 20px;">Loading stock data...</p></div></div></div>
             
             <!-- Sales Page -->
             <div class="page hidden" id="salesPage"><div class="card"><div class="card-header"><div class="card-title">Sales Records</div><button onclick="openAddSaleModal()" class="btn-success"><i class="fas fa-plus"></i> Record Sale</button></div><div class="filter-section"><div class="filter-group"><label>Filter by Product</label><select id="salesProductFilter" onchange="applySalesFilters()"><option value="">All Products</option></select></div><div class="filter-group"><label>From Date</label><input type="date" id="salesDateFrom" onchange="applySalesFilters()"></div><div class="filter-group"><label>To Date</label><input type="date" id="salesDateTo" onchange="applySalesFilters()"></div><div class="filter-actions"><button class="filter-btn" onclick="applySalesFilters()"><i class="fas fa-filter"></i> Apply</button><button class="filter-btn clear" onclick="clearSalesFilters()"><i class="fas fa-times"></i> Clear</button></div></div><div id="salesSummary" class="summary-box"></div><div class="table-container"><table id="salesTable"><thead><tr><th>Date</th><th>Seller</th><th>Branch</th><th>Product</th><th>Quantity</th><th>Unit Price</th><th>Total</th><th>Customer</th><th>Payment Method</th></tr></thead><tbody id="salesTableBody"><tr><td colspan="9" class="text-center" style="color: #94a3b8; padding: 40px;">Loading sales data...</td></tr></tbody></table></div></div></div>
@@ -4840,7 +4840,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 
     <script>
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbzlbrGKpC2j3XQp_12UsCilA9XKQqCThKVIgh5J5MzqZncp2yq3x_m3ow2insGF5h1_1g/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyPV9OlujRPWKhi1wbux1paxFOB7gMaD0CzhtCExptJL3-27EeyCNOwUlG9M9YZWEV6Eg/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -16659,10 +16659,11 @@ async function handleStockTemplateFile(event) {
         rows.forEach(row => {
             const product = String(row['Product'] || '').trim();
             const unit = String(row['Unit'] || '').trim();
-            const quantity = parseFloat(row['Quantity']);
+            const quantityRaw = parseFloat(row['Quantity']);
+            const quantity = isNaN(quantityRaw) ? 0 : quantityRaw;
             // Buy/Sell Price are optional here - a blank or 0 price in the
             // template means "keep the existing price for this product",
-            // not "invalid row". Only Product, Unit and a positive
+            // not "invalid row". Only Product, Unit and a non-negative
             // Quantity are strictly required.
             const buyPriceRaw = parseFloat(row['Buy Price']);
             const sellPriceRaw = parseFloat(row['Sell Price']);
@@ -16670,16 +16671,33 @@ async function handleStockTemplateFile(event) {
             const sellPrice = isNaN(sellPriceRaw) ? 0 : sellPriceRaw;
             const category = String(row['Category'] || '').trim();
             
-            if (!product || !unit || !quantity || quantity <= 0) {
+            if (!product || !unit || quantity < 0) {
                 skipped++;
                 return;
+            }
+            
+            if (quantity === 0) {
+                // A quantity of 0 only goes through for a brand new
+                // product - it gets registered in Stock with 0 units so
+                // it exists and can be topped up later. For a product
+                // that's already in stock, a 0 quantity doesn't change
+                // anything, so it's skipped exactly like before.
+                const alreadyExists = (stockCache.data || []).some(s =>
+                    String(s.product || '').trim().toLowerCase() === product.toLowerCase() &&
+                    String(s.unit || '').trim().toLowerCase() === unit.toLowerCase() &&
+                    (s.branchId || 'MAIN') === branchId
+                );
+                if (alreadyExists) {
+                    skipped++;
+                    return;
+                }
             }
             
             items.push({ product, unit, quantity, buyPrice, sellPrice, category, branchId });
         });
         
         if (items.length === 0) {
-            showNotification('No valid rows found - make sure Product, Unit and a positive Quantity are filled in for each row.', 'error');
+            showNotification('No valid rows found - make sure Product and Unit are filled in for each row.', 'error');
             return;
         }
         
@@ -16975,9 +16993,14 @@ async function generateStockQrPdf() {
             const nameLine = doc.splitTextToSize(label.product, CELL_W - 6)[0] || label.product;
             doc.text(nameLine, x + CELL_W / 2, y + 3 + QR_SIZE + 4, { align: 'center' });
 
-            doc.setFont(undefined, 'normal');
-            doc.setFontSize(8);
-            doc.text(formatCurrency(label.latestSellPrice), x + CELL_W / 2, y + 3 + QR_SIZE + 8, { align: 'center' });
+            // Show the unit under the name instead of the price - the
+            // price can change after printing, so it's read live from
+            // stock when the label is scanned rather than trusted here.
+            if (label.unit) {
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(8);
+                doc.text(label.unit, x + CELL_W / 2, y + 3 + QR_SIZE + 8, { align: 'center' });
+            }
 
             // Yield to the browser periodically so the tab doesn't freeze
             // and the person can see progress on large batches.
