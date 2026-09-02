@@ -9108,7 +9108,7 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
 
     <script>
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbzFSq6-k3RzpNR_L0mAG3f93tQoNgN7sZuUgBKIpUGudAiCAURYGoEq7_A0EZG7d_IdNg/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxfeZbjXRG7MAalaS7P1Kj9SfVH39ZErv1L-B9pGQ8RiVvzdIBzhOykWYlpFF8l3cRe2A/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -16639,6 +16639,21 @@ function calculateTotalPurchasesFromCache() {
             return latest;
         }
 
+        // Keep the live operational cache strictly to records after the
+        // latest known Closed At. Server responses are already filtered;
+        // this client-side guard is only a second line of defence for
+        // offline/local-cache data.
+        function filterLiveOperationalRecords(records, branchField) {
+            if (!Array.isArray(records)) return [];
+            return records.filter(record => {
+                const branch = record?.[branchField] || 'MAIN';
+                const closedAt = getLatestLocalClosedAtForBranch(branch);
+                if (closedAt === null) return true;
+                const recordTime = new Date(record.date).getTime();
+                return !isNaN(recordTime) && recordTime > closedAt;
+            });
+        }
+
         function filterOperationalRecordsByClose(records, branchField) {
             if (!Array.isArray(records)) return [];
             return records.filter(record => {
@@ -16687,9 +16702,13 @@ function calculateTotalPurchasesFromCache() {
                     });
                     
                     if (result.success) {
-                        salesCache.data = result.data;
+                        // The server response is authoritative. Replace the cache
+                        // even when it is empty ONLY when the server explicitly
+                        // confirms success; transient server failures come back
+                        // as success:false and therefore cannot erase good data.
+                        salesCache.data = Array.isArray(result.data) ? result.data : [];
                         
-                        const operationalSales = filterOperationalRecordsByClose(salesCache.data, 'branchId');
+                        const operationalSales = filterLiveOperationalRecords(salesCache.data, 'branchId');
                         if (!isAdmin && sellerId) {
                             salesCache.filtered = operationalSales.filter(sale => sale.sellerId === sellerId);
                         } else {
