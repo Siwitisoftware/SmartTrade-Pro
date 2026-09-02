@@ -595,23 +595,6 @@
                 color: #dc2626 !important;
             }
             
-            /* Recent Activity is desktop-only now - the mobile menu grid
-               above already gets someone to any section in one tap, so
-               this long scrolling list isn't needed on the smaller
-               screen, and removing it keeps the whole dashboard fitting
-               on one page there. */
-            .recent-activity-card {
-                display: none !important;
-            }
-            
-            /* Same reasoning for Quick Actions - every action it links to
-               (Add Stock, Record Sale, Record Purchase, Reports) is
-               already reachable from the menu grid or bottom nav above,
-               so this duplicate button row is dropped on mobile too. */
-            .quick-actions-card {
-                display: none !important;
-            }
-            
             /* Every modal (Record Sale, Add Stock, a simple "Are you
                sure?" confirmation - all of them) now gets the same
                white-and-blue look "home" (the Dashboard/menu grid) has,
@@ -925,12 +908,33 @@
             }
 
         @media (max-width: 768px) {
+            #appContainer.hidden ~ .mobile-bottom-nav { display:none !important; }
             /* No sidebar at all on mobile now - the menu grid (Dashboard
                page) plus the bottom nav together already cover every
                navigation need, so there's no "hamburger" menu to open
                anymore; "Home" in the bottom nav IS the way back to that
                grid from anywhere. */
             .sidebar, .mobile-menu-btn, .overlay {
+                display: none !important;
+            }
+            
+            /* Recent Activity - the mobile menu grid above already gets
+               someone to any section in one tap, so this long scrolling
+               list isn't needed on the smaller screen, and removing it
+               keeps the whole dashboard fitting on one page there. This
+               (and Quick Actions below) must stay INSIDE this mobile-only
+               media query - both were accidentally moved out to the
+               global stylesheet during an earlier pass, which hid them
+               on desktop too instead of just mobile as intended. */
+            .recent-activity-card {
+                display: none !important;
+            }
+            
+            /* Same reasoning for Quick Actions - every action it links to
+               (Add Stock, Record Sale, Record Purchase, Reports) is
+               already reachable from the menu grid or bottom nav above,
+               so this duplicate button row is dropped on mobile too. */
+            .quick-actions-card {
                 display: none !important;
             }
             
@@ -1041,6 +1045,7 @@
             .mmg-sellers .mobile-menu-grid-icon { background: #0284c7; }
             .mmg-branches .mobile-menu-grid-icon { background: #3b82f6; }
             .mmg-reports .mobile-menu-grid-icon { background: #1d4ed8; }
+            .mmg-accounting .mobile-menu-grid-icon { background: #0f766e; }
             .mmg-settings .mobile-menu-grid-icon { background: #475569; }
             
         }
@@ -1126,6 +1131,21 @@
                 padding-bottom: 78px !important;
                 background: #f1f5f9;
             }
+
+            /* Record Sale is a normal dashboard page, not a nested modal.
+               Let the main content area handle the page scrolling so the
+               lower fields/buttons are never trapped inside an 80vh box. */
+            .record-sale-page {
+                min-height: auto;
+                padding-bottom: 24px;
+            }
+
+            .record-sale-page > .confirmation-content {
+                max-height: none !important;
+                overflow: visible !important;
+                height: auto !important;
+                padding-bottom: 24px;
+            }
             
             .top-header {
                 border-bottom: none;
@@ -1203,6 +1223,34 @@
         }
         
         /* Dashboard Grid */
+        .sales-receipts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:15px;}
+        .sales-receipt-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,.07);overflow:visible;position:relative;}
+        .all-sales-filter-bar{display:flex;align-items:flex-end;gap:10px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;overflow-x:auto;margin-bottom:14px;}
+        .sales-filter-field{min-width:150px;flex:1;}
+        .sales-filter-field label{display:block;font-size:.72rem;font-weight:700;color:#64748b;margin:0 0 5px 2px;text-transform:uppercase;letter-spacing:.04em;}
+        .sales-filter-field select,.sales-filter-field input{width:100%;height:42px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:0 11px;color:#1e293b;box-sizing:border-box;}
+        .sales-filter-actions{display:flex;gap:7px;flex:0 0 auto;}
+        .sales-filter-action{height:42px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;padding:0 13px;font-weight:700;color:#334155;white-space:nowrap;cursor:pointer;}
+        .sales-filter-action.primary{background:#0f766e;color:#fff;border-color:#0f766e;}
+        .sales-receipts-grid{grid-template-columns:minmax(0,980px);justify-content:center;}
+        .sales-receipt-head-left{min-width:0;}
+        .sales-receipt-head-right{position:relative;display:flex;align-items:center;gap:9px;}
+        .sales-receipt-menu-btn{width:36px;height:36px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#334155;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+        .sales-receipt-menu-btn:hover{background:#f1f5f9;}
+        .sales-receipt-menu{display:none;position:absolute;right:0;top:43px;z-index:5000;width:min(330px,calc(100vw - 50px));background:#fff;border:1px solid #dbe3ec;border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.16);padding:8px;}
+        .sales-receipt-menu.show{display:block;}
+        .sales-receipt-menu-title{font-size:.75rem;font-weight:800;color:#64748b;padding:6px 8px;text-transform:uppercase;letter-spacing:.05em;}
+        .sales-receipt-menu-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 8px;border-top:1px solid #f1f5f9;font-size:.82rem;color:#334155;}
+        .sales-receipt-menu-actions{display:flex;gap:5px;flex:0 0 auto;}
+        .sales-receipt-menu-actions button{border:1px solid #dbe3ec;background:#f8fafc;border-radius:8px;padding:6px 8px;color:#334155;font-size:.75rem;font-weight:700;cursor:pointer;}
+        .sales-receipt-menu-actions button.danger{color:#b91c1c;}
+        @media(max-width:600px){.all-sales-filter-bar{align-items:flex-end}.sales-filter-field{min-width:145px}.sales-receipt-menu-item{align-items:flex-start;flex-direction:column}.sales-receipt-menu-actions{width:100%}.sales-receipt-menu-actions button{flex:1}.sales-receipt-head{padding:13px}.sales-receipt-meta{gap:7px 10px}}
+
+        .sales-receipt-head{padding:14px 15px 11px;border-bottom:1px dashed #cbd5e1;display:flex;justify-content:space-between;gap:12px;}
+        .sales-receipt-brand{font-weight:800;color:#0f172a;font-size:.82rem;letter-spacing:.04em}.sales-receipt-no{font-size:.75rem;color:#64748b;margin-top:3px}.sales-receipt-total{font-weight:800;color:var(--accent);white-space:nowrap}.sales-receipt-meta{padding:10px 15px;background:#f8fafc;display:flex;flex-wrap:wrap;gap:6px 12px;font-size:.78rem;color:#475569}.sales-receipt-meta strong{color:#1e293b}.sales-receipt-items{padding:10px 15px}.sales-receipt-item{display:grid;grid-template-columns:1fr auto;gap:10px;padding:9px 0;border-bottom:1px solid #eef2f7}.sales-receipt-item:last-child{border-bottom:0}.sales-receipt-item-name{font-weight:700;color:#1e293b}.sales-receipt-item-sub{font-size:.75rem;color:#64748b;margin-top:2px}.sales-receipt-item-price{font-weight:700;color:#334155;white-space:nowrap}.sales-receipt-summary{border-top:1px dashed #cbd5e1;padding:10px 15px 12px}.sales-receipt-row{display:flex;justify-content:space-between}.sales-receipt-row.total{font-weight:800;color:#0f172a}
+.sales-day-section{margin:18px 0 22px}.sales-day-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-radius:14px;background:linear-gradient(135deg,#e0f2fe,#dbeafe);color:#0f172a;border:1px solid #bfdbfe;box-shadow:0 5px 16px rgba(15,118,110,.16);}.sales-day-title{font-size:.92rem;font-weight:900;letter-spacing:.03em;color:#0f172a}.sales-day-total{font-size:.9rem;font-weight:900;white-space:nowrap;color:#1e3a8a}.sales-day-receipts{display:grid;grid-template-columns:minmax(0,980px);justify-content:center;gap:16px;margin-top:12px}.sales-receipt-menu-item.full-action{display:block}.sales-receipt-menu-item.full-action button{width:100%;text-align:left;border:0;background:transparent;padding:9px 8px;color:#334155;font-weight:700;cursor:pointer}.sales-receipt-menu-item.full-action button:hover{background:#f8fafc}.sales-share-menu{display:none;position:absolute;right:8px;top:42px;z-index:5100;width:210px;background:#fff;border:1px solid #dbe3ec;border-radius:10px;box-shadow:0 12px 28px rgba(15,23,42,.16);padding:6px}.sales-share-menu.show{display:block}.sales-share-menu button{display:block;width:100%;text-align:left;border:0;background:#fff;padding:10px;border-radius:8px;font-weight:700;color:#334155;cursor:pointer}.sales-share-menu button:hover{background:#f1f5f9}
+        .record-sale-page{width:100%;min-height:100%;padding-bottom:24px;box-sizing:border-box;}.record-sale-page>.confirmation-content{width:100%;max-width:900px!important;margin:0 auto;background:#fff!important;border-radius:14px;padding:20px;box-sizing:border-box;max-height:none!important;overflow:visible!important;height:auto!important;box-shadow:0 4px 18px rgba(15,23,42,.08);}
+        .mmg-record-sale .mobile-menu-grid-icon{background:#16a34a}.mmg-expenses .mobile-menu-grid-icon{background:#ea580c}
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -5292,63 +5340,76 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 </div>
         <div class="sidebar-menu">
             <div class="menu-section">
-                <div class="menu-section-title">Main Menu</div>
+                <div class="menu-section-title" data-i18n="mainMenu">Main Menu</div>
                 <div class="menu-item active" data-page="dashboard">
 <i class="fas fa-tachometer-alt">
 </i>
-<span class="menu-item-text">Dashboard</span>
+<span class="menu-item-text" data-i18n="dashboard">Dashboard</span>
 </div>
                 <div class="menu-item" data-page="stock">
 <i class="fas fa-boxes">
 </i>
-<span class="menu-item-text">Stock Inventory</span>
+<span class="menu-item-text" data-i18n="stockInventory">Stock Inventory</span>
 <span class="menu-badge" id="stockBadge">0</span>
 </div>
                 <div class="menu-item" data-page="sales">
 <i class="fas fa-shopping-cart">
 </i>
-<span class="menu-item-text">Sales</span>
+<span class="menu-item-text">All Sales</span>
 <span class="menu-badge" id="salesBadge">0</span>
+</div>
+                <div class="menu-item" data-page="recordSale">
+<i class="fas fa-cash-register"></i>
+<span class="menu-item-text">Record Sale</span>
+</div>
+                <div class="menu-item" data-page="expenses">
+<i class="fas fa-receipt"></i>
+<span class="menu-item-text">Expenses</span>
 </div>
                 <div class="menu-item" data-page="purchases">
 <i class="fas fa-truck">
 </i>
-<span class="menu-item-text">Purchases</span>
+<span class="menu-item-text" data-i18n="purchases">Purchases</span>
 <span class="menu-badge" id="purchasesBadge">0</span>
 </div>
                 <div class="menu-item" data-page="debts">
 <i class="fas fa-hand-holding-usd">
 </i>
-<span class="menu-item-text">Debts Management</span>
+<span class="menu-item-text" data-i18n="debtsManagement">Debts Management</span>
 <span class="menu-badge" id="debtsBadge">0</span>
 </div>
             </div>
             <div class="menu-section">
-                <div class="menu-section-title">Management</div>
+                <div class="menu-section-title" data-i18n="management">Management</div>
                 <div class="menu-item" data-page="customers">
 <i class="fas fa-users">
 </i>
-<span class="menu-item-text">Customers</span>
+<span class="menu-item-text" data-i18n="customers">Customers</span>
 </div>
                 <div class="menu-item" data-page="suppliers">
 <i class="fas fa-industry">
 </i>
-<span class="menu-item-text">Suppliers</span>
+<span class="menu-item-text" data-i18n="suppliers">Suppliers</span>
 </div>
                 <div class="menu-item" data-page="sellers">
 <i class="fas fa-user-tie">
 </i>
-<span class="menu-item-text">Sellers</span>
+<span class="menu-item-text" data-i18n="sellers">Sellers</span>
 </div>
                 <div class="menu-item" data-page="branches">
 <i class="fas fa-code-branch">
 </i>
-<span class="menu-item-text">Branches</span>
+<span class="menu-item-text" data-i18n="branches">Branches</span>
 </div>
                 <div class="menu-item" data-page="reports">
 <i class="fas fa-chart-bar">
 </i>
-<span class="menu-item-text">Reports</span>
+<span class="menu-item-text" data-i18n="reports">Reports</span>
+</div>
+                <div class="menu-item" data-page="accounting">
+<i class="fas fa-calculator">
+</i>
+<span class="menu-item-text" data-i18n="accounting">Accounting</span>
 </div>
                 
             </div>
@@ -5368,12 +5429,12 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
         <button class="footer-btn settings" onclick="navigateTo('settings')">
             <i class="fas fa-cog">
 </i>
-            <span class="footer-btn-text">Settings</span>
+            <span class="footer-btn-text" data-i18n="settings">Settings</span>
         </button>
         <button class="footer-btn logout" onclick="showLogoutConfirmation()">
             <i class="fas fa-sign-out-alt">
 </i>
-            <span class="footer-btn-text">Logout</span>
+            <span class="footer-btn-text" data-i18n="logout">Logout</span>
         </button>
     </div>
 </div>
@@ -5432,7 +5493,15 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
                     </div>
                     <div class="mobile-menu-grid-item mmg-sales" data-page="sales" onclick="navigateTo('sales')">
                         <div class="mobile-menu-grid-icon"><i class="fas fa-shopping-cart"></i></div>
-                        <span>Sales</span>
+                        <span>All Sales</span>
+                    </div>
+                    <div class="mobile-menu-grid-item mmg-record-sale" data-page="recordSale" onclick="navigateTo('recordSale')">
+                        <div class="mobile-menu-grid-icon"><i class="fas fa-cash-register"></i></div>
+                        <span>Record Sale</span>
+                    </div>
+                    <div class="mobile-menu-grid-item mmg-expenses" data-page="expenses" onclick="navigateTo('expenses')">
+                        <div class="mobile-menu-grid-icon"><i class="fas fa-receipt"></i></div>
+                        <span>Expenses</span>
                     </div>
                     <div class="mobile-menu-grid-item mmg-purchases" data-page="purchases" onclick="navigateTo('purchases')">
                         <div class="mobile-menu-grid-icon"><i class="fas fa-truck"></i></div>
@@ -5462,6 +5531,10 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
                         <div class="mobile-menu-grid-icon"><i class="fas fa-chart-bar"></i></div>
                         <span>Reports</span>
                     </div>
+                    <div class="mobile-menu-grid-item mmg-accounting" data-page="accounting" onclick="navigateTo('accounting')">
+                        <div class="mobile-menu-grid-icon"><i class="fas fa-calculator"></i></div>
+                        <span>Accounting</span>
+                    </div>
                     <div class="mobile-menu-grid-item mmg-settings" data-page="settings" onclick="navigateTo('settings')">
                         <div class="mobile-menu-grid-icon"><i class="fas fa-cog"></i></div>
                         <span>Settings</span>
@@ -5469,10 +5542,10 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
                 </div>
                 <div class="card recent-activity-card">
 <div class="card-header">
-<div class="card-title">Recent Activity</div>
+<div class="card-title" data-i18n="recentActivity">Recent Activity</div>
 <button onclick="refreshDashboard()">
 <i class="fas fa-sync">
-</i> Refresh</button>
+</i> <span data-i18n="refresh">Refresh</span></button>
 </div>
 <div id="recentActivity">
 <p class="text-center" style="color: #94a3b8; padding: 20px;">Loading recent activity...</p>
@@ -5480,24 +5553,24 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 </div>
                 <div class="card quick-actions-card">
 <div class="card-header">
-<div class="card-title">Quick Actions</div>
+<div class="card-title" data-i18n="quickActions">Quick Actions</div>
 </div>
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
 <button onclick="openAddStockModal()" class="btn-success" id="quickAddStockBtn">
 <i class="fas fa-plus">
-</i> Add Stock</button>
+</i> <span data-i18n="addStock">Add Stock</span></button>
 <button onclick="openAddSaleModal()" class="btn-secondary">
 <i class="fas fa-money-bill-wave">
-</i> Record Sale</button>
+</i> <span data-i18n="recordSale">Record Sale</span></button>
 <button onclick="openAddPurchaseModal()" class="btn-warning" id="quickRecordPurchaseBtn">
 <i class="fas fa-truck">
-</i> Record Purchase</button>
+</i> <span data-i18n="recordPurchase">Record Purchase</span></button>
 <button onclick="openNewPurchaseRequestModal()" class="btn-warning hidden" id="quickPurchaseRequestBtn">
 <i class="fas fa-clipboard-list">
-</i> Request Purchase</button>
+</i> <span data-i18n="requestPurchase">Request Purchase</span></button>
 <button onclick="navigateTo('reports')" id="reportsQuickAction">
 <i class="fas fa-chart-bar">
-</i> View Reports</button>
+</i> <span data-i18n="reports">View Reports</span></button>
 </div>
 </div>
             </div>
@@ -5533,60 +5606,40 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
             <div class="page hidden" id="salesPage">
 <div class="card">
 <div class="card-header">
-<div class="card-title">Sales Records</div>
+<div class="card-title">All Sales</div>
 <button onclick="openAddSaleModal()" class="btn-success">
 <i class="fas fa-plus">
 </i> Record Sale</button>
 </div>
-<div class="filter-section">
-<div class="filter-group">
-<label>Filter by Product</label>
+<div class="all-sales-filter-bar">
+<div class="sales-filter-field">
+<label>Product</label>
 <select id="salesProductFilter" onchange="applySalesFilters()">
 <option value="">All Products</option>
 </select>
 </div>
-<div class="filter-group">
-<label>From Date</label>
+<div class="sales-filter-field">
+<label>From</label>
 <input type="date" id="salesDateFrom" onchange="applySalesFilters()">
 </div>
-<div class="filter-group">
-<label>To Date</label>
+<div class="sales-filter-field">
+<label>To</label>
 <input type="date" id="salesDateTo" onchange="applySalesFilters()">
 </div>
-<div class="filter-actions">
-<button class="filter-btn" onclick="applySalesFilters()">
-<i class="fas fa-filter">
-</i> Apply</button>
-<button class="filter-btn clear" onclick="clearSalesFilters()">
-<i class="fas fa-times">
-</i> Clear</button>
+<div class="sales-filter-actions">
+<button class="sales-filter-action primary" onclick="applySalesFilters()"><i class="fas fa-filter"></i> Apply</button>
+<button class="sales-filter-action" onclick="clearSalesFilters()"><i class="fas fa-rotate-left"></i> Reset</button>
 </div>
 </div>
 <div id="salesSummary" class="summary-box">
 </div>
-<div class="table-container">
+<div id="salesReceiptsGrid" class="sales-receipts-grid"></div>
+<div class="table-container" style="display:none;">
 <table id="salesTable">
-<thead>
-<tr>
-<th>Date</th>
-<th>Seller</th>
-<th>Branch</th>
-<th>Product</th>
-<th>Quantity</th>
-<th>Unit Price</th>
-<th>Total</th>
-<th>Customer</th>
-<th>Payment Method</th>
-</tr>
-</thead>
-<tbody id="salesTableBody">
-<tr>
-<td colspan="9" class="text-center" style="color: #94a3b8; padding: 40px;">Loading sales data...</td>
-</tr>
-</tbody>
+<thead><tr><th>Date</th><th>Seller</th><th>Branch</th><th>Product</th><th>Quantity</th><th>Unit Price</th><th>Total</th><th>Customer</th><th>Payment Method</th></tr></thead>
+<tbody id="salesTableBody"></tbody>
 </table>
-</div>
-</div>
+</div></div>
 </div>
             
             <!-- Purchases Page -->
@@ -6332,6 +6385,244 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 </div>
             
             <!-- Settings Page -->
+<!-- Expenses Page -->
+<div class="page hidden" id="expensesPage">
+<div class="card">
+<div class="card-header">
+<div class="card-title">Expenses</div>
+</div>
+
+<button class="btn-success" onclick="openAddExpenseModal()" style="width:100%; margin-bottom:15px;">
+<i class="fas fa-plus"></i> Add Expense
+</button>
+<div class="filter-section">
+<div class="filter-group">
+<label>Date From</label>
+<input type="date" id="expensesDateFrom" class="product-select" onchange="loadExpensesData()">
+</div>
+<div class="filter-group">
+<label>Date To</label>
+<input type="date" id="expensesDateTo" class="product-select" onchange="loadExpensesData()">
+</div>
+<div class="filter-group">
+<label>Category</label>
+<select id="expensesCategorySelect" class="product-select" onchange="loadExpensesData()">
+<option value="">All Categories</option>
+</select>
+</div>
+<div class="filter-group" id="expensesBranchFilterGroup">
+<label>Branch</label>
+<select id="expensesBranchSelect" class="product-select" onchange="loadExpensesData()">
+<option value="ALL">All Branches</option>
+</select>
+</div>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:15px; margin-bottom:20px;">
+<div class="stat-card">
+<h3>Today's Expenses</h3>
+<div class="value" id="expStatToday">TZS 0</div>
+</div>
+<div class="stat-card">
+<h3>Current Period Expenses</h3>
+<div class="value" id="expStatPeriod">TZS 0</div>
+</div>
+<div class="stat-card">
+<h3>Total Expenses</h3>
+<div class="value" id="expStatTotal">TZS 0</div>
+</div>
+</div>
+
+<h3 style="font-size:0.95rem; color:#475569; margin-bottom:10px;"><i class="fas fa-tags"></i> Expense Categories</h3>
+<div id="expenseCategoriesList" style="margin-bottom:20px;">
+</div>
+
+<h3 style="font-size:0.95rem; color:#475569; margin-bottom:10px;"><i class="fas fa-clock"></i> Recent Expenses</h3>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Date</th>
+<th>Description</th>
+<th>Category</th>
+<th>Branch</th>
+<th>Amount</th>
+</tr>
+</thead>
+<tbody id="recentExpensesTableBody">
+</tbody>
+</table>
+</div>
+<p id="expensesEmptyState" class="hidden text-center" style="color:#94a3b8; padding:30px;">No expenses found for the selected filters.</p>
+
+</div>
+</div>
+            
+<div class="page hidden" id="accountingPage">
+<div class="card">
+<div class="card-header">
+<div class="card-title">Accounting</div>
+</div>
+<div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+<button id="accountingTabCloseBtn" class="confirmation-btn confirm" onclick="switchAccountingTab('close')" style="flex:1; min-width:150px;">
+<i class="fas fa-lock"></i> Close Accounts</button>
+<button id="accountingTabReportsBtn" class="confirmation-btn cancel" onclick="switchAccountingTab('reports')" style="flex:1; min-width:150px;">
+<i class="fas fa-history"></i> Closing Reports</button>
+</div>
+
+<div id="accountingCloseTab">
+<div class="filter-section">
+<div class="filter-group">
+<label>Period Start</label>
+<input type="date" id="accountingPeriodStart" class="product-select" onchange="handleAccountingPeriodInputChange()">
+</div>
+<div class="filter-group">
+<label>Period End</label>
+<input type="date" id="accountingPeriodEnd" class="product-select" onchange="handleAccountingPeriodInputChange()">
+</div>
+<div class="filter-group" id="accountingBranchFilterGroup">
+<label>Branch</label>
+<select id="accountingBranchSelect" class="product-select" onchange="handleAccountingPeriodInputChange()">
+<option value="ALL">All Branches</option>
+</select>
+</div>
+</div>
+
+<div id="accountingAlreadyClosedBanner" class="hidden" style="background:#fef2f2; border:1px solid var(--danger); color:#dc2626; border-radius:10px; padding:14px; margin-bottom:15px; font-weight:600;">
+<i class="fas fa-lock"></i> <span id="accountingBannerTitle">Period already closed.</span><br>
+<span id="accountingAlreadyClosedId" style="font-weight:400; font-size:0.9rem;"></span>
+</div>
+
+<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:15px; margin-bottom:20px;">
+<div class="stat-card">
+<h3>Total Sales</h3>
+<div class="value" id="acctStatTotalSales">—</div>
+</div>
+<div class="stat-card">
+<h3>Total Purchases</h3>
+<div class="value" id="acctStatTotalPurchases">—</div>
+</div>
+<div class="stat-card">
+<h3>Estimated COGS</h3>
+<div class="value" id="acctStatCogs">—</div>
+</div>
+<div class="stat-card">
+<h3>Gross Profit</h3>
+<div class="value" id="acctStatGrossProfit">—</div>
+</div>
+<div class="stat-card">
+<h3>Operating Expenses</h3>
+<div class="value" id="acctStatOperatingExpenses">—</div>
+</div>
+<div class="stat-card">
+<h3>Net Profit</h3>
+<div class="value" id="acctStatNetProfit">—</div>
+</div>
+<div class="stat-card">
+<h3>Closing Stock</h3>
+<div class="value" id="acctStatClosingStock">—</div>
+</div>
+<div class="stat-card">
+<h3>Outstanding Debts</h3>
+<div class="value" id="acctStatOutstandingDebts">—</div>
+</div>
+</div>
+
+<p style="color:#64748b; font-size:0.85rem; margin-bottom:15px;">
+Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted or reset. Estimated COGS uses the weighted average buy cost from Stock (for Stock-tracked products) or from Non-Stock Purchases (for products sold without stock tracking).
+</p>
+
+<div style="display:flex; gap:10px; flex-wrap:wrap;">
+<button class="btn-secondary" onclick="previewAccountingPeriod()" id="accountingPreviewBtn" style="flex:1; min-width:150px;">
+<i class="fas fa-sync"></i> <span id="accountingPreviewText">Preview</span>
+<span class="spinner small" id="accountingPreviewSpinner" style="display:none;"></span>
+</button>
+<button class="confirmation-btn confirm success" onclick="confirmCloseAccounts()" id="accountingCloseBtn" style="flex:1; min-width:150px;">
+<i class="fas fa-lock"></i> <span id="accountingCloseText">Close Accounts</span>
+<span class="spinner small" id="accountingCloseSpinner" style="display:none;"></span>
+</button>
+</div>
+</div>
+
+<div id="accountingReportsTab" class="hidden">
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Period</th>
+<th>Closed At</th>
+<th>Branch</th>
+<th>Sales</th>
+<th>Purchases</th>
+<th>Expenses</th>
+<th>Net Profit</th>
+<th>Closing Stock</th>
+<th>Debts</th>
+</tr>
+</thead>
+<tbody id="accountingReportsTableBody">
+</tbody>
+</table>
+</div>
+<p id="accountingReportsEmptyState" class="hidden text-center" style="color:#94a3b8; padding:30px;">No closed periods yet.</p>
+</div>
+</div>
+</div>
+
+<!-- Add Expense - saves to the dedicated EXPENSES sheet (see addExpense
+     backend action), completely separate from Purchases/Stock. Never
+     creates or affects a Purchase or Stock record. Note: this modal
+     deliberately does NOT include its own #fullscreenModalBar - that bar
+     is a single SHARED element that lives once, outside all modals (see
+     near the Logout confirmation), and a MutationObserver shows/hides it
+     automatically for whichever fullscreen modal is currently open.
+     Adding a second element with that same id here previously broke the
+     back/close bar for every OTHER modal in the app (duplicate ids mean
+     getElementById always finds the first one in the DOM, so the shared
+     observer was updating the wrong element). -->
+<div class="confirmation-modal fullscreen-modal" id="addExpenseModal">
+<div class="confirmation-content">
+<h2 class="confirmation-title">Add Expense</h2>
+<div class="form-group">
+<label>Category</label>
+<input type="text" id="expenseCategory" list="expenseCategoryOptions" placeholder="e.g. Rent, Utilities, Transport">
+<datalist id="expenseCategoryOptions"></datalist>
+</div>
+<div class="form-group">
+<label>Description</label>
+<input type="text" id="expenseDescription" placeholder="e.g. Monthly shop rent">
+</div>
+<div class="form-group">
+<label>Amount</label>
+<input type="number" id="expenseAmount" placeholder="0" min="0" step="0.01">
+</div>
+<div class="form-group">
+<label>Date</label>
+<input type="date" id="expenseDate">
+</div>
+<div class="form-group" id="expenseBranchGroup">
+<label>Branch</label>
+<select id="expenseBranchSelect"></select>
+</div>
+<div class="form-group">
+<label>Payment Method</label>
+<select id="expensePaymentMethod">
+<option value="cash">Cash</option>
+<option value="mobile_money">Mobile Money</option>
+<option value="bank_transfer">Bank Transfer</option>
+<option value="card">Card</option>
+</select>
+</div>
+<div class="confirmation-buttons">
+<button class="confirmation-btn cancel" onclick="closeAddExpenseModal()">Cancel</button>
+<button class="confirmation-btn confirm success" onclick="saveExpense()" id="saveExpenseBtn">
+<i class="fas fa-save"></i> <span id="saveExpenseText">Save Expense</span>
+<span class="spinner small" id="saveExpenseSpinner" style="display:none;"></span>
+</button>
+</div>
+</div>
+</div>
+
 <div class="page hidden" id="settingsPage">
     <div class="settings-container">
         <!-- Settings Sidebar -->
@@ -6483,54 +6774,175 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
             
             <!-- Display Settings -->
             <div class="settings-section" id="displaySection">
-                <h2 class="card-title" style="margin-bottom: 20px;">Display Settings</h2>
+                <h2 class="card-title" style="margin-bottom: 20px;" data-i18n="displaySettings">Display Settings</h2>
                 <div class="settings-grid">
                     <div class="setting-card">
                         <h3>
-<i class="fas fa-palette">
-</i> Theme Selection</h3>
-                        <div class="theme-options">
-                            <div class="theme-option theme-dark selected" data-theme="dark" onclick="selectTheme('dark')" style="color:#fff !important;">
-                                <i class="fas fa-moon" style="color:#fff !important;">
-</i>
-                                <p style="color:#fff !important;">Dark Mode</p>
-                            </div>
-                            <div class="theme-option theme-light" data-theme="light" onclick="selectTheme('light')">
-                                <i class="fas fa-sun">
-</i>
-                                <p>Light Mode</p>
-                            </div>
-                            <div class="theme-option theme-blue" data-theme="blue" onclick="selectTheme('blue')" style="color:#fff !important;">
-                                <i class="fas fa-tint" style="color:#fff !important;">
-</i>
-                                <p style="color:#fff !important;">Blue Theme</p>
-                            </div>
-                        </div>
-                        <button onclick="saveTheme()" class="btn-success" style="margin-top: 15px; width: 100%;">
-                            <i class="fas fa-save">
-</i> Apply Theme
-                        </button>
-                    </div>
-                    
-                    <div class="setting-card">
-                        <h3>
 <i class="fas fa-globe">
-</i> Language & Region</h3>
+</i> <span data-i18n="languageRegion">Language &amp; Region</span></h3>
                         <div class="form-group">
-                            <label>Language</label>
+                            <label data-i18n="language">Language</label>
                             <select id="settingLanguage">
+                                <option value="en" selected>English</option>
                                 <option value="sw">Kiswahili</option>
-                                <option value="en">English</option>
-                                <option value="fr">Français</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Currency</label>
+                            <label data-i18n="currency">Currency</label>
                             <select id="settingCurrency">
+                                <optgroup label="Africa">
                                 <option value="TZS">Tanzanian Shilling (TZS)</option>
-                                <option value="USD">US Dollar ($)</option>
-                                <option value="EUR">Euro (€)</option>
-                                <option value="GBP">British Pound (£)</option>
+                                <option value="KES">Kenyan Shilling (KES)</option>
+                                <option value="UGX">Ugandan Shilling (UGX)</option>
+                                <option value="ZMW">Zambian Kwacha (ZMW)</option>
+                                <option value="RWF">Rwandan Franc (RWF)</option>
+                                <option value="BIF">Burundian Franc (BIF)</option>
+                                <option value="ETB">Ethiopian Birr (ETB)</option>
+                                <option value="NGN">Nigerian Naira (NGN)</option>
+                                <option value="GHS">Ghanaian Cedi (GHS)</option>
+                                <option value="ZAR">South African Rand (ZAR)</option>
+                                <option value="EGP">Egyptian Pound (EGP)</option>
+                                <option value="MAD">Moroccan Dirham (MAD)</option>
+                                <option value="DZD">Algerian Dinar (DZD)</option>
+                                <option value="TND">Tunisian Dinar (TND)</option>
+                                <option value="XOF">West African CFA Franc (XOF)</option>
+                                <option value="XAF">Central African CFA Franc (XAF)</option>
+                                <option value="MWK">Malawian Kwacha (MWK)</option>
+                                <option value="MZN">Mozambican Metical (MZN)</option>
+                                <option value="AOA">Angolan Kwanza (AOA)</option>
+                                <option value="BWP">Botswana Pula (BWP)</option>
+                                <option value="NAD">Namibian Dollar (NAD)</option>
+                                <option value="SZL">Eswatini Lilangeni (SZL)</option>
+                                <option value="LSL">Lesotho Loti (LSL)</option>
+                                <option value="SDG">Sudanese Pound (SDG)</option>
+                                <option value="SSP">South Sudanese Pound (SSP)</option>
+                                <option value="SOS">Somali Shilling (SOS)</option>
+                                <option value="DJF">Djiboutian Franc (DJF)</option>
+                                <option value="ERN">Eritrean Nakfa (ERN)</option>
+                                <option value="LYD">Libyan Dinar (LYD)</option>
+                                <option value="SLL">Sierra Leonean Leone (SLL)</option>
+                                <option value="LRD">Liberian Dollar (LRD)</option>
+                                <option value="GMD">Gambian Dalasi (GMD)</option>
+                                <option value="GNF">Guinean Franc (GNF)</option>
+                                <option value="CVE">Cape Verdean Escudo (CVE)</option>
+                                <option value="MRU">Mauritanian Ouguiya (MRU)</option>
+                                <option value="STN">São Tomé and Príncipe Dobra (STN)</option>
+                                <option value="KMF">Comorian Franc (KMF)</option>
+                                <option value="MGA">Malagasy Ariary (MGA)</option>
+                                <option value="SCR">Seychellois Rupee (SCR)</option>
+                                <option value="MUR">Mauritian Rupee (MUR)</option>
+                                <option value="CDF">Congolese Franc (CDF)</option>
+                                </optgroup>
+                                <optgroup label="Americas">
+                                <option value="USD">US Dollar (USD)</option>
+                                <option value="CAD">Canadian Dollar (CAD)</option>
+                                <option value="MXN">Mexican Peso (MXN)</option>
+                                <option value="BRL">Brazilian Real (BRL)</option>
+                                <option value="ARS">Argentine Peso (ARS)</option>
+                                <option value="CLP">Chilean Peso (CLP)</option>
+                                <option value="COP">Colombian Peso (COP)</option>
+                                <option value="PEN">Peruvian Sol (PEN)</option>
+                                <option value="UYU">Uruguayan Peso (UYU)</option>
+                                <option value="BOB">Bolivian Boliviano (BOB)</option>
+                                <option value="PYG">Paraguayan Guarani (PYG)</option>
+                                <option value="VES">Venezuelan Bolívar (VES)</option>
+                                <option value="GTQ">Guatemalan Quetzal (GTQ)</option>
+                                <option value="HNL">Honduran Lempira (HNL)</option>
+                                <option value="NIO">Nicaraguan Córdoba (NIO)</option>
+                                <option value="CRC">Costa Rican Colón (CRC)</option>
+                                <option value="PAB">Panamanian Balboa (PAB)</option>
+                                <option value="DOP">Dominican Peso (DOP)</option>
+                                <option value="JMD">Jamaican Dollar (JMD)</option>
+                                <option value="TTD">Trinidad and Tobago Dollar (TTD)</option>
+                                <option value="BSD">Bahamian Dollar (BSD)</option>
+                                <option value="BBD">Barbadian Dollar (BBD)</option>
+                                <option value="HTG">Haitian Gourde (HTG)</option>
+                                <option value="CUP">Cuban Peso (CUP)</option>
+                                <option value="GYD">Guyanese Dollar (GYD)</option>
+                                <option value="SRD">Surinamese Dollar (SRD)</option>
+                                <option value="BZD">Belize Dollar (BZD)</option>
+                                </optgroup>
+                                <optgroup label="Europe">
+                                <option value="EUR">Euro (EUR)</option>
+                                <option value="GBP">British Pound (GBP)</option>
+                                <option value="CHF">Swiss Franc (CHF)</option>
+                                <option value="SEK">Swedish Krona (SEK)</option>
+                                <option value="NOK">Norwegian Krone (NOK)</option>
+                                <option value="DKK">Danish Krone (DKK)</option>
+                                <option value="PLN">Polish Złoty (PLN)</option>
+                                <option value="CZK">Czech Koruna (CZK)</option>
+                                <option value="HUF">Hungarian Forint (HUF)</option>
+                                <option value="RON">Romanian Leu (RON)</option>
+                                <option value="BGN">Bulgarian Lev (BGN)</option>
+                                <option value="HRK">Croatian Kuna (HRK)</option>
+                                <option value="ISK">Icelandic Króna (ISK)</option>
+                                <option value="UAH">Ukrainian Hryvnia (UAH)</option>
+                                <option value="RUB">Russian Ruble (RUB)</option>
+                                <option value="TRY">Turkish Lira (TRY)</option>
+                                <option value="RSD">Serbian Dinar (RSD)</option>
+                                <option value="ALL">Albanian Lek (ALL)</option>
+                                <option value="MKD">Macedonian Denar (MKD)</option>
+                                <option value="BAM">Bosnia-Herzegovina Mark (BAM)</option>
+                                <option value="MDL">Moldovan Leu (MDL)</option>
+                                <option value="GEL">Georgian Lari (GEL)</option>
+                                <option value="AMD">Armenian Dram (AMD)</option>
+                                <option value="AZN">Azerbaijani Manat (AZN)</option>
+                                <option value="BYN">Belarusian Ruble (BYN)</option>
+                                </optgroup>
+                                <optgroup label="Asia">
+                                <option value="CNY">Chinese Yuan (CNY)</option>
+                                <option value="JPY">Japanese Yen (JPY)</option>
+                                <option value="INR">Indian Rupee (INR)</option>
+                                <option value="KRW">South Korean Won (KRW)</option>
+                                <option value="IDR">Indonesian Rupiah (IDR)</option>
+                                <option value="PKR">Pakistani Rupee (PKR)</option>
+                                <option value="BDT">Bangladeshi Taka (BDT)</option>
+                                <option value="VND">Vietnamese Đồng (VND)</option>
+                                <option value="THB">Thai Baht (THB)</option>
+                                <option value="PHP">Philippine Peso (PHP)</option>
+                                <option value="MYR">Malaysian Ringgit (MYR)</option>
+                                <option value="SGD">Singapore Dollar (SGD)</option>
+                                <option value="HKD">Hong Kong Dollar (HKD)</option>
+                                <option value="TWD">New Taiwan Dollar (TWD)</option>
+                                <option value="AED">UAE Dirham (AED)</option>
+                                <option value="SAR">Saudi Riyal (SAR)</option>
+                                <option value="QAR">Qatari Riyal (QAR)</option>
+                                <option value="KWD">Kuwaiti Dinar (KWD)</option>
+                                <option value="BHD">Bahraini Dinar (BHD)</option>
+                                <option value="OMR">Omani Rial (OMR)</option>
+                                <option value="JOD">Jordanian Dinar (JOD)</option>
+                                <option value="ILS">Israeli Shekel (ILS)</option>
+                                <option value="LBP">Lebanese Pound (LBP)</option>
+                                <option value="IQD">Iraqi Dinar (IQD)</option>
+                                <option value="IRR">Iranian Rial (IRR)</option>
+                                <option value="AFN">Afghan Afghani (AFN)</option>
+                                <option value="NPR">Nepalese Rupee (NPR)</option>
+                                <option value="LKR">Sri Lankan Rupee (LKR)</option>
+                                <option value="MMK">Myanmar Kyat (MMK)</option>
+                                <option value="KHR">Cambodian Riel (KHR)</option>
+                                <option value="LAK">Laotian Kip (LAK)</option>
+                                <option value="MNT">Mongolian Tögrög (MNT)</option>
+                                <option value="KZT">Kazakhstani Tenge (KZT)</option>
+                                <option value="UZS">Uzbekistani Som (UZS)</option>
+                                <option value="TJS">Tajikistani Somoni (TJS)</option>
+                                <option value="KGS">Kyrgystani Som (KGS)</option>
+                                <option value="TMT">Turkmenistani Manat (TMT)</option>
+                                <option value="BND">Brunei Dollar (BND)</option>
+                                <option value="MVR">Maldivian Rufiyaa (MVR)</option>
+                                <option value="BTN">Bhutanese Ngultrum (BTN)</option>
+                                <option value="YER">Yemeni Rial (YER)</option>
+                                <option value="SYP">Syrian Pound (SYP)</option>
+                                </optgroup>
+                                <optgroup label="Oceania">
+                                <option value="AUD">Australian Dollar (AUD)</option>
+                                <option value="NZD">New Zealand Dollar (NZD)</option>
+                                <option value="FJD">Fijian Dollar (FJD)</option>
+                                <option value="PGK">Papua New Guinean Kina (PGK)</option>
+                                <option value="WST">Samoan Tālā (WST)</option>
+                                <option value="TOP">Tongan Paʻanga (TOP)</option>
+                                <option value="SBD">Solomon Islands Dollar (SBD)</option>
+                                <option value="VUV">Vanuatu Vatu (VUV)</option>
+                                </optgroup>
                             </select>
                         </div>
                         <div class="form-group">
@@ -6543,7 +6955,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
                         </div>
                         <button onclick="saveDisplaySettings()" class="btn-success" id="saveDisplayBtn" style="width: 100%;">
                             <i class="fas fa-save">
-</i> <span id="saveDisplayText">Save Settings</span>
+</i> <span id="saveDisplayText" data-i18n="saveSettings">Save Settings</span>
                             <span class="spinner small" id="displaySpinner" style="display: none;">
 </span>
                         </button>
@@ -7108,7 +7520,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 </div>
 </div>
 
-<div class="confirmation-modal fullscreen-modal" id="addSaleModal">
+<div class="page hidden record-sale-page" id="addSaleModal">
 <div class="confirmation-content" style="max-width: 600px;">
 <h2 class="confirmation-title" style="display:flex; justify-content:space-between; align-items:center;">
 <span>Record Sale</span>
@@ -7318,7 +7730,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 </div>
 <div class="form-group">
 <label>Quantity</label>
-<input type="number" id="editSaleQuantity" placeholder="Enter quantity" min="0" step="0.01" oninput="calculateEditSaleTotal()" required>
+<div class="quantity-control"><button type="button" class="quantity-btn" onclick="changeEditSaleQuantity(-1)" aria-label="Decrease quantity">−</button><input type="number" id="editSaleQuantity" placeholder="Enter quantity" min="0" step="1" oninput="calculateEditSaleTotal(); updateEditSaleAvailableStockDisplay();" required><button type="button" class="quantity-btn" onclick="changeEditSaleQuantity(1)" aria-label="Increase quantity">+</button></div><div id="editSaleAvailableStock" class="stock-indicator" style="display:none;margin-top:6px;"></div>
 </div>
 <div class="form-group">
 <label>Unit Price</label>
@@ -8696,7 +9108,7 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 
     <script>
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbzjycCW2JZwb5UzWUVXGCwAVQsEIjZznhrxsST2OLqH0TWttLYyDxtaKCjHJ2WW7FLI9g/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbzFSq6-k3RzpNR_L0mAG3f93tQoNgN7sZuUgBKIpUGudAiCAURYGoEq7_A0EZG7d_IdNg/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -8709,7 +9121,7 @@ let currentUser = {
     altLogoUrl: DEFAULT_LOGO_URL,
     directLogoUrl: DEFAULT_LOGO_URL,
     theme: "dark",
-    language: "sw",
+    language: "en",
     settings: {},
     currentPage: "dashboard",
     currency: "TZS",
@@ -8718,6 +9130,119 @@ let currentUser = {
     sellerName: null,
     branchId: null
 };
+
+// The system default language changed from Swahili to English - a
+// "smartTradeLanguage" value already sitting in THIS device's
+// localStorage from before that change reflects the old default, not a
+// choice anyone actually made. Cleared once (the migration flag below
+// guarantees this only ever runs a single time, so a language someone
+// deliberately picks afterward is never touched again) so the very next
+// line below, and the settings fetch from the server moments later (see
+// getUserSettingsFromDB, which applies this same reasoning server-side),
+// both correctly fall through to the new English default instead.
+if (!localStorage.getItem('smartTradeLanguageDefaultMigrated')) {
+    localStorage.removeItem('smartTradeLanguage');
+    localStorage.setItem('smartTradeLanguageDefaultMigrated', 'true');
+}
+
+// Restored from localStorage immediately (synchronously, before any
+// network request) so the correct currency/language show up on the very
+// first paint - the settings fetch from the server (see
+// updateSettingsUI()) will confirm/update these a moment later, but the
+// person never sees a flash of the wrong currency or language while
+// that's in flight.
+(function restoreDisplayPreferencesFromStorage() {
+    const savedCurrency = localStorage.getItem('smartTradeCurrency');
+    if (savedCurrency) currentUser.currency = savedCurrency;
+    
+    const savedLanguage = localStorage.getItem('smartTradeLanguage');
+    if (savedLanguage) currentUser.language = savedLanguage;
+})();
+
+// ============================================
+// TRANSLATIONS - covers the highest-visibility text a person sees
+// throughout the app (navigation, dashboard, common actions/labels) in
+// both languages. Given the size of this app, this is a real,
+// extensible foundation rather than a claim that literally every string
+// anywhere has been translated - t() falls back to the English text
+// itself for any key not yet added, so nothing ever breaks or shows a
+// blank/raw key if a spot hasn't been covered yet.
+// ============================================
+const translations = {
+    en: {
+        mainMenu: 'Main Menu', management: 'Management',
+        dashboard: 'Dashboard', stockInventory: 'Stock Inventory', sales: 'Sales',
+        purchases: 'Purchases', debtsManagement: 'Debts Management', customers: 'Customers',
+        suppliers: 'Suppliers', sellers: 'Sellers', branches: 'Branches', reports: 'Reports',
+        accounting: 'Accounting',
+        settings: 'Settings', logout: 'Logout',
+        totalProducts: 'Total Products', stockValue: 'Stock Value', todaySales: "Today's Sales",
+        totalStock: 'Total Stock', allSales: 'All Sales',
+        totalProfit: 'Total Profit', welcome: 'Welcome', branch: 'Branch',
+        recentActivity: 'Recent Activity', quickActions: 'Quick Actions', refresh: 'Refresh',
+        addStock: 'Add Stock', recordSale: 'Record Sale', recordPurchase: 'Record Purchase',
+        requestPurchase: 'Request Purchase',
+        save: 'Save', cancel: 'Cancel', delete: 'Delete', edit: 'Edit', update: 'Update',
+        completeSale: 'Complete Sale', completeDebt: 'Complete Debt',
+        addToSale: 'Add to Sale', addToDebt: 'Add to Debt',
+        customerName: 'Customer Name', borrowerName: "Borrower's Name",
+        product: 'Product', quantity: 'Quantity', unitPrice: 'Unit Price', total: 'Total',
+        grandTotal: 'Grand Total', paymentMethod: 'Payment Method', date: 'Date',
+        actions: 'Actions', status: 'Status', branch2: 'Branch',
+        loading: 'Loading...', noDataFound: 'No data found', search: 'Search',
+        displaySettings: 'Display Settings', languageRegion: 'Language & Region',
+        currency: 'Currency', language: 'Language', dateFormat: 'Date Format',
+        saveSettings: 'Save Settings'
+    },
+    sw: {
+        mainMenu: 'Menyu Kuu', management: 'Usimamizi',
+        dashboard: 'Dashibodi', stockInventory: 'Hesabu ya Bidhaa', sales: 'Mauzo',
+        purchases: 'Manunuzi', debtsManagement: 'Usimamizi wa Madeni', customers: 'Wateja',
+        suppliers: 'Wasambazaji', sellers: 'Wauzaji', branches: 'Matawi', reports: 'Ripoti',
+        accounting: 'Uhasibu',
+        settings: 'Mipangilio', logout: 'Toka',
+        totalProducts: 'Jumla ya Bidhaa', stockValue: 'Thamani ya Hesabu', todaySales: 'Mauzo ya Leo',
+        totalStock: 'Jumla ya Stock', allSales: 'Mauzo Yote',
+        totalProfit: 'Faida Jumla', welcome: 'Karibu', branch: 'Tawi',
+        recentActivity: 'Shughuli za Hivi Karibuni', quickActions: 'Vitendo vya Haraka', refresh: 'Onyesha upya',
+        addStock: 'Ongeza Bidhaa', recordSale: 'Rekodi Mauzo', recordPurchase: 'Rekodi Manunuzi',
+        requestPurchase: 'Omba Manunuzi',
+        save: 'Hifadhi', cancel: 'Ghairi', delete: 'Futa', edit: 'Hariri', update: 'Sasisha',
+        completeSale: 'Kamilisha Mauzo', completeDebt: 'Kamilisha Deni',
+        addToSale: 'Ongeza kwenye Mauzo', addToDebt: 'Ongeza kwenye Deni',
+        customerName: 'Jina la Mteja', borrowerName: 'Jina la Mkopaji',
+        product: 'Bidhaa', quantity: 'Idadi', unitPrice: 'Bei ya Kipimo', total: 'Jumla',
+        grandTotal: 'Jumla Kuu', paymentMethod: 'Njia ya Malipo', date: 'Tarehe',
+        actions: 'Vitendo', status: 'Hali', branch2: 'Tawi',
+        loading: 'Inapakia...', noDataFound: 'Hakuna data', search: 'Tafuta',
+        displaySettings: 'Mipangilio ya Muonekano', languageRegion: 'Lugha na Mkoa',
+        currency: 'Sarafu', language: 'Lugha', dateFormat: 'Muundo wa Tarehe',
+        saveSettings: 'Hifadhi Mipangilio'
+    }
+};
+
+function t(key) {
+    const lang = currentUser.language || 'en';
+    return (translations[lang] && translations[lang][key]) || translations.en[key] || key;
+}
+
+// Applies the current language to every static element tagged with
+// data-i18n (the Sidebar menu, etc.), then re-runs the few functions
+// that build their own text dynamically in JS (the Dashboard stat card
+// labels), so a language switch takes effect immediately without
+// needing a full page reload.
+function applyLanguage(lang) {
+    currentUser.language = lang;
+    
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+    });
+    
+    if (typeof updateDashboardStructure === 'function' && document.getElementById('dashboardStats')) {
+        updateDashboardStructure();
+    }
+}
 
 // Flag to track if we're doing fast navigation
 let isFastNavigation = true;
@@ -8780,6 +9305,7 @@ let logoElements = {
             stock: [],
             sales: [],
             purchases: [],
+            expenses: [],
             customers: [],
             suppliers: [],
             debts: [],
@@ -9059,6 +9585,7 @@ let debtPhotoBase64 = null;
             stock: offlineData.stock || [],
             sales: offlineData.sales || [],
             purchases: offlineData.purchases || [],
+            expenses: offlineData.expenses || [],
             customers: offlineData.customers || [],
             suppliers: offlineData.suppliers || [],
             debts: offlineData.debts || [],
@@ -9077,6 +9604,7 @@ let debtPhotoBase64 = null;
             offlineData.stock = [];
             offlineData.sales = [];
             offlineData.purchases = [];
+            offlineData.expenses = [];
             offlineData.customers = [];
             offlineData.suppliers = [];
             offlineData.debts = [];
@@ -9308,6 +9836,18 @@ let debtPhotoBase64 = null;
         function saveSession(response) {
     const oldLogoUrl = currentUser.logoUrl;
     
+    // Pull the saved currency/language straight out of response.settings
+    // (its DISPLAY section) - NOT from separate top-level
+    // response.currency/response.language fields, which the server never
+    // actually sends. This was the real root cause of a saved currency
+    // reverting to TZS on every fresh login: this function was
+    // hardcoding "TZS" and falling back to "sw" here regardless of
+    // whatever had genuinely been saved, silently overwriting it the
+    // moment anyone logged in again.
+    const savedDisplay = (response.settings && response.settings.DISPLAY) || {};
+    const restoredCurrency = savedDisplay.currency?.value || 'TZS';
+    const restoredLanguage = savedDisplay.language?.value || 'en';
+    
     currentUser = {
         business: response.business,
         email: response.email,
@@ -9317,10 +9857,10 @@ let debtPhotoBase64 = null;
         altLogoUrl: response.altLogoUrl || response.logoUrl || DEFAULT_LOGO_URL,
         directLogoUrl: response.directLogoUrl || response.logoUrl || DEFAULT_LOGO_URL,
         theme: response.theme || "dark",
-        language: response.language || "sw",
+        language: restoredLanguage,
         settings: response.settings || {},
         currentPage: "dashboard",
-        currency: "TZS",
+        currency: restoredCurrency,
         userType: response.userType || "admin",
         sellerId: response.sellerId || null,
         sellerName: response.sellerName || null,
@@ -9340,7 +9880,8 @@ let debtPhotoBase64 = null;
     localStorage.setItem('smartTradeAltLogoUrl', response.altLogoUrl || '');
     localStorage.setItem('smartTradeDirectLogoUrl', response.directLogoUrl || '');
     localStorage.setItem('smartTradeTheme', response.theme || "dark");
-    localStorage.setItem('smartTradeLanguage', response.language || "sw");
+    localStorage.setItem('smartTradeLanguage', restoredLanguage);
+    localStorage.setItem('smartTradeCurrency', restoredCurrency);
     localStorage.setItem('smartTradeCurrentPage', 'dashboard');
     localStorage.setItem('smartTradeUserType', response.userType || "admin");
     localStorage.setItem('smartTradeSellerId', response.sellerId || '');
@@ -9374,7 +9915,31 @@ let debtPhotoBase64 = null;
 }
         
         
-        function checkSession() {
+        // Silently confirms/updates the saved Display Settings (currency,
+// language) from the server - called on every app load (see
+// checkSession() above), not just when the Settings page itself is
+// opened. Deliberately not awaited by its caller and has no loading UI
+// of its own: currentUser.currency/language are already correct from
+// localStorage the instant the app opens, so this only matters for the
+// rarer case where the setting was changed from a different device -
+// a failure here is silent and harmless since the local values already
+// in effect stay exactly as they were.
+async function syncDisplaySettingsFromServer() {
+    if (!isOnline) return;
+    try {
+        const result = await apiCall('getSettings');
+        if (result.success && result.settings) {
+            settingsCache = result.settings;
+            currentUser.settings = result.settings;
+            localStorage.setItem('smartTradeSettings', JSON.stringify(result.settings));
+            updateSettingsUI(result.settings);
+        }
+    } catch (error) {
+        // Silent on purpose - see comment above.
+    }
+}
+
+function checkSession() {
     const savedToken = localStorage.getItem('smartTradeToken');
     const currentPage = localStorage.getItem('smartTradeCurrentPage') || 'dashboard';
     
@@ -9387,7 +9952,8 @@ let debtPhotoBase64 = null;
         currentUser.altLogoUrl = localStorage.getItem('smartTradeAltLogoUrl') || currentUser.logoUrl;
         currentUser.directLogoUrl = localStorage.getItem('smartTradeDirectLogoUrl') || currentUser.logoUrl;
         currentUser.theme = localStorage.getItem('smartTradeTheme') || "dark";
-        currentUser.language = localStorage.getItem('smartTradeLanguage') || "sw";
+        currentUser.language = localStorage.getItem('smartTradeLanguage') || "en";
+        currentUser.currency = localStorage.getItem('smartTradeCurrency') || currentUser.currency || "TZS";
         currentUser.currentPage = currentPage;
         currentUser.userType = localStorage.getItem('smartTradeUserType') || "admin";
         currentUser.sellerId = localStorage.getItem('smartTradeSellerId') || null;
@@ -9409,6 +9975,16 @@ let debtPhotoBase64 = null;
         if (currentUser.token && currentUser.databaseId) {
             showApp();
             applyMenuRestrictions();
+            
+            // Confirms (and updates, if it's changed since - e.g. from
+            // another device) the saved Display Settings (currency,
+            // language) straight from the server on every app load - not
+            // just whenever the Settings page itself happens to be
+            // opened. currentUser.currency/language were already set
+            // instantly above from localStorage, so the app never waits
+            // on this; it just quietly corrects things in the background
+            // if the server has something different.
+            syncDisplaySettingsFromServer();
             
             // If subscription expired, show disabled dashboard
             if (currentUser.isExpired) {
@@ -9457,7 +10033,9 @@ let debtPhotoBase64 = null;
                 item.style.display = 'none';
             }
         } else if (isSeller) {
-            const sellerVisibleMenus = ['dashboard', 'stock', 'sales', 'purchases', 'debts'];
+            // Seller navigation is limited to these six operational dashboards.
+            // Dashboard remains the landing page, but is not shown as a menu item.
+            const sellerVisibleMenus = ['dashboard', 'stock', 'sales', 'recordSale', 'expenses', 'purchases', 'debts', 'settings'];
             if (sellerVisibleMenus.includes(page)) {
                 item.style.display = 'flex';
             } else {
@@ -9469,6 +10047,16 @@ let debtPhotoBase64 = null;
     });
     
     if (isSeller) {
+        // Hide empty sidebar sections after applying the exact six-menu rule.
+        document.querySelectorAll('.sidebar-menu .menu-section').forEach(function(section) {
+            const hasVisibleItem = Array.from(section.querySelectorAll('.menu-item[data-page]')).some(function(el) {
+                return el.style.display !== 'none';
+            });
+            section.style.display = hasVisibleItem ? '' : 'none';
+        });
+        const sellerSettingsButton = document.querySelector('.sidebar-footer .footer-btn.settings');
+        if (sellerSettingsButton) sellerSettingsButton.style.display = 'flex';
+
         const reportsQuickAction = document.getElementById('reportsQuickAction');
         if (reportsQuickAction) reportsQuickAction.style.display = 'none';
         
@@ -9555,6 +10143,7 @@ let debtPhotoBase64 = null;
             localStorage.removeItem('smartTradeLogoBase64');
             localStorage.removeItem('smartTradeTheme');
             localStorage.removeItem('smartTradeLanguage');
+            localStorage.removeItem('smartTradeCurrency');
             localStorage.removeItem('smartTradeCurrentPage');
             localStorage.removeItem('smartTradeUserType');
             localStorage.removeItem('smartTradeSellerId');
@@ -9660,20 +10249,16 @@ let debtPhotoBase64 = null;
                 if (isAdmin) {
                     statsContainer.innerHTML = `
                         <div class="stat-card">
-                            <h3>Total Products</h3>
-                            <div class="value" id="statStock">0</div>
-                        </div>
-                        <div class="stat-card">
-                            <h3>Stock Value</h3>
+                            <h3>${t('totalStock')}</h3>
                             <div class="value" id="statValue">TZS 0</div>
                         </div>
                         <div class="stat-card">
-                            <h3>Today's Sales</h3>
-                            <div class="value" id="statTodaySales">TZS 0</div>
+                            <h3>${t('allSales')}</h3>
+                            <div class="value" id="statAllSales">TZS 0</div>
                         </div>
                         <div class="stat-card">
-                            <h3>Total Profit</h3>
-                            <div class="value" id="statProfit">TZS 0</div>
+                            <h3>${t('todaySales')}</h3>
+                            <div class="value" id="statTodaySales">TZS 0</div>
                         </div>
                     `;
                 } else {
@@ -9687,20 +10272,30 @@ let debtPhotoBase64 = null;
                     
                     statsContainer.innerHTML = `
                         <div class="stat-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--accent), #0ea5e9);">
-                            <h3 style="color: white; font-size: 1.2rem;">👋 Welcome, ${firstName}!</h3>
+                            <h3 style="color: white; font-size: 1.2rem;">👋 ${t('welcome')}, ${firstName}!</h3>
                             <div style="color: white; font-size: 1rem; margin-top: 10px;">
-                                <i class="fas fa-code-branch"></i> Branch: ${branchName}
+                                <i class="fas fa-code-branch"></i> ${t('branch')}: ${branchName}
                             </div>
                             <div style="color: white; font-size: 1rem; margin-top: 5px;">
                                 <i class="fas fa-calendar-day"></i> ${formatDate(new Date().toISOString(), false)}
                             </div>
                         </div>
                         <div class="stat-card">
-                            <h3>Today's Sales</h3>
+                            <h3>${t('todaySales')}</h3>
                             <div class="value" id="statTodaySales">TZS 0</div>
                         </div>
                     `;
                 }
+            }
+            
+            // Reload the actual numbers right after rebuilding this markup
+            // from scratch - the innerHTML above resets #statStock/
+            // #statValue/etc back to placeholder "0" values, so a language
+            // switch mid-session (which calls this function again) would
+            // otherwise show real labels next to stale zeros until the
+            // next natural refresh.
+            if (typeof loadDashboard === 'function' && currentUser.databaseId) {
+                loadDashboard();
             }
         }
         
@@ -10410,6 +11005,12 @@ function loadDisabledDashboard() {
 // Navigate to page function - INSTANT TRANSITION
 async function navigateTo(page, updateState) {
     if (updateState === undefined) updateState = true;
+
+    // Sellers may open only their operational dashboards and their own Settings.
+    if (currentUser && currentUser.userType === 'seller') {
+        const sellerPages = ['dashboard', 'stock', 'sales', 'recordSale', 'expenses', 'purchases', 'debts', 'settings'];
+        if (!sellerPages.includes(page)) page = 'dashboard';
+    }
     
     // Mobile-only: pressing the device/browser back button while on any
     // page other than Dashboard returns to Dashboard - the same "back
@@ -10464,7 +11065,7 @@ async function navigateTo(page, updateState) {
     }
     
     // Show selected page immediately
-    var pageElement = document.getElementById(page + 'Page');
+    var pageElement = document.getElementById(page === 'recordSale' ? 'addSaleModal' : page + 'Page');
     if (pageElement) {
         pageElement.classList.remove('hidden');
         pageElement.classList.add('active');
@@ -10547,6 +11148,14 @@ function loadPageContentFast(page) {
             }
             setTimeout(function() { refreshSalesBackground(); }, 100);
             break;
+        case 'recordSale':
+            // Record Sale is already rendered as the page itself.
+            openAddSaleSaleFormForPage();
+            break;
+        case 'expenses':
+            populateExpensesFilters();
+            loadExpensesData();
+            break;
         case 'purchases':
             setupPurchaseTabsForUser();
             updatePurchasesTableHeaders();
@@ -10605,6 +11214,9 @@ function loadPageContentFast(page) {
             break;
         case 'reports':
             loadReportsFast();
+            break;
+        case 'accounting':
+            initAccountingPage();
             break;
         case 'settings':
             if (settingsCache) {
@@ -10898,18 +11510,36 @@ async function loadDashboardFast() {
     var statsContainer = document.getElementById('dashboardStats');
     
     // Use cached data immediately
-    var totalProducts = Object.keys(productsCache || {}).length;
     var totalStockValue = calculateTotalStockValue();
-    var todaySales = calculateTodaySalesFromCache();
-    var totalProfit = calculateTotalProfitFromSales();
+    // Both "Today's Sales" and "All Sales" need the server's own
+    // period-aware figures (they exclude anything before the last Close
+    // Accounts, down to the exact second) - dashboardCache is the last
+    // successful getDashboard() response, so it's the right source here
+    // rather than deriving either from the raw sales cache, which has no
+    // idea an accounting period boundary even exists. This was already
+    // done correctly for "All Sales" below but was missed for "Today's
+    // Sales" here - meaning a sale made shortly before a same-day close
+    // could keep showing up in Today's Sales via this cached fallback
+    // even after being correctly excluded by the server. Falls back to
+    // the raw-cache calculation only if getDashboard() has genuinely
+    // never succeeded yet (this device's very first load) - corrected
+    // within moments once the real fetch below completes.
+    var todaySales = (dashboardCache && dashboardCache.quickStats)
+        ? (dashboardCache.quickStats.todaySales || 0)
+        : calculateTodaySalesFromCache();
+    // "All Sales" needs the server's period-aware total (it excludes
+    // anything before the last Close Accounts) - dashboardCache is the
+    // last successful getDashboard() response, so it's the right source
+    // here rather than deriving it from the raw sales cache, which has
+    // no idea where the current accounting period began.
+    var allSales = (dashboardCache && dashboardCache.quickStats && dashboardCache.quickStats.totalSales) || 0;
     
     if (isAdmin) {
         if (statsContainer) {
             statsContainer.innerHTML = `
-                <div class="stat-card"><h3>Total Products</h3><div class="value">${totalProducts}</div></div>
-                <div class="stat-card"><h3>Stock Value</h3><div class="value">${formatCurrency(totalStockValue)}</div></div>
+                <div class="stat-card"><h3>Total Stock</h3><div class="value">${formatCurrency(totalStockValue)}</div></div>
+                <div class="stat-card"><h3>All Sales</h3><div class="value">${formatCurrency(allSales)}</div></div>
                 <div class="stat-card"><h3>Today's Sales</h3><div class="value">${formatCurrency(todaySales)}</div></div>
-                <div class="stat-card"><h3>Total Profit</h3><div class="value">${formatCurrency(totalProfit)}</div></div>
             `;
         }
     } else {
@@ -10938,7 +11568,7 @@ async function loadDashboardFast() {
 function showDashboardLoading() {
     var statsContainer = document.getElementById('dashboardStats');
     if (statsContainer) {
-        statsContainer.innerHTML = '<div class="stat-card"><div class="spinner"></div></div><div class="stat-card"><div class="spinner"></div></div><div class="stat-card"><div class="spinner"></div></div><div class="stat-card"><div class="spinner"></div></div>';
+        statsContainer.innerHTML = '<div class="stat-card"><div class="spinner"></div></div><div class="stat-card"><div class="spinner"></div></div><div class="stat-card"><div class="spinner"></div></div>';
     }
     var recentActivity = document.getElementById('recentActivity');
     if (recentActivity) {
@@ -11058,7 +11688,7 @@ async function refreshStockBackground() {
 async function refreshSalesBackground() {
     if (!isOnline) return;
     try {
-        const result = await apiCall('getSales', { sellerId: currentUser.userType !== 'admin' ? currentUser.sellerId : null });
+        const result = await apiCall('getSales', { sellerId: currentUser.userType !== 'admin' ? currentUser.sellerId : null, branchId: currentUser.userType !== 'admin' ? (currentUser.branchId || null) : null });
         if (result.success) {
             salesCache.data = result.data;
             if (currentUser.userType === 'seller') {
@@ -11078,7 +11708,7 @@ async function refreshSalesBackground() {
 async function refreshPurchasesBackground() {
     if (!isOnline) return;
     try {
-        const result = await apiCall('getPurchases', { sellerId: currentUser.userType !== 'admin' ? currentUser.sellerId : null });
+        const result = await apiCall('getPurchases', { sellerId: currentUser.userType !== 'admin' ? currentUser.sellerId : null, branchId: currentUser.userType !== 'admin' ? (currentUser.branchId || null) : null });
         if (result.success) {
             purchasesCache.data = result.data;
             if (currentUser.userType === 'seller') {
@@ -11817,7 +12447,7 @@ function showApp() {
     document.getElementById('appContainer').classList.remove('hidden');
     
     updateTextContent();
-    applyTheme(currentUser.theme);
+    applyLanguage(currentUser.language || 'en');
     applyMenuRestrictions();
     updateDashboardStructure();
     applyDeveloperMode();
@@ -11900,6 +12530,13 @@ function refreshCurrentPage() {
             updateSalesTableHeaders();
             loadSales();
             break;
+        case 'recordSale':
+            openAddSaleSaleFormForPage();
+            break;
+        case 'expenses':
+            populateExpensesFilters();
+            loadExpensesData();
+            break;
         case 'purchases':
             updatePurchasesTableHeaders();
             loadPurchases();
@@ -11927,6 +12564,9 @@ function refreshCurrentPage() {
         case 'reports':
             loadReports();
             break;
+        case 'accounting':
+            initAccountingPage();
+            break;
         case 'settings':
             loadSettings();
             break;
@@ -11952,7 +12592,7 @@ function getPageTitle(page) {
     const titles = {
         'dashboard': 'Dashboard',
         'stock': 'Stock Inventory',
-        'sales': 'Sales Records',
+        'sales': 'All Sales',
         'purchases': 'Purchase Records',
         'debts': 'Debts Management',
         'customers': 'Customer Management',
@@ -11960,6 +12600,8 @@ function getPageTitle(page) {
         'sellers': 'Seller Management',
         'branches': 'Branch Management',
         'reports': 'Business Reports',
+        'expenses': 'Expenses',
+        'accounting': 'Accounting',
         'settings': 'Settings',
         'devdashboard': 'Developer Dashboard'
     };
@@ -12371,7 +13013,7 @@ function hideAccessDeniedModal() {
         // API FUNCTIONS
         // ============================================
         
-        async function apiCall(action, data = {}) {
+        async function apiCall(action, data = {}, timeoutMs = 30000) {
             const payload = {
                 action: action,
                 ...data
@@ -12406,12 +13048,14 @@ function hideAccessDeniedModal() {
                 // a slow-but-not-quite-offline connection, silently
                 // blocking whatever was waiting on it (like the once-a-
                 // second Connect Device poll, which would otherwise just
-                // stall instead of moving on to try again). 30 seconds is
-                // generous enough for the largest request this app makes
-                // (a borrower photo upload) while still guaranteeing
-                // nothing waits forever.
+                // stall instead of moving on to try again). The default of
+                // 30 seconds is generous enough for the largest request
+                // this app makes (a borrower photo upload); time-sensitive
+                // callers like the poll itself pass a much shorter
+                // timeoutMs instead, so a slow response there is detected
+                // and retried in a few seconds rather than up to 30.
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
                 
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -14517,10 +15161,14 @@ function updateAllCaches(result) {
     if (result.data && result.data.sales) {
         salesCache.data = result.data.sales;
         sortDataDescending(salesCache.data);
+        // Never allow a background/full sync to repopulate receipts from a
+        // closed period into the live All Sales cache. The server already
+        // filters these rows; this second guard protects the client cache.
+        const operationalSales = filterOperationalRecordsByClose(salesCache.data, 'branchId');
         if (currentUser.userType === 'seller' && currentUser.sellerId) {
-            salesCache.filtered = salesCache.data.filter(s => s.sellerId === currentUser.sellerId);
+            salesCache.filtered = operationalSales.filter(s => s.sellerId === currentUser.sellerId);
         } else {
-            salesCache.filtered = salesCache.data;
+            salesCache.filtered = operationalSales;
         }
         saveSalesCache();
         const salesBadgeEl = document.getElementById('salesBadge');
@@ -14529,10 +15177,13 @@ function updateAllCaches(result) {
     if (result.data && result.data.purchases) {
         purchasesCache.data = result.data.purchases;
         sortDataDescending(purchasesCache.data);
+        // Same cache guard for Purchases: closed-period purchases must not
+        // reappear after sync/background refresh.
+        const operationalPurchases = filterOperationalRecordsByClose(purchasesCache.data, 'branchId');
         if (currentUser.userType === 'seller' && currentUser.sellerId) {
-            purchasesCache.filtered = purchasesCache.data.filter(p => p.sellerId === currentUser.sellerId);
+            purchasesCache.filtered = operationalPurchases.filter(p => p.sellerId === currentUser.sellerId);
         } else {
-            purchasesCache.filtered = purchasesCache.data;
+            purchasesCache.filtered = operationalPurchases;
         }
         savePurchasesCache();
         const purchasesBadgeEl = document.getElementById('purchasesBadge');
@@ -15071,6 +15722,7 @@ function updateAllCaches(result) {
                 return;
             }
             
+            if (!validateEditSaleQuantityAgainstLocalStock(true)) return;
             setButtonLoading('updateSaleBtn', 'updateSaleSpinner', 'updateSaleText', true);
             
             const payload = {
@@ -15520,17 +16172,41 @@ function showSaleProductSuggestions() {
         
         
         
-        function calculateTodaySalesFromCache() {
+// Returns "YYYY-MM-DD" using the LOCAL (device's own) timezone, never
+// UTC. toISOString() always converts to UTC first, which silently
+// shifts the calendar date back by a day for any timezone AHEAD of UTC
+// (like East Africa, UTC+3) during the hours between local midnight and
+// the UTC offset catching up (e.g. 00:00-03:00 local time in Tanzania) -
+// exactly why "Today's Sales" could show yesterday's figures during
+// those early-morning hours, and why date-range filters (This Week/
+// Month/Quarter/Year) could quietly be off by a day too.
+function getLocalDateString(date) {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function calculateTodaySalesFromCache() {
     const today = new Date();
-    const todayString = today.toISOString().split('T')[0];
+    const todayString = getLocalDateString(today);
     let todaySales = 0;
+    
+    // Use the exact moment of the last Close Accounts when it is known.
+    // This prevents sales made before a close on the same calendar day
+    // from remaining visible in Today's Sales after the close.
+    const periodStart = dashboardCache?.quickStats?.currentPeriodStartTime
+        ? new Date(dashboardCache.quickStats.currentPeriodStartTime).getTime()
+        : null;
     
     if (salesCache?.data && Array.isArray(salesCache.data)) {
         salesCache.data.forEach(sale => {
             if (sale?.date) {
-                const saleDate = new Date(sale.date).toISOString().split('T')[0];
-                if (saleDate === todayString) {
-                    todaySales += sale.total || 0;
+                const saleTime = new Date(sale.date).getTime();
+                const saleDate = getLocalDateString(new Date(sale.date));
+                const isInCurrentPeriod = periodStart === null || saleTime > periodStart;
+                if (saleDate === todayString && isInCurrentPeriod) {
+                    todaySales += Number(sale.total) || 0;
                 }
             }
         });
@@ -15926,6 +16602,54 @@ function calculateTotalPurchasesFromCache() {
 }
         
         
+        // Hide closed-period records from the live Sales/Purchases views
+        // even when the device is offline and only localStorage is available.
+        function getLatestLocalClosedAtForBranch(branchId) {
+            const branch = branchId || 'MAIN';
+            let latest = null;
+
+            // Primary offline source: explicit boundaries saved immediately
+            // when Close Accounts succeeds on this device. This works even
+            // before Closing Reports has been opened/refreshed.
+            try {
+                const rawBoundaries = localStorage.getItem('smartTradeOperationalCloseBoundaries');
+                const boundaries = rawBoundaries ? JSON.parse(rawBoundaries) || {} : {};
+                const candidates = [boundaries[branch], boundaries.ALL];
+                candidates.forEach(v => {
+                    const t = new Date(v).getTime();
+                    if (!isNaN(t) && (latest === null || t > latest)) latest = t;
+                });
+            } catch (e) { /* continue with reports cache */ }
+
+            // Closing Reports remains a second source, so older cached
+            // installations/devices continue to work offline too.
+            let reports = [];
+            try {
+                const raw = localStorage.getItem('smartTradeClosingReports');
+                if (raw) reports = JSON.parse(raw) || [];
+            } catch (e) { reports = []; }
+            reports.forEach(r => {
+                if (!r) return;
+                if (r.status && r.status !== 'CLOSED') return;
+                const rBranch = r.branchId || 'ALL';
+                if (rBranch !== branch && rBranch !== 'ALL') return;
+                const t = new Date(r.closedAt).getTime();
+                if (!isNaN(t) && (latest === null || t > latest)) latest = t;
+            });
+            return latest;
+        }
+
+        function filterOperationalRecordsByClose(records, branchField) {
+            if (!Array.isArray(records)) return [];
+            return records.filter(record => {
+                const branch = record?.[branchField] || 'MAIN';
+                const closedAt = getLatestLocalClosedAtForBranch(branch);
+                if (closedAt === null) return true;
+                const recordTime = new Date(record.date).getTime();
+                return !isNaN(recordTime) && recordTime > closedAt;
+            });
+        }
+
         async function loadSales() {
             const tableBody = document.getElementById('salesTableBody');
             const summaryDiv = document.getElementById('salesSummary');
@@ -15935,10 +16659,11 @@ function calculateTotalPurchasesFromCache() {
             updateSalesTableHeaders();
             
             if (salesCache.data && salesCache.data.length > 0) {
+                const operationalSales = filterOperationalRecordsByClose(salesCache.data, 'branchId');
                 if (!isAdmin && sellerId) {
-                    salesCache.filtered = salesCache.data.filter(sale => sale.sellerId === sellerId);
+                    salesCache.filtered = operationalSales.filter(sale => sale.sellerId === sellerId);
                 } else {
-                    salesCache.filtered = salesCache.data;
+                    salesCache.filtered = operationalSales;
                 }
                 displaySalesTable();
                 document.getElementById('salesBadge').textContent = (salesCache.data || []).length;
@@ -15957,16 +16682,18 @@ function calculateTotalPurchasesFromCache() {
             if (isOnline) {
                 try {
                     const result = await apiCall('getSales', { 
-                        sellerId: !isAdmin ? sellerId : null 
+                        sellerId: !isAdmin ? sellerId : null,
+                        branchId: !isAdmin ? (currentUser.branchId || null) : null
                     });
                     
                     if (result.success) {
                         salesCache.data = result.data;
                         
+                        const operationalSales = filterOperationalRecordsByClose(salesCache.data, 'branchId');
                         if (!isAdmin && sellerId) {
-                            salesCache.filtered = salesCache.data.filter(sale => sale.sellerId === sellerId);
+                            salesCache.filtered = operationalSales.filter(sale => sale.sellerId === sellerId);
                         } else {
-                            salesCache.filtered = salesCache.data;
+                            salesCache.filtered = operationalSales;
                         }
                         
                         sortDataDescending(salesCache.data);
@@ -16152,10 +16879,29 @@ function calculateTotalPurchasesFromCache() {
         }
         
         function openAddSaleModal() {
+    if (currentUser && currentUser.currentPage !== 'recordSale') {
+        navigateTo('recordSale');
+        return;
+    }
+    openAddSaleSaleFormForPage();
+}
+
+function openAddSaleSaleFormForPage() {
     const modal = document.getElementById('addSaleModal');
-    modal.classList.add('show');
-    document.body.style.overflow = 'hidden';
-    document.body.classList.add('sale-modal-open');
+    if (!modal) return;
+    // The former Record Sale modal is now the Record Sale dashboard.
+    document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.classList.add('hidden'); });
+    modal.classList.remove('hidden');
+    modal.classList.add('active');
+    if (currentUser) {
+        currentUser.currentPage = 'recordSale';
+        localStorage.setItem('smartTradeCurrentPage', 'recordSale');
+    }
+    const title = document.getElementById('pageTitle');
+    if (title) title.textContent = 'Record Sale';
+    if (!isDesktop) closeSidebar();
+    document.body.style.overflow = '';
+    document.body.classList.remove('sale-modal-open');
     
     // Set default branch for admin
     if (currentUser.userType === 'admin') {
@@ -16206,9 +16952,12 @@ function calculateTotalPurchasesFromCache() {
         
         function hideAddSaleModal() {
             const modal = document.getElementById('addSaleModal');
-            modal.classList.remove('show');
+            if (modal) { modal.classList.remove('active'); modal.classList.add('hidden'); }
             document.body.style.overflow = '';
             document.body.classList.remove('sale-modal-open');
+            if (currentUser && currentUser.currentPage === 'recordSale') {
+                navigateTo('dashboard');
+            }
             
             // Pause polling while this form is closed (no cart open to add
             // scans into right now) but keep the connection itself alive -
@@ -17230,11 +17979,12 @@ async function updateStock() {
             }
             
             const itemsToProcess = mergeCartItemsForSubmission(session.items);
+            const receiptNo = generateClientReceiptNo();
             let successCount = 0;
             let offlineCount = 0;
             
             for (const item of itemsToProcess) {
-                const result = await processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer);
+                const result = await processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer, receiptNo);
                 if (result === 'online') successCount++;
                 else if (result === 'offline') offlineCount++;
             }
@@ -17266,6 +18016,13 @@ async function updateStock() {
         // customer - the customer record is only created/looked-up ONCE,
         // then each item is recorded the exact same way a single sale
         // always was (same online/offline handling per item).
+        function generateClientReceiptNo() {
+            const now = new Date();
+            const stamp = now.getFullYear().toString() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '-' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0') + String(now.getSeconds()).padStart(2,'0');
+            const token = (window.crypto && crypto.randomUUID) ? crypto.randomUUID().split('-')[0].toUpperCase() : Math.random().toString(36).slice(2,10).toUpperCase();
+            return `ST-${stamp}-${token}`;
+        }
+        
         function completeSale() {
             if (saleModalLocked) {
                 showNotification('This form is locked. Tap "Unlock" to record a sale.', 'error');
@@ -17344,11 +18101,12 @@ async function updateStock() {
             // sending, so the sale records ONE consolidated quantity
             // instead of several separate rows for the identical item.
             const itemsToProcess = mergeCartItemsForSubmission(currentSaleCart);
+            const receiptNo = generateClientReceiptNo();
             let successCount = 0;
             let offlineCount = 0;
             
             for (const item of itemsToProcess) {
-                const result = await processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer);
+                const result = await processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer, receiptNo);
                 if (result === 'online') successCount++;
                 else if (result === 'offline') offlineCount++;
             }
@@ -17387,7 +18145,7 @@ async function updateStock() {
         
         // Records exactly one cart item (online with offline fallback) -
         // returns 'online' or 'offline' so completeSale() can summarize.
-        async function processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer) {
+        async function processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer, receiptNo) {
             const { product, qty: quantity, unitPrice, subtotal: total, isStockProduct, branchId, unit: saleUnit } = item;
             
             const saleData = {
@@ -17402,7 +18160,8 @@ async function updateStock() {
                 timestamp: new Date().toISOString(),
                 sellerId: currentUser.sellerId,
                 customerId: customerId,
-                unit: saleUnit
+                unit: saleUnit,
+                receiptNo: receiptNo || null
             };
             
             if (isOnline) {
@@ -17455,7 +18214,9 @@ async function updateStock() {
                                 sellerId: currentUser.sellerId,
                                 sellerName: currentUser.userType === 'seller' ? currentUser.sellerName : 'Admin',
                                 branchId: branchId,
-                                unit: saleUnit
+                                unit: saleUnit,
+                                receiptNo: result.receiptNo || saleData.receiptNo || null,
+                                rowIndex: result.rowIndex || null
                             };
                             
                             salesCache.data.push(newSale);
@@ -17646,121 +18407,401 @@ async function updateStock() {
         }
         
         function displaySalesTable() {
-    const tableBody = document.getElementById('salesTableBody');
-    const summaryDiv = document.getElementById('salesSummary');
-    const isAdmin = currentUser.userType === 'admin';
-    
-    if (!salesCache.filtered || salesCache.filtered.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="${isAdmin ? 10 : 7}" class="text-center" style="color: #94a3b8; padding: 40px;">
-                    <div style="text-align: center;">
-                        <i class="fas fa-shopping-cart" style="font-size: 48px; color: #64748b; margin-bottom: 15px;"></i>
-                        <p>No sales found</p>
-                    </div>
-                </td>
-            </tr>
-        `;
-        summaryDiv.innerHTML = '';
-        document.getElementById('salesBadge').textContent = (salesCache.data || []).length;
-        return;
-    }
-    
-    let totalAmount = 0;
-    salesCache.filtered.forEach(sale => {
-        totalAmount += sale.total || 0;
-    });
-    
-    const avgPerSale = totalAmount / salesCache.filtered.length;
-    
-    summaryDiv.innerHTML = `
-        <div class="summary-item">
-            <span class="summary-label">Total Sales</span>
-            <span class="summary-value">${formatCurrency(totalAmount)}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Transactions</span>
-            <span class="summary-value">${salesCache.filtered.length}</span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Average per Sale</span>
-            <span class="summary-value">${formatCurrency(avgPerSale)}</span>
-        </div>
-    `;
-    
-    let html = '';
-    
-    if (isAdmin) {
-        // Get branch map + seller map (sellerName isn't always stored on
-        // the sale row itself - fall back to the live Sellers list so a
-        // seller's current name always shows instead of "Unknown Seller").
-        const branchMap = {};
-        if (branchesCache.data) {
-            branchesCache.data.forEach(b => {
-                branchMap[b.id] = b.name;
+            const container = document.getElementById('salesReceiptsGrid');
+            const summaryDiv = document.getElementById('salesSummary');
+            const tableBody = document.getElementById('salesTableBody');
+            if (!container) return;
+            const rows = (salesCache.filtered || []).slice();
+            const badge = document.getElementById('salesBadge');
+            if (badge) badge.textContent = (salesCache.data || []).length;
+            if (!rows.length) {
+                container.innerHTML = '<div class="card" style="grid-column:1/-1; text-align:center; color:#94a3b8; padding:40px;"><i class="fas fa-receipt" style="font-size:42px; margin-bottom:12px;"></i><p>No completed sales found</p></div>';
+                if (summaryDiv) summaryDiv.innerHTML = '';
+                if (tableBody) tableBody.innerHTML = '';
+                window.currentSalesReceiptGroups = [];
+                return;
+            }
+
+            const sellerMap = {}; (sellersCache.data || []).forEach(x => sellerMap[x.id] = x.name);
+            const branchMap = {}; (branchesCache.data || []).forEach(x => branchMap[x.id] = x.name);
+            const sorted = rows.slice().sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            const dayBuckets = {};
+
+            sorted.forEach(sale => {
+                const d = new Date(sale.date);
+                const dayKey = isNaN(d.getTime()) ? 'Unknown Date' : d.toISOString().slice(0,10);
+                if (!dayBuckets[dayKey]) dayBuckets[dayKey] = [];
+                dayBuckets[dayKey].push(sale);
             });
-        }
-        const sellerMap = {};
-        if (sellersCache.data) {
-            sellersCache.data.forEach(s => {
-                sellerMap[s.id] = s.name;
-            });
-        }
-        
-        salesCache.filtered.forEach((sale, index) => {
-            const dateDisplay = formatDate(sale.date, true);
-            const sellerName = sale.sellerName || sellerMap[sale.sellerId] || (sale.sellerId ? 'Unknown Seller' : 'Admin');
-            const branchName = branchMap[sale.branchId] || sale.branchId || 'Main Branch';
-            // IMPORTANT: use the row index that came from the server
-            // (matches the ACTUAL row in the SALES sheet), never the
-            // position within this filtered/sorted display list - those
-            // only coincide when no filter or sort is active.
-            const rowIndex = sale.rowIndex || (index + 2);
-            
-            html += `
-                <tr>
-                    <td>${dateDisplay}</td>
-                    <td><span class="badge ${sale.sellerId ? 'info' : 'secondary'}">${sellerName}</span></td>
-                    <td><span class="badge info">${branchName}</span></td>
-                    <td>${sale.product || ''}</td>
-                    <td>${formatQuantity(sale.quantity)}${sale.unit ? ' ' + pluralizeUnit(sale.unit, sale.quantity) : ''}</td>
-                    <td>${formatCurrency(sale.unitPrice || 0)}</td>
-                    <td>${formatCurrency(sale.total || 0)}</td>
-                    <td>${sale.customer || 'Walk-in'}</td>
-                    <td>${sale.paymentMethod || 'cash'}</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn-sm btn-secondary" onclick="editSale('${rowIndex}', '${(sale.product || '').replace(/'/g, "\\'")}', ${sale.quantity}, ${sale.unitPrice || 0}, ${sale.total || 0}, '${(sale.customer || '').replace(/'/g, "\\'")}', '${sale.paymentMethod || 'cash'}', '${sale.sellerId || ''}', '${sale.branchId || 'MAIN'}', '${sale.date}', '${(sale.unit || '').replace(/'/g, "\\'")}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn-sm btn-danger" onclick="deleteSale('${rowIndex}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
+
+            const allGroups = [];
+            const daySections = Object.keys(dayBuckets).sort((a,b) => new Date(b) - new Date(a)).map(dayKey => {
+                const dayRows = dayBuckets[dayKey].slice().sort((a,b) => new Date(a.date) - new Date(b.date));
+                const dayTotal = dayRows.reduce((sum,s) => sum + (Number(s.total)||0), 0);
+                const groups = [];
+
+                dayRows.forEach(sale => {
+                    const t = new Date(sale.date).getTime();
+                    const customer = (sale.customer || '').trim();
+                    const seller = sale.sellerId || '';
+                    const branch = sale.branchId || 'MAIN';
+                    const payment = sale.paymentMethod || 'cash';
+                    let group = null;
+
+                    // Keep an explicitly shared receipt number together.
+                    if (sale.receiptNo || sale.receipt) {
+                        const rn = sale.receiptNo || sale.receipt;
+                        group = groups.find(g => g.receiptNo === rn);
+                    }
+
+                    // Legacy/offline rows may not have a stored receipt number.
+                    // Keep the existing time/customer grouping behaviour for them.
+                    if (!group) {
+                        for (let i=groups.length-1;i>=0;i--) {
+                            const g=groups[i];
+                            if (t-g.lastTime > 120000) break;
+                            if ((g.customer||'') === customer && g.sellerId===seller && g.branchId===branch && g.paymentMethod===payment) { group=g; break; }
+                        }
+                    }
+                    if (!group && !customer) {
+                        for (let i=groups.length-1;i>=0;i--) {
+                            const g=groups[i];
+                            if (t-g.lastTime > 5000) break;
+                            if (!g.customer && g.sellerId===seller && g.branchId===branch && g.paymentMethod===payment) { group=g; break; }
+                        }
+                    }
+                    if (!group) {
+                        group={receiptNo:sale.receiptNo || sale.receipt || '', customer,sellerId:seller,branchId:branch,paymentMethod:payment,items:[],lastTime:t,firstTime:t};
+                        groups.push(group);
+                    }
+                    group.items.push(sale);
+                    group.lastTime=Math.max(group.lastTime,t);
+                });
+
+                groups.sort((a,b) => b.firstTime-a.firstTime);
+                groups.forEach(g => { g._dayKey = dayKey; allGroups.push(g); });
+                const startIndex = allGroups.length - groups.length;
+
+                const receiptHtml = groups.map((g, localIndex) => {
+                    const gi = startIndex + localIndex;
+                    const first=g.items[0];
+                    const subtotal=g.items.reduce((sum,x)=>sum+(Number(x.total)||0),0);
+                    const customerName=g.customer || 'Walk-in Customer';
+                    const sellerName=first.sellerName || sellerMap[g.sellerId] || (g.sellerId ? 'Unknown Seller' : 'Admin');
+                    const branchName=branchMap[g.branchId] || g.branchId || 'Main Branch';
+                    const receiptNo=first.receiptNo || first.receipt || `SALE-${String(gi+1).padStart(4,'0')}`;
+                    const items=g.items.map(x=>`<div class="sales-receipt-item"><div><div class="sales-receipt-item-name">${escapeHtml(x.product||x.service||'Item')}</div><div class="sales-receipt-item-sub">${formatQuantity(x.quantity)}${x.unit?' '+pluralizeUnit(x.unit,x.quantity):''} × ${formatCurrency(x.unitPrice||0)}</div></div><div class="sales-receipt-item-price">${formatCurrency(x.total||0)}</div></div>`).join('');
+                    return `<div class="sales-receipt-card">
+                        <div class="sales-receipt-head">
+                            <div class="sales-receipt-head-left"><div class="sales-receipt-brand">SMARTTRADE</div><div class="sales-receipt-no">Receipt • ${escapeHtml(receiptNo)}</div></div>
+                            <div class="sales-receipt-head-right"><button type="button" class="sales-receipt-menu-btn" aria-label="Sale options" onclick="toggleSalesReceiptMenu(${gi}, event)"><i class="fas fa-ellipsis-vertical"></i></button>
+                            <div class="sales-receipt-menu" id="salesReceiptMenu-${gi}">
+                                <div class="sales-receipt-menu-title">Sale options</div>
+                                <div class="sales-receipt-menu-item full-action"><button type="button" onclick="printSalesReceipt(${gi}, event)"><i class="fas fa-print"></i> Print</button></div>
+                                <div class="sales-receipt-menu-item full-action" style="position:relative"><button type="button" onclick="toggleSalesShareMenu(${gi}, event)"><i class="fas fa-share-nodes"></i> Share</button><div class="sales-share-menu" id="salesShareMenu-${gi}"><button type="button" onclick="shareSalesReceiptText(${gi}, event)"><i class="fas fa-comment-alt"></i> Share as Text</button><button type="button" onclick="shareSalesReceiptPdf(${gi}, event)"><i class="fas fa-file-pdf"></i> Share as PDF</button></div></div>
+                                ${g.items.map((x,ii)=>{ const rowIndex=x.rowIndex || ((salesCache.data ? salesCache.data.indexOf(x) : -1)+2); return `<div class="sales-receipt-menu-item"><span>${escapeHtml(x.product||x.service||'Item')}</span><span class="sales-receipt-menu-actions"><button type="button" onclick="editSalesReceiptItem(${gi},${ii},event)"><i class="fas fa-pen"></i> Edit</button><button type="button" class="danger" onclick="deleteSalesReceiptItem(${gi},${ii},event)"><i class="fas fa-trash"></i> Delete</button></span></div>`; }).join('')}
+                            </div></div>
                         </div>
-                    </td>
-                </tr>
-            `;
-        });
-    } else {
-        salesCache.filtered.forEach(sale => {
-            const dateDisplay = formatDate(sale.date, true);
-            
-            html += `
-                <tr>
-                    <td>${dateDisplay}</td>
-                    <td>${sale.product || ''}</td>
-                    <td>${formatQuantity(sale.quantity)}${sale.unit ? ' ' + pluralizeUnit(sale.unit, sale.quantity) : ''}</td>
-                    <td>${formatCurrency(sale.unitPrice || 0)}</td>
-                    <td>${formatCurrency(sale.total || 0)}</td>
-                    <td>${sale.customer || 'Walk-in'}</td>
-                    <td>${sale.paymentMethod || 'cash'}</td>
-                </tr>
-            `;
-        });
-    }
-    
-    tableBody.innerHTML = html;
+                        <div class="sales-receipt-meta"><span><strong>Customer:</strong> ${escapeHtml(customerName)}</span><span><strong>Date:</strong> ${formatDate(first.date,true)}</span><span><strong>Payment:</strong> ${escapeHtml(g.paymentMethod)}</span><span><strong>Seller:</strong> ${escapeHtml(sellerName)}</span><span><strong>Branch:</strong> ${escapeHtml(branchName)}</span></div>
+                        <div class="sales-receipt-items">${items}</div>
+                        <div class="sales-receipt-summary"><div class="sales-receipt-row total"><span>Total</span><span>${formatCurrency(subtotal)}</span></div></div>
+                    </div>`;
+                }).join('');
+
+                const dateTitle = dayKey === 'Unknown Date' ? 'SALES AS OF UNKNOWN DATE' : `SALES AS OF ${formatSalesAsOfDate(dayKey)}`;
+                return `<section class="sales-day-section"><div class="sales-day-header"><div class="sales-day-title">${dateTitle}</div><div class="sales-day-total">Total Sales: ${formatCurrency(dayTotal)}</div></div><div class="sales-day-receipts">${receiptHtml}</div></section>`;
+            }).join('');
+
+            window.currentSalesReceiptGroups = allGroups;
+            const totalAmount = rows.reduce((sum,s) => sum + (Number(s.total)||0), 0);
+            if (summaryDiv) summaryDiv.innerHTML = `<div class="summary-item"><span class="summary-label">Total Sales</span><span class="summary-value">${formatCurrency(totalAmount)}</span></div>`;
+            container.innerHTML = daySections;
+            if (tableBody) tableBody.innerHTML = '';
+        }
+
+        function formatSalesAsOfDate(dayKey) {
+            const d = new Date(dayKey + 'T00:00:00');
+            if (isNaN(d.getTime())) return dayKey;
+            return d.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
+        }
+
+        function toggleSalesReceiptMenu(groupIndex, event) {
+            if (event) event.stopPropagation();
+            document.querySelectorAll('.sales-receipt-menu.show').forEach(m => {
+                if (m.id !== `salesReceiptMenu-${groupIndex}`) m.classList.remove('show');
+            });
+            document.querySelectorAll('.sales-share-menu.show').forEach(m => m.classList.remove('show'));
+            const menu = document.getElementById(`salesReceiptMenu-${groupIndex}`);
+            if (menu) menu.classList.toggle('show');
+        }
+
+        function toggleSalesShareMenu(groupIndex, event) {
+            if (event) event.stopPropagation();
+            const menu = document.getElementById(`salesShareMenu-${groupIndex}`);
+            if (menu) menu.classList.toggle('show');
+        }
+
+        function getSalesReceiptGroup(groupIndex) {
+            return (window.currentSalesReceiptGroups || [])[groupIndex] || null;
+        }
+
+        function buildSalesReceiptShareText(group) {
+            if (!group || !group.items || !group.items.length) return '';
+            const first = group.items[0];
+            const customer = group.customer || '';
+            const lines = [];
+            lines.push((currentUser.business || 'SmartTrade').toUpperCase());
+            lines.push('SALES RECEIPT');
+            lines.push(`Receipt: ${first.receiptNo || first.receipt || 'Sale'}`);
+            lines.push(`Date: ${formatDate(first.date, true)}`);
+            if (customer) lines.push(`Customer: ${customer}`);
+            lines.push('');
+            group.items.forEach(item => {
+                const name = item.product || item.service || 'Item';
+                const qty = formatQuantity(item.quantity);
+                const unit = item.unit ? ' ' + pluralizeUnit(item.unit, item.quantity) : '';
+                lines.push(`${name} — ${qty}${unit} × ${formatCurrency(item.unitPrice || 0)} = ${formatCurrency(item.total || 0)}`);
+            });
+            const total = group.items.reduce((sum, item) => sum + (Number(item.total) || 0), 0);
+            lines.push('');
+            lines.push(`TOTAL: ${formatCurrency(total)}`);
+            lines.push(`Payment: ${group.paymentMethod || 'Cash'}`);
+            return lines.join('\n');
+        }
+
+        function buildSalesReceiptPrintHTML(group) {
+            if (!group || !group.items || !group.items.length) return '';
+            const first = group.items[0];
+            const hasCachedLogo = typeof logoBase64Cache !== 'undefined' && logoBase64Cache && logoBase64Cache.data && logoBase64Cache.url === currentUser.logoUrl;
+            const logoHTML = hasCachedLogo ? `<img src="${logoBase64Cache.data}" class="receipt-logo" alt="">` : '';
+            const customer = group.customer || '';
+            const seller = first.sellerName || (typeof sellersCache !== 'undefined' && sellersCache.data ? ((sellersCache.data.find(x => x.id === group.sellerId) || {}).name || '') : '') || (group.sellerId ? 'Unknown Seller' : 'Admin');
+            const receiptNo = first.receiptNo || first.receipt || 'Sale';
+            const rows = group.items.map(item => `<tr><td>${escapeHtml(item.product || item.service || 'Item')}</td><td class="qty">${formatQuantity(item.quantity)}${item.unit ? ' ' + pluralizeUnit(item.unit, item.quantity) : ''}</td><td class="money">${formatCurrency(item.unitPrice || 0)}</td><td class="money">${formatCurrency(item.total || 0)}</td></tr>`).join('');
+            const total = group.items.reduce((sum,item) => sum + (Number(item.total)||0), 0);
+            return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${escapeHtml(receiptNo)}</title><style>
+            *{box-sizing:border-box} body{font-family:Arial,'Segoe UI',sans-serif;color:#172033;background:#fff;margin:0;padding:20px}.receipt{width:100%;max-width:760px;margin:0 auto;border:1px solid #dbe3ec;border-radius:14px;overflow:hidden;background:#fff}.receipt-top{padding:22px 24px 16px;text-align:center;border-bottom:2px dashed #cbd5e1}.receipt-logo{width:58px;height:58px;object-fit:cover;border-radius:50%;margin-bottom:8px}.business{font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.receipt-title{font-size:12px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:.12em}.meta{display:grid;grid-template-columns:1fr 1fr;gap:7px 18px;padding:16px 24px;background:#f8fafc;font-size:12px}.meta div{display:flex;justify-content:space-between;gap:12px}.meta strong{color:#334155}.items{padding:10px 24px 6px}table{width:100%;border-collapse:collapse;font-size:12px}th{padding:9px 5px;border-bottom:2px solid #1e293b;text-align:left;font-size:11px;text-transform:uppercase;color:#475569}td{padding:9px 5px;border-bottom:1px dashed #dbe3ec;vertical-align:top}.qty{text-align:center}.money{text-align:right;white-space:nowrap}.total{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-top:2px dashed #94a3b8;font-size:18px;font-weight:900}.payment{margin:0 24px 18px;padding:11px 13px;border-radius:9px;background:#f8fafc;font-size:12px;display:flex;justify-content:space-between}.footer{text-align:center;padding:15px 24px 22px;color:#64748b;font-size:11px;border-top:1px solid #eef2f7}.print-btn{display:block;margin:0 auto 18px;padding:10px 20px;border:0;border-radius:9px;background:#2563eb;color:#fff;font-weight:800;cursor:pointer}@media print{body{padding:0}.receipt{border:0;max-width:none;border-radius:0}.print-btn{display:none}}@media(max-width:600px){.meta{grid-template-columns:1fr}.items{padding-left:14px;padding-right:14px}.meta,.total{padding-left:14px;padding-right:14px}.payment{margin-left:14px;margin-right:14px}}
+            </style></head><body><button class="print-btn" onclick="window.print()">Print Receipt</button><div class="receipt"><div class="receipt-top">${logoHTML}<div class="business">${escapeHtml(currentUser.business || 'SmartTrade')}</div><div class="receipt-title">Sales Receipt</div></div><div class="meta"><div><span>Receipt No.</span><strong>${escapeHtml(receiptNo)}</strong></div><div><span>Date & Time</span><strong>${escapeHtml(formatDate(first.date,true))}</strong></div>${customer ? `<div><span>Customer</span><strong>${escapeHtml(customer)}</strong></div>` : ''}<div><span>Served by</span><strong>${escapeHtml(seller)}</strong></div></div><div class="items"><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Amount</th></tr></thead><tbody>${rows}</tbody></table></div><div class="total"><span>TOTAL</span><span>${formatCurrency(total)}</span></div><div class="payment"><span>Payment Method</span><strong>${escapeHtml(group.paymentMethod || 'Cash')}</strong></div><div class="footer">Thank you for your business!</div></div></body></html>`;
+        }
+
+        function printSalesReceipt(groupIndex, event) {
+            if (event) event.stopPropagation();
+            const group = getSalesReceiptGroup(groupIndex);
+            if (!group) return;
+            const menu = document.getElementById(`salesReceiptMenu-${groupIndex}`);
+            if (menu) menu.classList.remove('show');
+            const w = window.open('', '_blank');
+            if (!w) { showNotification('Please allow pop-ups to print the receipt.', 'error'); return; }
+            w.document.open();
+            w.document.write(buildSalesReceiptPrintHTML(group));
+            w.document.close();
+            setTimeout(() => { try { w.focus(); w.print(); } catch (e) {} }, 350);
+        }
+
+        async function shareSalesReceiptText(groupIndex, event) {
+            if (event) event.stopPropagation();
+            const group = getSalesReceiptGroup(groupIndex);
+            if (!group) return;
+            document.querySelectorAll('.sales-receipt-menu.show').forEach(m => m.classList.remove('show'));
+            const text = buildSalesReceiptShareText(group);
+            try {
+                if (navigator.share) await navigator.share({title:'Sales Receipt', text});
+                else if (navigator.clipboard && window.isSecureContext) await navigator.clipboard.writeText(text);
+                else { const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.left='-9999px'; document.body.appendChild(ta); ta.focus(); ta.select(); document.execCommand('copy'); ta.remove(); }
+                showNotification('Receipt text is ready to share.', 'success');
+            } catch(err) { if (!err || err.name !== 'AbortError') showNotification('Unable to share the receipt text.', 'error'); }
+        }
+
+        function buildSimpleReceiptPdfBlob(group) {
+            if (!group || !group.items || !group.items.length) return new Blob([], {type:'application/pdf'});
+            const enc = new TextEncoder();
+            const esc = value => String(value == null ? '' : value).normalize ? String(value == null ? '' : value).normalize('NFKD').replace(/[^\x20-\x7E]/g,'') : String(value == null ? '' : value).replace(/[^\x20-\x7E]/g,'');
+            const pdfText = value => esc(value).replace(/([\\()])/g,'\\$1');
+            const first = group.items[0];
+            const receiptNo = first.receiptNo || first.receipt || 'Sale';
+            const business = currentUser.business || 'SmartTrade';
+            const customer = group.customer || '';
+            const seller = first.sellerName || (typeof sellersCache !== 'undefined' && sellersCache.data ? ((sellersCache.data.find(x => x.id === group.sellerId) || {}).name || '') : '') || (group.sellerId ? 'Unknown Seller' : 'Admin');
+
+            // Keep the shared PDF on the same A4-sized canvas as the print layout.
+            // All columns are explicitly bounded so no content can run off the right edge.
+            const width = 595, margin = 34, contentW = width - margin * 2;
+            const lineH = 13;
+            const approxCharWidth = size => size * 0.52;
+            const wrapText = (value, maxWidth, size=9) => {
+                const str = esc(value);
+                const maxChars = Math.max(1, Math.floor(maxWidth / approxCharWidth(size)));
+                const words = str.split(/\s+/).filter(Boolean);
+                if (!words.length) return [''];
+                const out = [];
+                let line = '';
+                words.forEach(word => {
+                    // Break a single very-long token safely instead of letting it overflow.
+                    if (word.length > maxChars) {
+                        if (line) { out.push(line); line = ''; }
+                        for (let i = 0; i < word.length; i += maxChars) out.push(word.slice(i, i + maxChars));
+                        return;
+                    }
+                    const candidate = line ? line + ' ' + word : word;
+                    if (candidate.length > maxChars) { out.push(line); line = word; }
+                    else line = candidate;
+                });
+                if (line) out.push(line);
+                return out.length ? out : [''];
+            };
+
+            const rows = group.items.map(item => ({
+                name: item.product || item.service || 'Item',
+                qty: `${formatQuantity(item.quantity)}${item.unit ? ' ' + pluralizeUnit(item.unit, item.quantity) : ''}`,
+                price: formatCurrency(item.unitPrice || 0),
+                total: formatCurrency(item.total || 0)
+            }));
+            const total = group.items.reduce((sum,item)=>sum+(Number(item.total)||0),0);
+
+            // Column positions are inside the page and leave a fixed right margin.
+            const itemX = margin + 5;
+            const qtyX = margin + 300;
+            const priceX = margin + 405;
+            const amountX = width - margin - 5;
+            const itemW = 255, qtyW = 55, priceW = 90, amountW = 105;
+
+            const ops = [];
+            const text = (x,y,str,size=10,bold=false,align='left') => {
+                const font = bold ? '/F2' : '/F1';
+                const clean = esc(str);
+                const charW = approxCharWidth(size);
+                let tx = x;
+                if (align === 'right') tx = x - clean.length * charW;
+                else if (align === 'center') tx = x - (clean.length * charW / 2);
+                ops.push(`BT ${font} ${size} Tf 0 g 1 0 0 1 ${tx.toFixed(2)} ${(height-y).toFixed(2)} Tm (${pdfText(clean)}) Tj ET`);
+            };
+            const line=(x1,y1,x2,y2,w=1)=>ops.push(`q 0.65 G ${w} w ${x1} ${height-y1} m ${x2} ${height-y2} l S Q`);
+            const rect=(x,y,w,h,fill)=>ops.push(`q ${fill} rg ${x} ${height-y-h} ${w} ${h} re f Q`);
+
+            let bodyHeight = 0;
+            const rowLayouts = rows.map(r => {
+                const nameLines = wrapText(r.name, itemW, 9);
+                const rowH = Math.max(30, nameLines.length * lineH + 12);
+                bodyHeight += rowH;
+                return {...r, nameLines, rowH};
+            });
+            const metaValues = [
+                ['Receipt No.', receiptNo],
+                ['Date & Time', formatDate(first.date,true)],
+                ...(customer ? [['Customer', customer]] : []),
+                ['Served by', seller]
+            ];
+            const metaHeight = metaValues.reduce((sum, pair) => sum + Math.max(16, wrapText(pair[1], 365, 9).length * lineH + 4), 0);
+            const height = Math.max(500, 92 + metaHeight + 44 + bodyHeight + 95);
+
+            rect(margin-8,18,contentW+16,62,'0.95 0.97 1');
+            text(width/2,42,business.toUpperCase(),16,true,'center');
+            text(width/2,62,'SALES RECEIPT',9,false,'center');
+
+            let metaY = 105;
+            metaValues.forEach(([label,value]) => {
+                text(margin,metaY,label,9,false,'left');
+                const valueLines = wrapText(value, 365, 9);
+                valueLines.forEach((v,i) => text(margin+95, metaY + i*lineH, v, 9, true, 'left'));
+                metaY += Math.max(16, valueLines.length * lineH + 4);
+            });
+
+            const tableTop = metaY + 10;
+            rect(margin,tableTop,contentW,24,'0.93 0.95 0.98');
+            text(itemX,tableTop+16,'ITEM',8,true,'left');
+            text(qtyX,tableTop+16,'QTY',8,true,'right');
+            text(priceX,tableTop+16,'UNIT PRICE',8,true,'right');
+            text(amountX,tableTop+16,'AMOUNT',8,true,'right');
+
+            let y=tableTop+38;
+            rowLayouts.forEach(r=>{
+                r.nameLines.forEach((lineText,i)=> text(itemX,y+i*lineH,lineText,9,false,'left'));
+                text(qtyX,y,r.qty,9,false,'right');
+                text(priceX,y,r.price,9,false,'right');
+                text(amountX,y,r.total,9,false,'right');
+                line(margin,y+r.rowH-7,margin+contentW,y+r.rowH-7,0.5);
+                y += r.rowH;
+            });
+
+            const totalY=y+8;
+            line(margin,totalY-15,margin+contentW,totalY-15,1.2);
+            text(margin,totalY,'TOTAL',13,true,'left');
+            text(amountX,totalY,formatCurrency(total),13,true,'right');
+            const payY=totalY+32;
+            rect(margin,payY-15,contentW,30,'0.97 0.98 0.99');
+            text(margin+8,payY+4,'Payment Method',9,false,'left');
+            text(amountX,payY+4,group.paymentMethod || 'Cash',9,true,'right');
+            text(width/2,payY+38,'Thank you for your business!',9,false,'center');
+
+            const content=ops.join('\n');
+            const objects=[
+                '<< /Type /Catalog /Pages 2 0 R >>',
+                '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+                `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] /Resources << /Font << /F1 5 0 R /F2 6 0 R >> >> /Contents 4 0 R >>`,
+                `<< /Length ${enc.encode(content).length} >>\nstream\n${content}\nendstream`,
+                '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+                '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>'
+            ];
+            let pdf='%PDF-1.4\n', offsets=[0];
+            objects.forEach((obj,i)=>{offsets[i+1]=enc.encode(pdf).length; pdf+=`${i+1} 0 obj\n${obj}\nendobj\n`;});
+            const xref=enc.encode(pdf).length; pdf+=`xref\n0 ${objects.length+1}\n0000000000 65535 f \n`;
+            for(let i=1;i<offsets.length;i++) pdf+=String(offsets[i]).padStart(10,'0')+' 00000 n \n';
+            pdf+=`trailer\n<< /Size ${objects.length+1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+            return new Blob([pdf],{type:'application/pdf'});
+        }
+
+        async function shareSalesReceiptPdf(groupIndex, event) {
+            if (event) event.stopPropagation();
+            const group = getSalesReceiptGroup(groupIndex);
+            if (!group) return;
+            document.querySelectorAll('.sales-receipt-menu.show').forEach(m => m.classList.remove('show'));
+            const first = group.items[0];
+            const receiptNo = first.receiptNo || first.receipt || 'receipt';
+            const blob = buildSimpleReceiptPdfBlob(group);
+            const file = new File([blob], `${receiptNo}.pdf`, {type:'application/pdf'});
+            try {
+                if (navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))) {
+                    await navigator.share({title:'Sales Receipt PDF', files:[file]});
+                    showNotification('Receipt PDF shared successfully.', 'success');
+                } else {
+                    const url = URL.createObjectURL(blob);
+                    const w = window.open(url, '_blank');
+                    if (!w) { const a=document.createElement('a'); a.href=url; a.download=file.name; a.click(); }
+                    showNotification('PDF opened. Use the browser share/save option.', 'info');
+                    setTimeout(()=>URL.revokeObjectURL(url),60000);
+                }
+            } catch(err) { if (!err || err.name !== 'AbortError') showNotification('Unable to share the receipt PDF.', 'error'); }
+        }
+
+function editSalesReceiptItem(groupIndex, itemIndex, event) {
+    if (event) event.stopPropagation();
+    const group = (window.currentSalesReceiptGroups || [])[groupIndex];
+    const sale = group && group.items ? group.items[itemIndex] : null;
+    if (!sale) return;
+    const rowIndex = Number(sale.rowIndex) || (salesCache.data ? salesCache.data.indexOf(sale) + 2 : 0);
+    if (rowIndex < 2) return;
+    const menu = document.getElementById(`salesReceiptMenu-${groupIndex}`);
+    if (menu) menu.classList.remove('show');
+    editSale(rowIndex, sale.product || sale.service || '', sale.quantity, sale.unitPrice, sale.total, sale.customer || '', sale.paymentMethod || 'cash', sale.sellerId || '', sale.branchId || 'MAIN', sale.date || '', sale.unit || '');
 }
+
+function deleteSalesReceiptItem(groupIndex, itemIndex, event) {
+    if (event) event.stopPropagation();
+    const group = (window.currentSalesReceiptGroups || [])[groupIndex];
+    const sale = group && group.items ? group.items[itemIndex] : null;
+    if (!sale) return;
+    const rowIndex = Number(sale.rowIndex) || (salesCache.data ? salesCache.data.indexOf(sale) + 2 : 0);
+    if (rowIndex < 2) return;
+    const menu = document.getElementById(`salesReceiptMenu-${groupIndex}`);
+    if (menu) menu.classList.remove('show');
+    deleteSale(rowIndex);
+}
+
+document.addEventListener('click', function(event) {
+    if (!event.target.closest('.sales-receipt-head-right')) {
+        document.querySelectorAll('.sales-receipt-menu.show').forEach(m => m.classList.remove('show'));
+    }
+});
 
 function editSale(rowIndex, product, quantity, unitPrice, total, customer, paymentMethod, sellerId, branchId, date, unit) {
             // Store the original values before editing
@@ -17777,6 +18818,7 @@ function editSale(rowIndex, product, quantity, unitPrice, total, customer, payme
             document.getElementById('editSaleUnit').value = unit || '';
             document.getElementById('editSaleQuantity').value = quantity;
             document.getElementById('editSaleUnitPrice').value = unitPrice;
+            updateEditSaleAvailableStockDisplay();
             document.getElementById('editSaleTotal').value = total;
             document.getElementById('editSaleCustomer').value = customer || '';
             document.getElementById('editSalePaymentMethod').value = paymentMethod || 'cash';
@@ -17812,11 +18854,78 @@ function hideEditSaleModal() {
     document.body.style.overflow = '';
 }
 
+function getEditSaleStockInfo() {
+    const product = (document.getElementById('editSaleProduct')?.value || '').trim();
+    const unit = (document.getElementById('editSaleUnit')?.value || '').trim();
+    const branchSelect = document.getElementById('editSaleBranchSelect');
+    const originalBranch = document.getElementById('editSaleOriginalBranch')?.value || 'MAIN';
+    const branch = (branchSelect && branchSelect.closest('.form-group') && branchSelect.closest('.form-group').style.display !== 'none') ? branchSelect.value : originalBranch;
+    if (!product || !Array.isArray(stockCache.data)) return null;
+    const rows = stockCache.data.filter(s => s.product === product && (s.branchId || 'MAIN') === branch && (s.unit || '') === unit);
+    if (!rows.length) return null;
+    const available = Math.max(0, rows.reduce((sum, s) => sum + (Number(s.quantity) || 0), 0));
+    const old = window.oldSaleData || {};
+    const oldSame = old.product === product && (old.branchId || 'MAIN') === branch && (old.unit || '') === unit;
+    return { available, oldQuantity: oldSame ? Math.max(0, Number(old.quantity) || 0) : 0 };
+}
+
+function getEditSaleAvailableStock() {
+    const info = getEditSaleStockInfo();
+    return info ? info.available : null;
+}
+
+function updateEditSaleAvailableStockDisplay() {
+    const el = document.getElementById('editSaleAvailableStock');
+    if (!el) return;
+    const info = getEditSaleStockInfo();
+    if (!info) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.textContent = 'Available Stock: ' + formatQuantity(info.available);
+}
+
+function changeEditSaleQuantity(delta) {
+    const input = document.getElementById('editSaleQuantity');
+    if (!input) return;
+    const current = Number(input.value) || 0;
+    let next = Math.max(0, Math.round((current + Number(delta || 0)) * 1000000) / 1000000);
+    const info = getEditSaleStockInfo();
+    if (info) {
+        const additionalNeeded = Math.max(0, next - info.oldQuantity);
+        if (additionalNeeded > info.available + 1e-9) {
+            next = info.oldQuantity + info.available;
+            showNotification('Quantity cannot exceed available stock. Available Stock: ' + formatQuantity(info.available), 'error');
+        }
+    }
+    input.value = next;
+    calculateEditSaleTotal();
+}
+
+function validateEditSaleQuantityAgainstLocalStock(showError = true) {
+    const input = document.getElementById('editSaleQuantity');
+    const quantity = Number(input?.value);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+        if (showError) showNotification('Quantity must be greater than zero.', 'error');
+        return false;
+    }
+    const info = getEditSaleStockInfo();
+    if (!info) return true;
+    const additionalNeeded = Math.max(0, quantity - info.oldQuantity);
+    if (additionalNeeded > info.available + 1e-9) {
+        const maxQuantity = info.oldQuantity + info.available;
+        if (showError) showNotification('Insufficient stock. Available Stock: ' + formatQuantity(info.available) + '. Additional required: ' + formatQuantity(additionalNeeded) + '.', 'error');
+        input.value = maxQuantity;
+        calculateEditSaleTotal();
+        return false;
+    }
+    return true;
+}
+
 function calculateEditSaleTotal() {
     const quantity = parseFloat(document.getElementById('editSaleQuantity').value) || 0;
     const unitPrice = parseFloat(document.getElementById('editSaleUnitPrice').value) || 0;
     const total = quantity * unitPrice;
     document.getElementById('editSaleTotal').value = total.toFixed(2);
+    updateEditSaleAvailableStockDisplay();
 }
 
 
@@ -19814,10 +20923,11 @@ function showEditCustomerSuggestions() {
             updatePurchasesTableHeaders();
             
             if (purchasesCache.data && purchasesCache.data.length > 0) {
+                const operationalPurchases = filterOperationalRecordsByClose(purchasesCache.data, 'branchId');
                 if (!isAdmin && sellerId) {
-                    purchasesCache.filtered = purchasesCache.data.filter(purchase => purchase.sellerId === sellerId);
+                    purchasesCache.filtered = operationalPurchases.filter(purchase => purchase.sellerId === sellerId);
                 } else {
-                    purchasesCache.filtered = purchasesCache.data;
+                    purchasesCache.filtered = operationalPurchases;
                 }
                 displayPurchasesTable();
                 document.getElementById('purchasesBadge').textContent = (purchasesCache.data || []).length;
@@ -19836,17 +20946,19 @@ function showEditCustomerSuggestions() {
             if (isOnline) {
                 try {
                     const result = await apiCall('getPurchases', { 
-                        sellerId: !isAdmin ? sellerId : null 
+                        sellerId: !isAdmin ? sellerId : null,
+                        branchId: !isAdmin ? (currentUser.branchId || null) : null
                     });
                     
                     if (result.success) {
                         purchasesCache.data = result.data;
                         purchasesCache.summary = result.summary;
                         
+                        const operationalPurchases = filterOperationalRecordsByClose(purchasesCache.data, 'branchId');
                         if (!isAdmin && sellerId) {
-                            purchasesCache.filtered = purchasesCache.data.filter(purchase => purchase.sellerId === sellerId);
+                            purchasesCache.filtered = operationalPurchases.filter(purchase => purchase.sellerId === sellerId);
                         } else {
-                            purchasesCache.filtered = purchasesCache.data;
+                            purchasesCache.filtered = operationalPurchases;
                         }
                         
                         sortDataDescending(purchasesCache.data);
@@ -20595,7 +21707,7 @@ function showEditSupplierSuggestions() {
             
             if (purchasesCache.data) {
                 purchasesCache.data.push({
-                    date: new Date().toISOString(),
+                    date: data.timestamp || new Date().toISOString(),
                     product: data.product,
                     quantity: data.qty,
                     unitCost: data.unitCost,
@@ -21348,6 +22460,12 @@ function onDebtQRScanSuccess(decodedText) {
 
 let connectDeviceCode = null;
 let connectDevicePollTimer = null;
+// The actual setTimeout handle for the next scheduled poll - kept
+// separate from connectDevicePollTimer above (which several other spots
+// in the code check as a simple "is polling currently active?" truthy
+// flag) so stopping polling can reliably cancel the specific pending
+// timer without disturbing those existing checks.
+let connectDevicePollTimeoutId = null;
 let connectDeviceContext = null; // 'sale' or 'debt'
 let connectDeviceLinked = false;
 // Tracks item ids this Computer has already added to the cart, so a scan
@@ -21621,13 +22739,34 @@ async function openConnectDeviceModal(context) {
 
 function startConnectDevicePolling() {
     stopConnectDevicePolling();
-    connectDevicePollTimer = setInterval(pollConnectedDeviceScans, 1000);
+    // A plain setInterval would fire again every second regardless of
+    // whether the PREVIOUS poll has actually finished yet - on a slower
+    // connection where one round-trip takes longer than a second, that
+    // means two (or more) polls end up in flight at once. That's not
+    // catastrophic on its own (connectDeviceProcessedIds already stops a
+    // redelivered item being added twice), but it's needless extra load
+    // and, worse, opens the door to their responses arriving back
+    // out-of-order. Scheduling the NEXT poll only once the current one
+    // has fully completed removes that possibility entirely - there is
+    // only ever exactly one poll in flight at any moment, which is what
+    // a business system moving real stock and money should guarantee.
+    connectDevicePollTimer = true;
+    scheduleNextConnectDevicePoll();
+}
+
+function scheduleNextConnectDevicePoll() {
+    if (!connectDevicePollTimer) return;
+    connectDevicePollTimeoutId = setTimeout(async () => {
+        await pollConnectedDeviceScans();
+        scheduleNextConnectDevicePoll();
+    }, 1000);
 }
 
 function stopConnectDevicePolling() {
-    if (connectDevicePollTimer) {
-        clearInterval(connectDevicePollTimer);
-        connectDevicePollTimer = null;
+    connectDevicePollTimer = null;
+    if (connectDevicePollTimeoutId) {
+        clearTimeout(connectDevicePollTimeoutId);
+        connectDevicePollTimeoutId = null;
     }
 }
 
@@ -21635,7 +22774,14 @@ async function pollConnectedDeviceScans() {
     if (!connectDeviceCode || !isOnline) return;
     
     try {
-        const result = await apiCall('pollScannedItems', { code: connectDeviceCode });
+        // A short timeout here on purpose - this poll runs once a second,
+        // so a slow response should be treated as "try again shortly"
+        // rather than waiting the full default 30 seconds and stalling
+        // the whole once-a-second rhythm. 8 seconds is still generous for
+        // this tiny request (no photos involved), while guaranteeing a
+        // poll never blocks the next one for long even on a poor
+        // connection.
+        const result = await apiCall('pollScannedItems', { code: connectDeviceCode }, 8000);
         
         if (!result.success) {
             if (result.expired) {
@@ -24347,7 +25493,23 @@ function showEditPurchaseUnitSuggestions() {
                 localStorage.removeItem('smartTradeOpenModal');
                 if (modalHistoryPushed && !isHandlingPopstate) {
                     modalHistoryPushed = false;
+                    // Marks this as "our own doing" before calling
+                    // history.back() - that call itself fires a popstate
+                    // event a moment later, and without this flag the
+                    // handler below has no way to tell that apart from a
+                    // genuine hardware/gesture back-press. Left
+                    // unguarded, it was falling through to the
+                    // "guaranteed fallback" logic and force-navigating to
+                    // Dashboard - even when the modal had been opened
+                    // from a completely different page, which is exactly
+                    // what was closing that page along with the modal.
+                    isHandlingPopstate = true;
                     history.back();
+                    // history.back()'s own popstate fires asynchronously
+                    // (next tick), so this needs to still be true when it
+                    // does - cleared shortly after on a timer rather than
+                    // immediately.
+                    setTimeout(() => { isHandlingPopstate = false; }, 150);
                 } else {
                     modalHistoryPushed = false;
                 }
@@ -24356,6 +25518,14 @@ function showEditPurchaseUnitSuggestions() {
         
         window.addEventListener('popstate', function() {
             if (!historyReady) return;
+            
+            // This popstate was triggered by our OWN history.back() call
+            // above (closing a modal via its UI button/X, not a genuine
+            // hardware back-press) - the modal is already closed, and
+            // whatever page was open underneath it must be left exactly
+            // as it was, untouched.
+            if (isHandlingPopstate) return;
+            
             const openModal = document.querySelector('.confirmation-modal.fullscreen-modal.show');
             if (openModal) {
                 isHandlingPopstate = true;
@@ -24605,7 +25775,6 @@ function showEditPurchaseUnitSuggestions() {
                 <div class="stat-card"><div class="spinner"></div></div>
                 <div class="stat-card"><div class="spinner"></div></div>
                 <div class="stat-card"><div class="spinner"></div></div>
-                <div class="stat-card"><div class="spinner"></div></div>
             `;
         } else {
             let sellerFullName = currentUser.sellerName || 'Seller';
@@ -24804,22 +25973,26 @@ function showEditPurchaseUnitSuggestions() {
     const statsContainer = document.getElementById('dashboardStats');
     
     if (isAdmin) {
+        // "All Sales" = sales since the current OPEN accounting period
+        // began (getDashboard() on the server already excludes anything
+        // from before the last Close Accounts) - so this genuinely reads
+        // 0 right after a close, while Total Stock (the live inventory
+        // value) is never period-filtered and simply carries forward,
+        // exactly as required.
+        const allSales = quickStats.totalSales || 0;
+        
         statsContainer.innerHTML = `
             <div class="stat-card">
-                <h3>Total Products</h3>
-                <div class="value" id="statStock">${totalProducts || quickStats.stockItems || 0}</div>
+                <h3>Total Stock</h3>
+                <div class="value" id="statValue">${formatCurrency(calculateTotalStockValue())}</div>
             </div>
             <div class="stat-card">
-                <h3>Stock Value</h3>
-                <div class="value" id="statValue">${formatCurrency(calculateTotalStockValue())}</div>
+                <h3>All Sales</h3>
+                <div class="value" id="statAllSales">${formatCurrency(allSales)}</div>
             </div>
             <div class="stat-card">
                 <h3>Today's Sales</h3>
                 <div class="value" id="statTodaySales">${formatCurrency(todaySales)}</div>
-            </div>
-            <div class="stat-card">
-                <h3>Total Profit</h3>
-                <div class="value" id="statProfit">${formatCurrency(totalProfit)}</div>
             </div>
         `;
         
@@ -24913,6 +26086,720 @@ function showEditPurchaseUnitSuggestions() {
         // ============================================
 // REPORTS PAGE - Load cache first, then update silently
 // ============================================
+
+// ============================================
+// ACCOUNTING PAGE - Close Accounts + Closing Reports. Entirely additive:
+// this reads Sales/Purchases/Stock/Debts to compute totals (via the
+// backend's computeAccountingPeriodStats) and writes only to its own new
+// ACCOUNTING_PERIODS sheet - it never deletes, resets, or edits a single
+// existing record, so Stock/Sales/Purchases/Debts/Reports/Offline Mode
+// all keep working exactly as they always have.
+// ============================================
+
+let accountingCurrentTab = 'close';
+let accountingClosingReportsCache = null;
+
+async function initAccountingPage() {
+    populateAccountingBranchDropdown();
+    
+    // Cache-first, same pattern the rest of this app already uses for
+    // its Dashboard: show whatever closing reports were cached from a
+    // previous load INSTANTLY (synchronously, no network wait) so the
+    // date defaults and first preview can start right away - the real
+    // fetch below then quietly confirms/updates this in the background,
+    // instead of making every single thing on this page wait on it
+    // first.
+    if (!accountingClosingReportsCache) {
+        const cached = localStorage.getItem('smartTradeClosingReports');
+        if (cached) {
+            try { accountingClosingReportsCache = JSON.parse(cached); } catch (e) { /* ignore */ }
+        }
+    }
+    
+    setDefaultAccountingPeriodDates();
+    switchAccountingTab(accountingCurrentTab);
+    previewAccountingPeriod();
+    
+    // Refreshes the real closing reports list in the background - if it
+    // turns out to differ from what was cached (a close happened on
+    // another device, for instance), the date defaults and the Closing
+    // Reports table (if that's the tab currently showing) are quietly
+    // brought up to date.
+    loadClosingReports().then(() => {
+        setDefaultAccountingPeriodDates();
+        if (accountingCurrentTab === 'reports') {
+            renderClosingReportsTable();
+        }
+    });
+}
+
+function populateAccountingBranchDropdown() {
+    const select = document.getElementById('accountingBranchSelect');
+    if (!select) return;
+    const currentValue = select.value || 'ALL';
+    
+    let options = '<option value="ALL">All Branches</option>';
+    if (branchesCache && branchesCache.data) {
+        branchesCache.data.forEach(b => {
+            options += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
+        });
+    }
+    select.innerHTML = options;
+    select.value = currentValue;
+}
+
+// Fills the Expenses tab's Branch and Category filter dropdowns - Branch
+// mirrors the same list Close Accounts uses; Category is built from
+// whatever categories already exist on this business's own Purchases
+// (not a fixed hardcoded list), so it always reflects real data.
+function populateExpensesFilters() {
+    const branchSelect = document.getElementById('expensesBranchSelect');
+    if (branchSelect) {
+        const currentBranchValue = branchSelect.value || 'ALL';
+        let branchOptions = '<option value="ALL">All Branches</option>';
+        if (branchesCache && branchesCache.data) {
+            branchesCache.data.forEach(b => {
+                branchOptions += `<option value="${b.id}">${escapeHtml(b.name)}</option>`;
+            });
+        }
+        branchSelect.innerHTML = branchOptions;
+        branchSelect.value = currentBranchValue;
+    }
+    // Category options are filled in from real Expense records instead
+    // (see loadExpensesData/renderExpenseCategoryFilterOptions) - not
+    // from Purchases, since Expense categories (Rent, Electricity,
+    // Transport...) are a completely different set from Purchase
+    // categories now.
+}
+
+function renderExpenseCategoryFilterOptions(categories) {
+    const categorySelect = document.getElementById('expensesCategorySelect');
+    if (!categorySelect) return;
+    const currentValue = categorySelect.value || '';
+    let options = '<option value="">All Categories</option>';
+    (categories || []).forEach(c => {
+        options += `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`;
+    });
+    categorySelect.innerHTML = options;
+    categorySelect.value = currentValue;
+}
+
+// Defaults Period Start to the day right after the most recently closed
+// period's end (for whichever branch is selected) - so periods naturally
+// chain one after another without gaps or overlaps, unless the person
+// deliberately picks different dates. If nothing has ever been closed for
+// this branch, defaults to the start of the current calendar month.
+function setDefaultAccountingPeriodDates() {
+    const branchId = document.getElementById('accountingBranchSelect')?.value || 'ALL';
+    // Relevant closed periods for this branch - either that exact branch,
+    // or an "ALL Branches" close (which finalizes every branch together) -
+    // matching the same rule the backend uses for overlap detection.
+    const reports = (accountingClosingReportsCache || []).filter(r => {
+        const rowBranch = r.branchId || 'ALL';
+        return rowBranch === branchId || rowBranch === 'ALL' || branchId === 'ALL';
+    });
+    
+    const startInput = document.getElementById('accountingPeriodStart');
+    const endInput = document.getElementById('accountingPeriodEnd');
+    if (!startInput || !endInput) return;
+    
+    const today = new Date();
+    const todayStr = getLocalDateString(today);
+    
+    if (reports.length > 0) {
+        // Sorted by the ACTUAL closing moment (Closed At), not Period
+        // End's calendar date - matching the exact same boundary the
+        // server now uses (see getLatestClosedPeriodEnd). Period Start
+        // defaults to the calendar day right after that real moment, so
+        // if accounts were closed mid-day, the very next day is offered
+        // as the new period's start, exactly as expected.
+        const sorted = reports.slice().sort((a, b) => new Date(b.closedAt) - new Date(a.closedAt));
+        const lastClosedAt = new Date(sorted[0].closedAt);
+        const nextStart = new Date(lastClosedAt);
+        nextStart.setDate(nextStart.getDate() + 1);
+        const nextStartStr = getLocalDateString(nextStart);
+        
+        // Guards against an older closed record whose timestamp somehow
+        // ended up in the future (shouldn't happen going forward - the
+        // server now rejects future Period End dates outright - but a
+        // record like that could already exist from before that
+        // validation existed). Without this guard, Period Start could
+        // land AFTER Period End (today), reproducing the reversed-dates
+        // symptom this was written to prevent - falls back to today
+        // instead. Compared as local calendar-date strings (not raw
+        // timestamps), so this comparison itself can't fall into the
+        // same UTC-shift trap this whole fix is about.
+        if (nextStartStr > todayStr) {
+            startInput.value = todayStr;
+        } else {
+            startInput.value = nextStartStr;
+        }
+    } else {
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        startInput.value = getLocalDateString(monthStart);
+    }
+    
+    endInput.value = todayStr;
+}
+
+function handleAccountingPeriodInputChange() {
+    const banner = document.getElementById('accountingAlreadyClosedBanner');
+    if (banner) banner.classList.add('hidden');
+    previewAccountingPeriod();
+}
+
+async function previewAccountingPeriod() {
+    const periodStart = document.getElementById('accountingPeriodStart').value;
+    const periodEnd = document.getElementById('accountingPeriodEnd').value;
+    const branchId = document.getElementById('accountingBranchSelect').value;
+    
+    if (!periodStart || !periodEnd) return;
+    
+    if (new Date(periodStart) > new Date(periodEnd)) {
+        clearAccountingStatsDisplay();
+        showNotification('Period Start must be before Period End', 'error');
+        return;
+    }
+    
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    if (new Date(periodEnd).getTime() > todayEnd.getTime()) {
+        clearAccountingStatsDisplay();
+        showNotification('Period End cannot be a future date', 'error');
+        return;
+    }
+    
+    if (!isOnline) {
+        showNotification('Accounting figures need an internet connection to calculate accurately from every record.', 'error');
+        return;
+    }
+    
+    setButtonLoading('accountingPreviewBtn', 'accountingPreviewSpinner', 'accountingPreviewText', true);
+    
+    try {
+        const result = await apiCall('previewAccountingPeriod', { periodStart, periodEnd, branchId });
+        if (result.success) {
+            if (result.overlapsClosedPeriod) {
+                clearAccountingStatsDisplay();
+                showOverlapWarning(result.overlap);
+            } else {
+                renderAccountingStats(result.period, result.alreadyClosed);
+            }
+        } else {
+            clearAccountingStatsDisplay();
+            showNotification(result.error || 'Failed to calculate accounting figures', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error calculating accounting figures', 'error');
+    }
+    
+    setButtonLoading('accountingPreviewBtn', 'accountingPreviewSpinner', 'accountingPreviewText', false);
+}
+
+// Resets the stat cards to "—" and hides any warning banner - used
+// whenever the current date selection turns out to be invalid, so a
+// stale banner or stale figures from a PREVIOUS valid selection never
+// linger on screen looking like they still apply to what's showing now.
+function clearAccountingStatsDisplay() {
+    ['acctStatTotalSales', 'acctStatTotalPurchases', 'acctStatCogs', 'acctStatGrossProfit',
+     'acctStatOperatingExpenses', 'acctStatNetProfit', 'acctStatClosingStock', 'acctStatOutstandingDebts'
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '—';
+    });
+    const banner = document.getElementById('accountingAlreadyClosedBanner');
+    if (banner) banner.classList.add('hidden');
+    const closeBtn = document.getElementById('accountingCloseBtn');
+    if (closeBtn) closeBtn.disabled = false;
+}
+
+// Reuses the same banner as "already closed" for a related but distinct
+// situation: the selected range doesn't exactly MATCH an existing closed
+// period, but overlaps part of one by at least a day - closing it would
+// silently re-finalize days that were already locked in, so this is
+// blocked the same way (Close disabled), with a clear explanation of
+// which closed period it conflicts with.
+function showOverlapWarning(overlap) {
+    const banner = document.getElementById('accountingAlreadyClosedBanner');
+    const titleEl = document.getElementById('accountingBannerTitle');
+    const idEl = document.getElementById('accountingAlreadyClosedId');
+    const closeBtn = document.getElementById('accountingCloseBtn');
+    
+    if (banner) banner.classList.remove('hidden');
+    if (titleEl) titleEl.textContent = 'This period overlaps an already-closed period.';
+    if (idEl) idEl.textContent = `${overlap.closeId} (${formatDate(overlap.periodStart, false)} \u2192 ${formatDate(overlap.periodEnd, false)})`;
+    if (closeBtn) closeBtn.disabled = true;
+}
+
+function renderAccountingStats(period, alreadyClosed) {
+    document.getElementById('acctStatTotalSales').textContent = formatCurrency(period.totalSales);
+    document.getElementById('acctStatTotalPurchases').textContent = formatCurrency(period.totalPurchases);
+    document.getElementById('acctStatCogs').textContent = formatCurrency(period.cogs);
+    document.getElementById('acctStatGrossProfit').textContent = formatCurrency(period.grossProfit);
+    document.getElementById('acctStatOperatingExpenses').textContent = formatCurrency(period.operatingExpenses);
+    document.getElementById('acctStatNetProfit').textContent = formatCurrency(period.netProfit);
+    document.getElementById('acctStatClosingStock').textContent = formatCurrency(period.closingStockValue);
+    document.getElementById('acctStatOutstandingDebts').textContent = formatCurrency(period.outstandingDebts);
+    
+    const banner = document.getElementById('accountingAlreadyClosedBanner');
+    const titleEl = document.getElementById('accountingBannerTitle');
+    const closeBtn = document.getElementById('accountingCloseBtn');
+    if (alreadyClosed) {
+        if (banner) banner.classList.remove('hidden');
+        // Always reset back to the plain "already closed" wording here -
+        // this is the one path where the title must never be left over
+        // from a previous overlap warning (see showOverlapWarning above).
+        if (titleEl) titleEl.textContent = 'Period already closed.';
+        const idEl = document.getElementById('accountingAlreadyClosedId');
+        if (idEl) idEl.textContent = period.closeId;
+        if (closeBtn) closeBtn.disabled = true;
+    } else {
+        if (banner) banner.classList.add('hidden');
+        if (closeBtn) closeBtn.disabled = false;
+    }
+}
+
+function switchAccountingTab(tab) {
+    accountingCurrentTab = tab;
+    const closeTab = document.getElementById('accountingCloseTab');
+    const reportsTab = document.getElementById('accountingReportsTab');
+    const closeBtn = document.getElementById('accountingTabCloseBtn');
+    const reportsBtn = document.getElementById('accountingTabReportsBtn');
+    if (!closeTab || !reportsTab || !closeBtn || !reportsBtn) return;
+    
+    closeTab.classList.add('hidden');
+    reportsTab.classList.add('hidden');
+    closeBtn.className = 'confirmation-btn cancel';
+    reportsBtn.className = 'confirmation-btn cancel';
+    
+    if (tab === 'reports') {
+        reportsTab.classList.remove('hidden');
+        reportsBtn.className = 'confirmation-btn confirm';
+        renderClosingReportsTable();
+    } else {
+        closeTab.classList.remove('hidden');
+        closeBtn.className = 'confirmation-btn confirm';
+    }
+}
+
+// Loads and renders the Expenses tab's data from real Purchases records
+// (nonstock only) - respects whatever Date/Category/Branch filters are
+// currently set. Stat cards use their own fixed boundaries regardless of
+// the filters (Today/Current Period/Total), while the category
+// breakdown and Recent Expenses list respect the filters directly.
+// Opens the Add Expense form - populates Branch (a Seller only ever sees
+// their own branch, matching how the rest of the app scopes them) and
+// suggests existing categories from real Purchases data, then resets the
+// fields fresh (Date defaults to today, in the device's own local
+// timezone - never UTC, matching the fix applied everywhere else dates
+// are shown/compared in this app).
+// Remembers the categories seen the last time Expenses data was loaded
+// (see loadExpensesData) so Add Expense can suggest them - genuinely
+// real categories this business has actually used, not Purchase
+// categories (which are a completely different set now).
+let lastKnownExpenseCategories = [];
+
+function openAddExpenseModal() {
+    const branchSelect = document.getElementById('expenseBranchSelect');
+    if (branchSelect) {
+        let options = '';
+        if (currentUser.userType === 'seller') {
+            options = `<option value="${escapeHtml(currentUser.branchId || 'MAIN')}">${escapeHtml(currentUser.branchName || currentUser.branchId || 'Main Branch')}</option>`;
+        } else if (branchesCache && branchesCache.data && branchesCache.data.length > 0) {
+            branchesCache.data.forEach(b => {
+                options += `<option value="${escapeHtml(b.id)}">${escapeHtml(b.name)}</option>`;
+            });
+        } else {
+            options = '<option value="MAIN">Main Branch</option>';
+        }
+        branchSelect.innerHTML = options;
+    }
+    
+    const categoryList = document.getElementById('expenseCategoryOptions');
+    if (categoryList) {
+        // A few common starting suggestions, plus every category this
+        // business has genuinely used before (from real Expense
+        // records) - the starter list never affects any calculation, it
+        // only ever appears here to help someone typing.
+        const categories = new Set(['Rent', 'Electricity', 'Water', 'Transport', 'Salaries', 'Internet', 'Airtime', 'Repairs & Maintenance']);
+        lastKnownExpenseCategories.forEach(c => { if (c.name) categories.add(c.name); });
+        categoryList.innerHTML = Array.from(categories).sort().map(c => `<option value="${escapeHtml(c)}"></option>`).join('');
+    }
+    
+    document.getElementById('expenseCategory').value = '';
+    document.getElementById('expenseDescription').value = '';
+    document.getElementById('expenseAmount').value = '';
+    document.getElementById('expenseDate').value = getLocalDateString(new Date());
+    document.getElementById('expensePaymentMethod').value = 'cash';
+    
+    document.getElementById('addExpenseModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeAddExpenseModal() {
+    document.getElementById('addExpenseModal').classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// universalModalClose() (wired to the single shared #fullscreenModalBar's
+// back/close buttons) looks for a function named "hide" + the modal's id
+// with its first letter capitalized - this is what makes THAT shared bar
+// correctly close this specific modal, matching the same naming pattern
+// every other fullscreen modal in the app already follows.
+function hideAddExpenseModal() {
+    closeAddExpenseModal();
+}
+
+// Saves an Expense to the dedicated EXPENSES sheet (see the addExpense
+// backend action) - a genuine business operating cost, completely
+// separate from Purchases/Stock. Never creates or adjusts a Purchase or
+// Stock record, regardless of what's typed into Category/Description -
+// this form has no way to touch either of those at all, by construction.
+async function saveExpense() {
+    const category = document.getElementById('expenseCategory').value.trim();
+    const description = document.getElementById('expenseDescription').value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount').value);
+    const dateValue = document.getElementById('expenseDate').value;
+    const branchId = document.getElementById('expenseBranchSelect').value;
+    const paymentMethod = document.getElementById('expensePaymentMethod').value;
+    
+    if (!description) {
+        showNotification('Please enter a description', 'error');
+        return;
+    }
+    if (!amount || amount <= 0) {
+        showNotification('Please enter a valid amount', 'error');
+        return;
+    }
+    if (!dateValue) {
+        showNotification('Please select a date', 'error');
+        return;
+    }
+    
+    if (category) registerCategoryIfNew(category);
+    
+    setButtonLoading('saveExpenseBtn', 'saveExpenseSpinner', 'saveExpenseText', true);
+    
+    // Midday, not midnight - avoids the picked calendar date shifting to
+    // the day before/after once converted to UTC for storage, the same
+    // class of bug already fixed elsewhere in this app for date-only
+    // values.
+    const isoDate = new Date(dateValue + 'T12:00:00').toISOString();
+    const expenseCategory = category || 'Uncategorized';
+    
+    // A genuinely separate record from Purchases - Expenses are real
+    // business operating costs (rent, electricity, transport, salaries,
+    // etc), never buying goods to resell. This never touches Stock,
+    // Purchases, or their offline queue at all - it has its own sheet,
+    // its own action (addExpense), and its own offline queue below.
+    const expenseData = {
+        category: expenseCategory,
+        description: description,
+        amount: amount,
+        paymentMethod: paymentMethod,
+        branchId: branchId,
+        date: isoDate,
+        sellerId: currentUser.sellerId
+    };
+    
+    if (isOnline) {
+        try {
+            const result = await apiCall('addExpense', expenseData);
+            if (result.success) {
+                showNotification('Expense saved successfully', 'success');
+                await loadExpensesData();
+                loadDashboard();
+                closeAddExpenseModal();
+            } else {
+                showNotification(result.error || 'Failed to save expense', 'error');
+            }
+        } catch (error) {
+            offlineData.expenses.push(expenseData);
+            saveOfflineData();
+            showNotification('Saved offline - will sync automatically once back online.', 'info');
+            await loadExpensesData();
+            closeAddExpenseModal();
+        }
+    } else {
+        offlineData.expenses.push(expenseData);
+        saveOfflineData();
+        showNotification('Saved offline - will sync automatically once back online.', 'info');
+        await loadExpensesData();
+        closeAddExpenseModal();
+    }
+    
+    setButtonLoading('saveExpenseBtn', 'saveExpenseSpinner', 'saveExpenseText', false);
+}
+
+// Remembers the last successfully loaded Expenses result so it can be
+// shown INSTANTLY the next time this tab is opened (even before the
+// fresh network fetch below completes) - same cache-first pattern the
+// rest of this app already uses, so switching to this tab never shows a
+// blank/loading flash if it's already been viewed once this session.
+let lastExpensesResult = null;
+
+async function loadExpensesData() {
+    const dateFrom = document.getElementById('expensesDateFrom')?.value || '';
+    const dateTo = document.getElementById('expensesDateTo')?.value || '';
+    const category = document.getElementById('expensesCategorySelect')?.value || '';
+    const branchId = document.getElementById('expensesBranchSelect')?.value || 'ALL';
+    
+    if (lastExpensesResult) {
+        renderExpensesResult(lastExpensesResult);
+    }
+    
+    if (!isOnline) {
+        if (!lastExpensesResult) {
+            showNotification('Expenses figures need an internet connection to calculate accurately from every record.', 'error');
+        }
+        return;
+    }
+    
+    try {
+        const result = await apiCall('getExpensesData', { dateFrom, dateTo, category, branchId });
+        if (result.success) {
+            lastExpensesResult = result;
+            renderExpensesResult(result);
+        } else {
+            showNotification(result.error || 'Failed to load expenses', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error loading expenses', 'error');
+    }
+}
+
+function renderExpensesResult(result) {
+    document.getElementById('expStatToday').textContent = formatCurrency(result.todayExpenses);
+    document.getElementById('expStatPeriod').textContent = formatCurrency(result.periodExpenses);
+    document.getElementById('expStatTotal').textContent = formatCurrency(result.totalExpenses);
+    lastKnownExpenseCategories = result.categories || [];
+    renderExpenseCategoryFilterOptions(result.categories);
+    renderExpenseCategories(result.categories);
+    renderRecentExpenses(result.recent);
+}
+
+function renderExpenseCategories(categories) {
+    const container = document.getElementById('expenseCategoriesList');
+    if (!container) return;
+    
+    if (!categories || categories.length === 0) {
+        container.innerHTML = '<p style="color:#94a3b8; font-size:0.85rem;">No expense categories yet.</p>';
+        return;
+    }
+    
+    const grandTotal = categories.reduce((sum, c) => sum + c.total, 0);
+    
+    container.innerHTML = categories.map(c => {
+        const percent = grandTotal > 0 ? Math.round((c.total / grandTotal) * 100) : 0;
+        return `
+            <div style="margin-bottom:10px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; margin-bottom:4px;">
+                    <span style="font-weight:600; color:#1e293b;">${escapeHtml(c.name)}</span>
+                    <span style="color:#475569;">${formatCurrency(c.total)} (${percent}%)</span>
+                </div>
+                <div style="background:#e2e8f0; border-radius:6px; height:8px; overflow:hidden;">
+                    <div style="background:var(--accent); height:100%; width:${percent}%;"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderRecentExpenses(expenses) {
+    const tbody = document.getElementById('recentExpensesTableBody');
+    const emptyState = document.getElementById('expensesEmptyState');
+    if (!tbody || !emptyState) return;
+    
+    if (!expenses || expenses.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+    }
+    emptyState.classList.add('hidden');
+    
+    tbody.innerHTML = expenses.map(e => `
+        <tr>
+            <td>${formatDate(e.date, false)}</td>
+            <td>${escapeHtml(e.description || '-')}</td>
+            <td>${escapeHtml(e.category || 'Uncategorized')}</td>
+            <td>${escapeHtml(getOfflineBranchName(e.branchId))}</td>
+            <td>${formatCurrency(e.total)}</td>
+        </tr>
+    `).join('');
+}
+
+// Cached to localStorage on every successful fetch so the closing
+// history remains visible offline too (see section 17 of the spec -
+// "closing information should not disappear").
+async function loadClosingReports() {
+    if (!isOnline) {
+        const cached = localStorage.getItem('smartTradeClosingReports');
+        if (cached) {
+            try { accountingClosingReportsCache = JSON.parse(cached); } catch (e) { /* ignore */ }
+        }
+        return;
+    }
+    try {
+        const result = await apiCall('getClosingReports', {});
+        if (result.success) {
+            accountingClosingReportsCache = result.reports;
+            localStorage.setItem('smartTradeClosingReports', JSON.stringify(result.reports));
+        }
+    } catch (error) {
+        const cached = localStorage.getItem('smartTradeClosingReports');
+        if (cached) {
+            try { accountingClosingReportsCache = JSON.parse(cached); } catch (e) { /* ignore */ }
+        }
+    }
+}
+
+function renderClosingReportsTable() {
+    const tbody = document.getElementById('accountingReportsTableBody');
+    const emptyState = document.getElementById('accountingReportsEmptyState');
+    if (!tbody || !emptyState) return;
+    
+    const branchFilter = document.getElementById('accountingBranchSelect')?.value || 'ALL';
+    const reports = (accountingClosingReportsCache || []).filter(r => branchFilter === 'ALL' || (r.branchId || 'ALL') === branchFilter);
+    
+    if (reports.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+    }
+    emptyState.classList.add('hidden');
+    
+    tbody.innerHTML = reports.map(r => `
+        <tr>
+            <td>${formatDate(r.periodStart, false)} &rarr; ${formatDate(r.periodEnd, false)}</td>
+            <td>${formatDate(r.closedAt, true)}</td>
+            <td>${(!r.branchId || r.branchId === 'ALL') ? 'All Branches' : escapeHtml(getOfflineBranchName(r.branchId))}</td>
+            <td>${formatCurrency(r.totalSales)}</td>
+            <td>${formatCurrency(r.totalPurchases)}</td>
+            <td>${formatCurrency(r.operatingExpenses)}</td>
+            <td>${formatCurrency(r.netProfit)}</td>
+            <td>${formatCurrency(r.closingStockValue)}</td>
+            <td>${formatCurrency(r.outstandingDebts)}</td>
+        </tr>
+    `).join('');
+}
+
+function confirmCloseAccounts() {
+    const periodStart = document.getElementById('accountingPeriodStart').value;
+    const periodEnd = document.getElementById('accountingPeriodEnd').value;
+    
+    if (!periodStart || !periodEnd) {
+        showNotification('Please select Period Start and Period End first', 'error');
+        return;
+    }
+    
+    if (new Date(periodStart) > new Date(periodEnd)) {
+        showNotification('Period Start must be before Period End', 'error');
+        return;
+    }
+    
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    if (new Date(periodEnd).getTime() > todayEnd.getTime()) {
+        showNotification('Period End cannot be a future date', 'error');
+        return;
+    }
+    
+    if (!isOnline) {
+        showNotification('Closing accounts needs an internet connection.', 'error');
+        return;
+    }
+    
+    showConfirmationModal(
+        'Close Accounts',
+        `Are you sure you want to close the current accounting period? This will finalize the current period's financial statistics. Sales, purchases, expenses and profit will start from zero in the new period. Existing stock and outstanding debts will be carried forward.`,
+        async () => { await closeAccountsConfirmed(); }
+    );
+}
+
+async function closeAccountsConfirmed() {
+    const periodStart = document.getElementById('accountingPeriodStart').value;
+    const periodEnd = document.getElementById('accountingPeriodEnd').value;
+    const branchId = document.getElementById('accountingBranchSelect').value;
+    
+    setButtonLoading('accountingCloseBtn', 'accountingCloseSpinner', 'accountingCloseText', true);
+    
+    try {
+        const result = await apiCall('closeAccountingPeriod', { periodStart, periodEnd, branchId });
+        if (result.success) {
+            renderAccountingStats(result.period, true);
+            if (!result.alreadyClosed && result.period?.closedAt) {
+                // The close moment is the exact boundary for the new open
+                // period. Clear cached operational stats immediately so the
+                // old period cannot remain visible while the dashboard is
+                // refreshing. Stock is intentionally untouched.
+                dashboardCache = dashboardCache || { quickStats: {} };
+                dashboardCache.quickStats = dashboardCache.quickStats || {};
+                dashboardCache.quickStats.currentPeriodStartTime = result.period.closedAt;
+                // Persist the exact close instant locally so offline Sales and
+                // Purchases filtering still knows where the new period starts.
+                try {
+                    const boundaryKey = result.period.branchId || 'ALL';
+                    const rawBoundaries = localStorage.getItem('smartTradeOperationalCloseBoundaries');
+                    const boundaries = rawBoundaries ? JSON.parse(rawBoundaries) || {} : {};
+                    boundaries[boundaryKey] = result.period.closedAt;
+                    localStorage.setItem('smartTradeOperationalCloseBoundaries', JSON.stringify(boundaries));
+                } catch (e) { console.warn('Could not cache closing boundary locally', e); }
+                dashboardCache.quickStats.todaySales = 0;
+                dashboardCache.quickStats.totalSales = 0;
+                saveDashboardCache();
+
+                // Immediately reset the live operational lists after Close.
+                // Historical records remain in the backing cache for reports,
+                // while All Sales/Purchases show only records after Closed At.
+                const justClosedAt = new Date(result.period.closedAt).getTime();
+                const justClosedBranch = result.period.branchId || 'ALL';
+                const isAfterJustClose = (record) => {
+                    if (!record) return false;
+                    const recordBranch = record.branchId || 'MAIN';
+                    if (justClosedBranch !== 'ALL' && recordBranch !== justClosedBranch) return true;
+                    const recordTime = new Date(record.date).getTime();
+                    return !isNaN(recordTime) && recordTime > justClosedAt;
+                };
+                if (Array.isArray(salesCache.data)) {
+                    const operationalSales = salesCache.data.filter(isAfterJustClose);
+                    salesCache.filtered = currentUser.userType === 'seller' && currentUser.sellerId
+                        ? operationalSales.filter(s => s.sellerId === currentUser.sellerId)
+                        : operationalSales;
+                    saveSalesCache();
+                }
+                if (Array.isArray(purchasesCache.data)) {
+                    const operationalPurchases = purchasesCache.data.filter(isAfterJustClose);
+                    purchasesCache.filtered = currentUser.userType === 'seller' && currentUser.sellerId
+                        ? operationalPurchases.filter(p => p.sellerId === currentUser.sellerId)
+                        : operationalPurchases;
+                    savePurchasesCache();
+                }
+            }
+            if (result.alreadyClosed) {
+                showNotification('This exact period was already closed.', 'info');
+            } else {
+                showNotification('Accounting period closed successfully.', 'success');
+                await loadClosingReports();
+                setDefaultAccountingPeriodDates();
+            }
+        } else if (result.overlapsClosedPeriod) {
+            // The server is the authoritative check for this - it's
+            // possible for the page to reach here without Preview having
+            // already caught it (e.g. dates changed and Close tapped
+            // before a Preview finished), so this failure mode is handled
+            // here too, not just inside previewAccountingPeriod().
+            showOverlapWarning(result.overlap);
+            showNotification(result.error || 'This period overlaps an already-closed period.', 'error');
+        } else {
+            showNotification(result.error || 'Failed to close accounting period', 'error');
+        }
+    } catch (error) {
+        showNotification('Network error closing accounting period', 'error');
+    }
+    
+    setButtonLoading('accountingCloseBtn', 'accountingCloseSpinner', 'accountingCloseText', false);
+}
+
 
 async function loadReports() {
     console.log('Loading reports page - showing cache first...');
@@ -25138,7 +27025,7 @@ function updateReportStatsFromCache() {
             
             if (settings.DISPLAY) {
                 const settingLanguage = document.getElementById('settingLanguage');
-                if (settingLanguage) settingLanguage.value = settings.DISPLAY.language?.value || 'sw';
+                if (settingLanguage) settingLanguage.value = settings.DISPLAY.language?.value || 'en';
                 
                 const settingCurrency = document.getElementById('settingCurrency');
                 if (settingCurrency) settingCurrency.value = settings.DISPLAY.currency?.value || 'TZS';
@@ -25146,8 +27033,22 @@ function updateReportStatsFromCache() {
                 const settingDateFormat = document.getElementById('settingDateFormat');
                 if (settingDateFormat) settingDateFormat.value = settings.DISPLAY.date_format?.value || 'dd/mm/yyyy';
                 
-                selectedTheme = settings.DISPLAY.theme?.value || 'dark';
-                updateThemeSelection();
+                // This is what actually makes a saved currency (and
+                // language) "stick" across page loads. formatCurrency()
+                // reads currentUser.currency, but until now nothing ever
+                // set that property except the brief moment right after
+                // tapping Save on the Display Settings page - which
+                // vanished the very next time the app loaded, since nothing
+                // restored it from these settings again. Persisting to
+                // localStorage too means the correct currency/language is
+                // available INSTANTLY on the next load, before this
+                // settings fetch from the server even completes.
+                currentUser.currency = settings.DISPLAY.currency?.value || currentUser.currency || 'TZS';
+                localStorage.setItem('smartTradeCurrency', currentUser.currency);
+                
+                currentUser.language = settings.DISPLAY.language?.value || currentUser.language || 'en';
+                localStorage.setItem('smartTradeLanguage', currentUser.language);
+                applyLanguage(currentUser.language);
             }
         }
         
@@ -25310,70 +27211,6 @@ function updateReportStatsFromCache() {
         // THEME FUNCTIONS
         // ============================================
         
-        function selectTheme(theme) {
-            selectedTheme = theme;
-            updateThemeSelection();
-        }
-        
-        function updateThemeSelection() {
-            document.querySelectorAll('.theme-option').forEach(option => {
-                option.classList.remove('selected');
-            });
-            
-            const selectedOption = document.querySelector(`.theme-option[data-theme="${selectedTheme}"]`);
-            if (selectedOption) {
-                selectedOption.classList.add('selected');
-            }
-        }
-        
-        function applyTheme(theme) {
-            const root = document.documentElement;
-            
-            switch(theme) {
-                case 'light':
-                    root.style.setProperty('--primary', '#f8fafc');
-                    root.style.setProperty('--secondary', '#e2e8f0');
-                    root.style.setProperty('--light', '#0f172a');
-                    root.style.setProperty('--dark', '#f8fafc');
-                    break;
-                case 'blue':
-                    root.style.setProperty('--primary', '#1e40af');
-                    root.style.setProperty('--secondary', '#3b82f6');
-                    root.style.setProperty('--light', '#f8fafc');
-                    root.style.setProperty('--dark', '#1e40af');
-                    break;
-                default:
-                    root.style.setProperty('--primary', '#0f172a');
-                    root.style.setProperty('--secondary', '#1e293b');
-                    root.style.setProperty('--light', '#f8fafc');
-                    root.style.setProperty('--dark', '#0f172a');
-            }
-            
-            selectedTheme = theme;
-            updateThemeSelection();
-        }
-        
-        async function saveTheme() {
-            try {
-                const result = await apiCall('updateSettings', {
-                    section: 'DISPLAY',
-                    key: 'theme',
-                    value: selectedTheme
-                });
-                
-                if (result.success) {
-                    currentUser.theme = selectedTheme;
-                    localStorage.setItem('smartTradeTheme', selectedTheme);
-                    applyTheme(selectedTheme);
-                    showNotification('Theme saved successfully!', 'success');
-                } else {
-                    showNotification(result.error || 'Failed to save theme', 'error');
-                }
-            } catch (error) {
-                showNotification('Network error saving theme', 'error');
-            }
-        }
-        
         async function saveDisplaySettings() {
             const language = document.getElementById('settingLanguage').value;
             const currency = document.getElementById('settingCurrency').value;
@@ -25403,9 +27240,18 @@ function updateReportStatsFromCache() {
             }
             
             if (allSuccess) {
-                currentUser.language = language;
                 currentUser.currency = currency;
+                currentUser.language = language;
+                // Both persisted here (not just held in memory) - this is
+                // exactly what was missing before: the setting reached the
+                // database fine, but nothing saved it locally too, so a
+                // page reload had no way to know the saved currency/language
+                // until the settings fetch from the server completed a
+                // moment later (and even then, nothing was reading it back
+                // into currentUser - see updateSettingsUI() for that fix).
+                localStorage.setItem('smartTradeCurrency', currency);
                 localStorage.setItem('smartTradeLanguage', language);
+                applyLanguage(language);
                 showNotification('Display settings saved successfully!', 'success');
             }
             
@@ -25657,10 +27503,17 @@ function showSettingsSection(section) {
     const currency = currentUser.currency || 'TZS';
     
     const currencySymbols = {
-        'TZS': 'TZS ',
-        'USD': '$',
-        'EUR': '€',
-        'GBP': '£'
+        'TZS': 'TZS ', 'KES': 'KSh ', 'UGX': 'USh ', 'ZMW': 'ZK ', 'RWF': 'RF ',
+        'ETB': 'Br ', 'NGN': '₦', 'GHS': 'GH₵', 'ZAR': 'R', 'EGP': 'E£',
+        'MAD': 'MAD ', 'XOF': 'CFA ', 'XAF': 'FCFA ',
+        'USD': '$', 'CAD': 'CA$', 'MXN': 'MX$', 'BRL': 'R$', 'ARS': 'AR$',
+        'EUR': '€', 'GBP': '£', 'CHF': 'CHF ', 'SEK': 'kr ', 'NOK': 'kr ',
+        'DKK': 'kr ', 'PLN': 'zł ', 'RUB': '₽', 'TRY': '₺', 'UAH': '₴',
+        'CNY': '¥', 'JPY': '¥', 'INR': '₹', 'KRW': '₩', 'IDR': 'Rp ',
+        'PKR': '₨', 'BDT': '৳', 'VND': '₫', 'THB': '฿', 'PHP': '₱',
+        'MYR': 'RM ', 'SGD': 'S$', 'HKD': 'HK$', 'TWD': 'NT$', 'AED': 'د.إ ',
+        'SAR': '﷼', 'ILS': '₪',
+        'AUD': 'A$', 'NZD': 'NZ$'
     };
     
     const symbol = currencySymbols[currency] || currency + ' ';
@@ -29014,8 +30867,8 @@ function getDateRangeForPeriod(period) {
     }
     
     return {
-        from: from.toISOString().split('T')[0],
-        to: to.toISOString().split('T')[0]
+        from: getLocalDateString(from),
+        to: getLocalDateString(to)
     };
 }
 
@@ -30650,7 +32503,7 @@ function restoreFullDashboard() {
         var page = item.getAttribute('data-page');
         
         if (currentUser.userType === 'seller') {
-            var sellerVisibleMenus = ['dashboard', 'stock', 'sales', 'purchases', 'debts'];
+            var sellerVisibleMenus = ['dashboard', 'stock', 'sales', 'recordSale', 'expenses', 'purchases', 'debts', 'settings'];
             if (sellerVisibleMenus.includes(page)) {
                 item.style.display = 'flex';
             } else {
