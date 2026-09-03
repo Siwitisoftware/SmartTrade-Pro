@@ -9107,8 +9107,30 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
                   
 
     <script>
+const DETECTED_TIME_ZONE = (() => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch(e) { return 'UTC'; } })();
+let activeBusinessTimeZone = DETECTED_TIME_ZONE;
+
+function isValidTimeZone(tz) { try { new Intl.DateTimeFormat('en-US', { timeZone: tz }).format(); return true; } catch(e) { return false; } }
+function getBusinessTimeZone() {
+    const saved = currentUser && currentUser.settings && currentUser.settings.PROFILE && currentUser.settings.PROFILE.time_zone
+        ? currentUser.settings.PROFILE.time_zone.value : null;
+    return isValidTimeZone(saved) ? saved : (isValidTimeZone(activeBusinessTimeZone) ? activeBusinessTimeZone : 'UTC');
+}
+function setBusinessTimeZone(tz) { if (isValidTimeZone(tz)) activeBusinessTimeZone = tz; }
+function getBusinessDateParts(dateValue = new Date()) {
+    const d = dateValue instanceof Date ? dateValue : new Date(dateValue);
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: getBusinessTimeZone(), year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(d);
+    const out = {}; parts.forEach(p => { if (p.type !== 'literal') out[p.type] = p.value; });
+    return { year:Number(out.year), month:Number(out.month), day:Number(out.day) };
+}
+function getBusinessMonthYear(dateValue = new Date()) { const p = getBusinessDateParts(dateValue); return {month:p.month-1, year:p.year}; }
+function getBusinessCalendarDate(dateValue = new Date()) { const p = getBusinessDateParts(dateValue); return new Date(Date.UTC(p.year, p.month-1, p.day, 12, 0, 0)); }
+function formatBusinessDateTime(dateValue = new Date(), locale='en-GB') {
+    const d = dateValue instanceof Date ? dateValue : new Date(dateValue);
+    return new Intl.DateTimeFormat(locale, { timeZone:getBusinessTimeZone(), year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }).format(d);
+}
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbxfeZbjXRG7MAalaS7P1Kj9SfVH39ZErv1L-B9pGQ8RiVvzdIBzhOykWYlpFF8l3cRe2A/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbw5DJem83DNRcq4Ts2ElEBnL2d40JK1GNOpa7VWVWsC2Mq9ujTY_9l8aOXpFl0S0N6Lsg/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -9493,6 +9515,15 @@ let debtPhotoBase64 = null;
         
         async function syncOfflineData() {
     if (!currentUser.databaseId || offlineData.isSyncing) return;
+    // One persistent operation ID per pending sync batch. If the server
+    // completes the batch but the response is lost, the next retry uses the
+    // SAME ID and the server returns an already-processed success instead of
+    // executing the batch a second time. The ID is cleared only after the
+    // queue is successfully cleared.
+    if (!offlineData.syncOperationId) {
+        offlineData.syncOperationId = 'SYNC_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
+        saveOfflineData();
+    }
     
     if (!offlineData.debts) {
         offlineData.debts = [];
@@ -9582,6 +9613,7 @@ let debtPhotoBase64 = null;
         
         const result = await apiCall('syncOfflineData', {
             databaseId: currentUser.databaseId,
+            operationId: offlineData.syncOperationId,
             stock: offlineData.stock || [],
             sales: offlineData.sales || [],
             purchases: offlineData.purchases || [],
@@ -9616,6 +9648,7 @@ let debtPhotoBase64 = null;
             offlineData.purchaseEdits = [];
             offlineData.debtEdits = [];
             offlineData.deletes = [];
+            offlineData.syncOperationId = null;
             offlineData.lastSync = new Date().toISOString();
             offlineData.isSyncing = false;
             
@@ -9931,6 +9964,7 @@ async function syncDisplaySettingsFromServer() {
         if (result.success && result.settings) {
             settingsCache = result.settings;
             currentUser.settings = result.settings;
+            setBusinessTimeZone(getBusinessTimeZone());
             localStorage.setItem('smartTradeSettings', JSON.stringify(result.settings));
             updateSettingsUI(result.settings);
         }
@@ -10580,7 +10614,7 @@ async function updateSubscriptionCache() {
                     expiredMinutes: Math.floor(diffMs / (1000 * 60)),
                     expiredHours: Math.floor(diffMs / (1000 * 60 * 60)),
                     expiredDays: Math.floor(diffMs / (1000 * 60 * 60 * 24)),
-                    expiryDateFormatted: expiry.toLocaleString()
+                    expiryDateFormatted: formatBusinessDateTime(expiry)
                 };
                 showAccessDeniedModal(expiryInfo);
                 showNotification('Your subscription has expired. Access restricted.', 'error');
@@ -10995,7 +11029,7 @@ function loadDisabledDashboard() {
     // Show expiry date
     if (subscriptionCache && subscriptionCache.expiryDate) {
         const expiryDate = new Date(subscriptionCache.expiryDate);
-        if (expiryDateEl) expiryDateEl.textContent = expiryDate.toLocaleString();
+        if (expiryDateEl) expiryDateEl.textContent = formatBusinessDateTime(expiryDate);
     } else if (expiryDateEl) {
         expiryDateEl.textContent = '—';
     }
@@ -11301,7 +11335,7 @@ async function checkAndEnforceSubscriptionFast() {
                     expiredMinutes: Math.floor(diffMs / (1000 * 60)),
                     expiredHours: Math.floor(diffMs / (1000 * 60 * 60)),
                     expiredDays: Math.floor(diffMs / (1000 * 60 * 60 * 24)),
-                    expiryDateFormatted: expiry.toLocaleString()
+                    expiryDateFormatted: formatBusinessDateTime(expiry)
                 };
                 showAccessDeniedModal(expiryInfo);
                 return false;
@@ -11356,7 +11390,7 @@ async function checkAndEnforceSubscriptionFast() {
                 expiredMinutes: Math.floor(diffMs / (1000 * 60)),
                 expiredHours: Math.floor(diffMs / (1000 * 60 * 60)),
                 expiredDays: Math.floor(diffMs / (1000 * 60 * 60 * 24)),
-                expiryDateFormatted: expiry.toLocaleString()
+                expiryDateFormatted: formatBusinessDateTime(expiry)
             };
             showAccessDeniedModal(expiryInfo);
             return false;
@@ -11419,7 +11453,7 @@ async function checkSubscriptionWithServer() {
                     expiredMinutes: Math.floor(diffMs / (1000 * 60)),
                     expiredHours: Math.floor(diffMs / (1000 * 60 * 60)),
                     expiredDays: Math.floor(diffMs / (1000 * 60 * 60 * 24)),
-                    expiryDateFormatted: expiry.toLocaleString()
+                    expiryDateFormatted: formatBusinessDateTime(expiry)
                 };
                 showAccessDeniedModal(expiryInfo);
                 showNotification('Your subscription has expired. Access restricted.', 'error');
@@ -11449,7 +11483,7 @@ function getExpiryInfoFromCache() {
             expiredMinutes: Math.floor(diffMs / (1000 * 60)),
             expiredHours: Math.floor(diffMs / (1000 * 60 * 60)),
             expiredDays: Math.floor(diffMs / (1000 * 60 * 60 * 24)),
-            expiryDateFormatted: expiry.toLocaleString()
+            expiryDateFormatted: formatBusinessDateTime(expiry)
         };
     }
     return {
@@ -11479,7 +11513,7 @@ async function verifySubscriptionWithServer() {
                         expiredMinutes: Math.floor(diffMs / (1000 * 60)),
                         expiredHours: Math.floor(diffMs / (1000 * 60 * 60)),
                         expiredDays: Math.floor(diffMs / (1000 * 60 * 60 * 24)),
-                        expiryDateFormatted: expiry.toLocaleString()
+                        expiryDateFormatted: formatBusinessDateTime(expiry)
                     };
                     
                     if (!document.getElementById('accessDeniedModal')) {
@@ -12469,7 +12503,7 @@ function showApp() {
                 expiredMinutes: Math.floor(diffMs / (1000 * 60)),
                 expiredHours: Math.floor(diffMs / (1000 * 60 * 60)),
                 expiredDays: Math.floor(diffMs / (1000 * 60 * 60 * 24)),
-                expiryDateFormatted: expiry.toLocaleString()
+                expiryDateFormatted: formatBusinessDateTime(expiry)
             };
             showAccessDeniedModal(expiryInfo);
             currentUser.currentPage = 'disabledDashboard';
@@ -13014,9 +13048,30 @@ function hideAccessDeniedModal() {
         // ============================================
         
         async function apiCall(action, data = {}, timeoutMs = 30000) {
+            // Every write gets ONE durable idempotency key. The same payload object
+            // is mutated so an offline fallback/Retry keeps exactly the same key.
+            const writeActions = [
+                'addSale','updateSale','deleteSaleRow',
+                'addStock','bulkAddStock','updateStock','deleteStockRow',
+                'addPurchase','updatePurchase','deletePurchaseRow',
+                'addDebt','updateDebt','deleteDebt','returnDebt','denyDebt',
+                'addExpense','addUnit','addCategory','addNonStockProduct',
+                'saveDraftPurchaseRequest','submitPurchaseRequest','submitAdminPurchaseList',
+                'approvePurchaseRequest','rejectPurchaseRequest','saveReviewDraft',
+                'deletePurchaseRequest','completePurchaseRequestItem',
+                'updateSettings','updateProfile','changePassword','syncOfflineData'
+            ];
+            if (writeActions.includes(action) && !data.operationId) {
+                const randomPart = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                    ? crypto.randomUUID()
+                    : (Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + '-' + Math.random().toString(36).slice(2));
+                data.operationId = action.toUpperCase() + '_' + randomPart;
+            }
+
             const payload = {
                 action: action,
-                ...data
+                ...data,
+                clientTimeZone: getBusinessTimeZone()
             };
             
             const noAuthActions = ['login', 'register', 'forgot'];
@@ -16172,19 +16227,24 @@ function showSaleProductSuggestions() {
         
         
         
-// Returns "YYYY-MM-DD" using the LOCAL (device's own) timezone, never
-// UTC. toISOString() always converts to UTC first, which silently
-// shifts the calendar date back by a day for any timezone AHEAD of UTC
-// (like East Africa, UTC+3) during the hours between local midnight and
-// the UTC offset catching up (e.g. 00:00-03:00 local time in Tanzania) -
-// exactly why "Today's Sales" could show yesterday's figures during
-// those early-morning hours, and why date-range filters (This Week/
-// Month/Quarter/Year) could quietly be off by a day too.
+// Canonical business calendar for ALL displayed/grouped dates.
+// SmartTrade stores instants as ISO timestamps, but calendar dates must be
+// interpreted in the business timezone, not the browser/UTC timezone.
+function getBusinessDateString(dateValue) {
+    const date = dateValue instanceof Date ? dateValue : new Date(dateValue);
+    if (isNaN(date.getTime())) return '';
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: getBusinessTimeZone(), year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(date);
+    const map = {};
+    parts.forEach(p => { if (p.type !== 'literal') map[p.type] = p.value; });
+    return `${map.year}-${map.month}-${map.day}`;
+}
+
+// Kept under the existing name so every existing caller automatically uses
+// the same business calendar without changing unrelated application logic.
 function getLocalDateString(date) {
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return getBusinessDateString(date);
 }
 
 function calculateTodaySalesFromCache() {
@@ -16221,13 +16281,14 @@ function calculateTotalSalesFromCache() {
     
     if (salesCache?.data && Array.isArray(salesCache.data)) {
         const now = new Date();
-        const thisMonth = now.getMonth();
-        const thisYear = now.getFullYear();
+        const businessNow = getBusinessMonthYear(now);
+        const thisMonth = businessNow.month;
+        const thisYear = businessNow.year;
         
         salesCache.data.forEach(sale => {
             if (sale?.date && sale?.total) {
                 const saleDate = new Date(sale.date);
-                if (saleDate.getMonth() === thisMonth && saleDate.getFullYear() === thisYear) {
+                if (getBusinessMonthYear(saleDate).month === thisMonth && getBusinessMonthYear(saleDate).year === thisYear) {
                     totalSales += sale.total;
                 }
             }
@@ -16243,13 +16304,14 @@ function calculateTotalPurchasesFromCache() {
     
     if (purchasesCache?.data && Array.isArray(purchasesCache.data)) {
         const now = new Date();
-        const thisMonth = now.getMonth();
-        const thisYear = now.getFullYear();
+        const businessNow = getBusinessMonthYear(now);
+        const thisMonth = businessNow.month;
+        const thisYear = businessNow.year;
         
         purchasesCache.data.forEach(purchase => {
             if (purchase?.date && purchase?.total) {
                 const purchaseDate = new Date(purchase.date);
-                if (purchaseDate.getMonth() === thisMonth && purchaseDate.getFullYear() === thisYear) {
+                if (getBusinessMonthYear(purchaseDate).month === thisMonth && getBusinessMonthYear(purchaseDate).year === thisYear) {
                     totalPurchases += purchase.total;
                 }
             }
@@ -18037,9 +18099,19 @@ async function updateStock() {
         // always was (same online/offline handling per item).
         function generateClientReceiptNo() {
             const now = new Date();
-            const stamp = now.getFullYear().toString() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + '-' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0') + String(now.getSeconds()).padStart(2,'0');
+            const bp = getBusinessDateParts(now); const bt = new Intl.DateTimeFormat('en-GB', { timeZone:getBusinessTimeZone(), hour:'2-digit', minute:'2-digit', second:'2-digit', hourCycle:'h23' }).formatToParts(now); const tm = {}; bt.forEach(p => { if (p.type !== 'literal') tm[p.type] = p.value; }); const stamp = String(bp.year) + String(bp.month).padStart(2,'0') + String(bp.day).padStart(2,'0') + '-' + tm.hour + tm.minute + tm.second;
             const token = (window.crypto && crypto.randomUUID) ? crypto.randomUUID().split('-')[0].toUpperCase() : Math.random().toString(36).slice(2,10).toUpperCase();
             return `ST-${stamp}-${token}`;
+        }
+
+        // One stable id per sale-line operation. It is created before the
+        // first network attempt and travels with the queued offline record.
+        // If a request reaches the server but its response is lost, every
+        // retry carries the same id, so the server can safely ignore the
+        // already-committed operation instead of reducing stock twice.
+        function generateSaleOperationId() {
+            const token = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+            return 'SALEOP-' + token.replace(/-/g, '').toUpperCase();
         }
         
         function completeSale() {
@@ -18121,6 +18193,11 @@ async function updateStock() {
             // instead of several separate rows for the identical item.
             const itemsToProcess = mergeCartItemsForSubmission(currentSaleCart);
             const receiptNo = generateClientReceiptNo();
+            // Keep one stable operation id for each item in this sale.
+            // The id must NOT be regenerated during retry/sync.
+            itemsToProcess.forEach(item => {
+                if (!item.operationId) item.operationId = generateSaleOperationId();
+            });
             let successCount = 0;
             let offlineCount = 0;
             
@@ -18180,7 +18257,8 @@ async function updateStock() {
                 sellerId: currentUser.sellerId,
                 customerId: customerId,
                 unit: saleUnit,
-                receiptNo: receiptNo || null
+                receiptNo: receiptNo || null,
+                operationId: item.operationId || generateSaleOperationId()
             };
             
             if (isOnline) {
@@ -18188,12 +18266,15 @@ async function updateStock() {
                     const result = await apiCall('addSale', saleData);
                     
                     if (result.success) {
-                        if (isStockProduct && productsCache[product]) {
+                        // If this is a retry after a lost response, the server
+                        // has already committed the sale and stock movement.
+                        // Never apply the local stock movement a second time.
+                        if (!result.alreadyProcessed && isStockProduct && productsCache[product]) {
                             productsCache[product].quantity -= quantity;
                             saveProductsCache();
                         }
                         
-                        if (isStockProduct && stockCache.data) {
+                        if (!result.alreadyProcessed && isStockProduct && stockCache.data) {
                             let remainingToReduce = quantity;
                             
                             const sortedStock = [...stockCache.data]
@@ -18235,6 +18316,7 @@ async function updateStock() {
                                 branchId: branchId,
                                 unit: saleUnit,
                                 receiptNo: result.receiptNo || saleData.receiptNo || null,
+                                operationId: result.operationId || saleData.operationId || null,
                                 rowIndex: result.rowIndex || null
                             };
                             
@@ -18349,7 +18431,9 @@ async function updateStock() {
                     sellerId: data.sellerId,
                     sellerName: data.sellerId ? 'Seller' : 'Admin',
                     branchId: data.branchId,
-                    unit: data.unit || ''
+                    unit: data.unit || '',
+                    receiptNo: data.receiptNo || null,
+                    operationId: data.operationId || null
                 };
                 
                 salesCache.data.push(newSale);
@@ -18448,7 +18532,7 @@ async function updateStock() {
 
             sorted.forEach(sale => {
                 const d = new Date(sale.date);
-                const dayKey = isNaN(d.getTime()) ? 'Unknown Date' : d.toISOString().slice(0,10);
+                const dayKey = isNaN(d.getTime()) ? 'Unknown Date' : getBusinessDateString(d);
                 if (!dayBuckets[dayKey]) dayBuckets[dayKey] = [];
                 dayBuckets[dayKey].push(sale);
             });
@@ -18539,9 +18623,9 @@ async function updateStock() {
         }
 
         function formatSalesAsOfDate(dayKey) {
-            const d = new Date(dayKey + 'T00:00:00');
-            if (isNaN(d.getTime())) return dayKey;
-            return d.toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
+            const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dayKey);
+            if (!m) return dayKey;
+            return `${m[3]}/${m[2]}/${m[1]}`;
         }
 
         function toggleSalesReceiptMenu(groupIndex, event) {
@@ -21848,7 +21932,7 @@ function downloadStockTemplate() {
     }
     
     const businessName = currentUser.business || 'SmartTrade Pro';
-    const generatedOn = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+    const generatedOn = new Intl.DateTimeFormat('en-GB', { timeZone:getBusinessTimeZone(), day:'2-digit', month:'long', year:'numeric' }).format(new Date());
     const headerRow = ['Product', 'Unit', 'Quantity', 'Buy Price', 'Sell Price', 'Category'];
     
     // Layout: a title block (business name + subtitle + date) sitting
@@ -22389,7 +22473,7 @@ function onSaleQRScanSuccess(decodedText) {
     qrScannedSessionItems.unshift({
         product: payload.product,
         unit: matchedVariant.unit,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        time: new Intl.DateTimeFormat(undefined, { timeZone:getBusinessTimeZone(), hour:'2-digit', minute:'2-digit' }).format(new Date())
     });
     renderQRScannedItemsList();
 }
@@ -22464,7 +22548,7 @@ function onDebtQRScanSuccess(decodedText) {
     qrScannedSessionItems.unshift({
         product: payload.product,
         unit: matchedVariant.unit,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        time: new Intl.DateTimeFormat(undefined, { timeZone:getBusinessTimeZone(), hour:'2-digit', minute:'2-digit' }).format(new Date())
     });
     renderQRScannedItemsList();
 }
@@ -23446,7 +23530,7 @@ function sendScannedItemWithRetry(product, unit, target, customerName, customerS
                 target: target || 'sale',
                 customerName: customerName || '',
                 customerSessionId: customerSessionId || '',
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                time: new Intl.DateTimeFormat(undefined, { timeZone:getBusinessTimeZone(), hour:'2-digit', minute:'2-digit' }).format(new Date())
             });
             renderRemoteScannerHistory();
         } else if (statusEl) {
@@ -26254,7 +26338,8 @@ function setDefaultAccountingPeriodDates() {
             startInput.value = nextStartStr;
         }
     } else {
-        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const bpToday = getBusinessDateParts(today);
+        const monthStart = new Date(Date.UTC(bpToday.year, bpToday.month - 1, 1, 12, 0, 0));
         startInput.value = getLocalDateString(monthStart);
     }
     
@@ -26793,6 +26878,11 @@ async function closeAccountsConfirmed() {
                         : operationalPurchases;
                     savePurchasesCache();
                 }
+                // Expenses are also a live-period list. Clear the in-page
+                // result immediately after a successful close so an older
+                // result cannot flash back into the Expenses table before the
+                // next authoritative server fetch.
+                lastExpensesResult = null;
             }
             if (result.alreadyClosed) {
                 showNotification('This exact period was already closed.', 'info');
@@ -26908,8 +26998,9 @@ function updateReportStatsFromCache() {
     const monthlyPurchases = document.getElementById('reportMonthlyPurchases');
     
     const now = new Date();
-    const thisMonth = now.getMonth();
-    const thisYear = now.getFullYear();
+    const businessNow = getBusinessMonthYear(now);
+    const thisMonth = businessNow.month;
+    const thisYear = businessNow.year;
     
     // Calculate from cache
     if (monthlySales) {
@@ -26918,7 +27009,7 @@ function updateReportStatsFromCache() {
             salesCache.data.forEach(sale => {
                 if (sale?.date && sale?.total) {
                     const saleDate = new Date(sale.date);
-                    if (saleDate.getMonth() === thisMonth && saleDate.getFullYear() === thisYear) {
+                    if (getBusinessMonthYear(saleDate).month === thisMonth && getBusinessMonthYear(saleDate).year === thisYear) {
                         monthlyTotal += sale.total;
                     }
                 }
@@ -26958,7 +27049,7 @@ function updateReportStatsFromCache() {
             purchasesCache.data.forEach(purchase => {
                 if (purchase?.date && purchase?.total) {
                     const purchaseDate = new Date(purchase.date);
-                    if (purchaseDate.getMonth() === thisMonth && purchaseDate.getFullYear() === thisYear) {
+                    if (getBusinessMonthYear(purchaseDate).month === thisMonth && getBusinessMonthYear(purchaseDate).year === thisYear) {
                         monthlyTotal += purchase.total;
                     }
                 }
@@ -27281,85 +27372,178 @@ function updateReportStatsFromCache() {
             showNotification('Data export feature coming soon', 'info');
         }
         
-       // Updated confirmation modal function to support custom content
+       // Confirmation dialogs close immediately after acceptance. The actual
+// action button that opened the dialog is kept as the visual source of
+// progress, so users always see what is being processed (e.g. Completing
+// Sale..., Recording Purchase..., Deleting Customer...). Actions that already
+// have their own setButtonLoading(...) keep their exact, purpose-specific
+// loading text; the fallback below only applies when they do not.
+let confirmationActionButton = null;
+let confirmationActionButtonOriginalHTML = null;
+let confirmationActionButtonOriginalDisabled = false;
+let confirmationActionButtonOriginalAriaBusy = null;
+let confirmationActionButtonFallbackApplied = false;
+
+function getConfirmationLoadingText(title) {
+    const t = String(title || '').toLowerCase();
+    if (t.includes('complete sale')) return 'Completing Sale...';
+    if (t.includes('complete debt')) return 'Completing Debt...';
+    if (t.includes('purchase request') && t.includes('submit')) return 'Submitting Request...';
+    if (t.includes('approve purchase')) return 'Approving Request...';
+    if (t.includes('reject purchase')) return 'Rejecting Request...';
+    if (t.includes('record purchase')) return 'Recording Purchase...';
+    if (t.includes('delete purchase')) return 'Deleting Purchase...';
+    if (t.includes('delete sale')) return 'Deleting Sale...';
+    if (t.includes('delete stock')) return 'Deleting Stock...';
+    if (t.includes('delete customer')) return 'Deleting Customer...';
+    if (t.includes('delete supplier')) return 'Deleting Supplier...';
+    if (t.includes('delete seller')) return 'Deleting Seller...';
+    if (t.includes('delete denied debt')) return 'Deleting Debt...';
+    if (t.includes('delete debt')) return 'Deleting Debt...';
+    if (t.includes('delete branch')) return 'Deleting Branch...';
+    if (t.includes('reset seller pin')) return 'Resetting PIN...';
+    if (t.includes('re-lend debt')) return 'Re-lending Debt...';
+    if (t.includes('confirm payment')) return 'Recording Payment...';
+    if (t.includes('complete purchase')) return 'Completing Purchase...';
+    if (t.includes('close accounts')) return 'Closing Accounts...';
+    if (t.includes('delete user account')) return 'Deleting Account...';
+    if (t.includes('logout')) return 'Logging out...';
+    if (t.includes('approve')) return 'Approving...';
+    if (t.includes('reject')) return 'Rejecting...';
+    if (t.includes('delete')) return 'Deleting...';
+    if (t.includes('save')) return 'Saving...';
+    if (t.includes('update')) return 'Updating...';
+    return 'Processing...';
+}
+
+function captureConfirmationActionButton() {
+    const active = document.activeElement;
+    confirmationActionButton = (active && active.tagName === 'BUTTON' && active.id !== 'confirmationConfirmBtn') ? active : null;
+    confirmationActionButtonOriginalHTML = confirmationActionButton ? confirmationActionButton.innerHTML : null;
+    confirmationActionButtonOriginalDisabled = confirmationActionButton ? confirmationActionButton.disabled : false;
+    confirmationActionButtonOriginalAriaBusy = confirmationActionButton ? confirmationActionButton.getAttribute('aria-busy') : null;
+    confirmationActionButtonFallbackApplied = false;
+}
+
+function applyConfirmationFallbackLoading(title) {
+    const button = confirmationActionButton;
+    if (!button || !document.body.contains(button)) return;
+
+    // If the action itself already activated its dedicated loading UI,
+    // never overwrite it. This preserves labels such as "Completing Sale..."
+    // and the existing spinner/text elements exactly as designed.
+    if (button.disabled || button.dataset.loading === 'true' || button.querySelector('.spinner:not([style*="display: none"])')) {
+        button.setAttribute('aria-busy', 'true');
+        return;
+    }
+
+    confirmationActionButtonOriginalHTML = button.innerHTML;
+    button.disabled = true;
+    button.style.opacity = '1';
+    button.setAttribute('aria-busy', 'true');
+    button.innerHTML = '<span class="spinner small" style="display:inline-block; width:14px; height:14px; border-width:2px; margin-right:7px;"></span><span>' + escapeHtml(getConfirmationLoadingText(title)) + '</span>';
+    confirmationActionButtonFallbackApplied = true;
+}
+
+function restoreConfirmationActionButton() {
+    const button = confirmationActionButton;
+    if (!button || !document.body.contains(button)) {
+        confirmationActionButton = null;
+        return;
+    }
+
+    // Dedicated setButtonLoading(...) actions restore themselves. Only restore
+    // the generic fallback that this confirmation helper created.
+    if (confirmationActionButtonFallbackApplied && confirmationActionButtonOriginalHTML !== null) {
+        button.innerHTML = confirmationActionButtonOriginalHTML;
+        button.disabled = confirmationActionButtonOriginalDisabled;
+        button.style.removeProperty('opacity');
+    }
+
+    if (confirmationActionButtonOriginalAriaBusy === null) button.removeAttribute('aria-busy');
+    else button.setAttribute('aria-busy', confirmationActionButtonOriginalAriaBusy);
+
+    confirmationActionButton = null;
+    confirmationActionButtonOriginalHTML = null;
+    confirmationActionButtonFallbackApplied = false;
+}
+
 function showConfirmationModal(title, message, onConfirm, isCustomContent = false, waitForConfirm = false) {
     const modal = document.getElementById('confirmationModal');
     const titleEl = document.getElementById('confirmationTitle');
     const messageEl = document.getElementById('confirmationMessage');
     const confirmBtn = document.getElementById('confirmationConfirmBtn');
     const icon = document.getElementById('confirmationIcon');
-    
+
+    // The caller's button is the button immediately responsible for opening
+    // this confirmation. Capture it before the modal changes focus.
+    captureConfirmationActionButton();
+
     titleEl.textContent = title;
-    
-    if (isCustomContent) {
-        // For custom content (like delete confirmation with input)
-        messageEl.innerHTML = message;
-    } else {
-        messageEl.textContent = message;
-    }
-    
+
+    if (isCustomContent) messageEl.innerHTML = message;
+    else messageEl.textContent = message;
+
     icon.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
     icon.className = 'confirmation-icon warning';
-    
-    // Store original onclick and replace temporarily
+
     const originalOnClick = confirmBtn.onclick;
-    
-    // Logout uses its own dedicated modal (#logoutConfirmation), never this
-    // shared one - but the Developer Dashboard's logout confirmation does
-    // reuse this modal, so it's still excluded by title here as a safety net.
-    // Everything else closes the moment "Confirm" is tapped and shows its
-    // own loading state on the actual action button - waitForConfirm lets a
-    // caller opt back into the old "stay open until onConfirm resolves"
-    // behavior when it needs to validate something (e.g. require a reason)
-    // before allowing the dialog to close.
     const isLogoutFlow = /logout/i.test(title);
-    
-    confirmBtn.onclick = (isLogoutFlow || waitForConfirm)
-        ? async function() {
+
+    confirmBtn.onclick = async function() {
+        // Keep the old validation behaviour only for callers that explicitly
+        // request it. No current normal confirmation uses this mode.
+        if (isLogoutFlow || waitForConfirm) {
             const result = await onConfirm();
-            if (result !== false) { // Only close if not explicitly returning false
-                hideConfirmationModal();
-            }
+            if (result !== false) hideConfirmationModal();
+            return;
         }
-        : async function() {
-            // If onConfirm() is an async action (a server call, like most
-            // Delete/Deny/Mark-as-Paid style confirmations), show a quick
-            // loading state on this Confirm button itself while it runs,
-            // instead of closing the dialog immediately and leaving the
-            // person staring at nothing with no sign anything is
-            // happening until a notification eventually appears. Plain
-            // synchronous actions (onConfirm() returns undefined, not a
-            // promise) keep behaving exactly as before - close right away.
-            const maybePromise = onConfirm();
-            if (maybePromise && typeof maybePromise.then === 'function') {
-                const originalHTML = confirmBtn.innerHTML;
-                confirmBtn.disabled = true;
-                confirmBtn.innerHTML = '<span class="spinner small" style="display:inline-block; width:14px; height:14px; border-width:2px;"></span> Please wait...';
-                try {
-                    await maybePromise;
-                } finally {
-                    confirmBtn.disabled = false;
-                    confirmBtn.innerHTML = originalHTML;
-                }
+
+        // CLOSE FIRST. This is intentionally synchronous: once Confirm is
+        // accepted, the confirmation message disappears immediately.
+        hideConfirmationModal();
+
+        // Start the real action immediately. Existing action functions such
+        // as completeSaleConfirmed() set their own precise loading state at
+        // the first line, so their labels are preserved.
+        let result;
+        try {
+            result = onConfirm();
+        } catch (error) {
+            restoreConfirmationActionButton();
+            throw error;
+        }
+
+        // For actions that do not have a dedicated loading implementation,
+        // add a generic state after the callback has had its synchronous
+        // opportunity to activate its own spinner/text.
+        Promise.resolve().then(() => applyConfirmationFallbackLoading(title));
+
+        if (result && typeof result.then === 'function') {
+            try {
+                await result;
+            } finally {
+                // Give dedicated setButtonLoading(...) calls a chance to
+                // restore themselves before this helper touches anything.
+                setTimeout(() => restoreConfirmationActionButton(), 0);
             }
-            hideConfirmationModal();
-        };
-    
+        } else {
+            setTimeout(() => restoreConfirmationActionButton(), 0);
+        }
+    };
+
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
-    
-    // Restore original onclick when modal is hidden
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (!modal.classList.contains('show')) {
-                confirmBtn.onclick = originalOnClick;
-                observer.disconnect();
-            }
-        });
+
+    const observer = new MutationObserver(function() {
+        if (!modal.classList.contains('show')) {
+            confirmBtn.onclick = originalOnClick;
+            observer.disconnect();
+        }
     });
     observer.observe(modal, { attributes: true });
 }
-        
+
         function hideConfirmationModal() {
             const modal = document.getElementById('confirmationModal');
             modal.classList.remove('show');
@@ -27548,55 +27732,40 @@ function showSettingsSection(section) {
         
         function formatDate(dateString, includeTime = false) {
             if (!dateString) return '—';
-            
             try {
-                const date = new Date(dateString);
-                
-                if (isNaN(date.getTime())) {
-                    return '—';
+                const date = dateString instanceof Date ? dateString : new Date(dateString);
+                if (isNaN(date.getTime())) return '—';
+
+                // Date-only strings are calendar dates, not UTC instants.
+                // Keep their literal Y/M/D; timestamps are converted to the
+                // business timezone so 01:05 on 03/09 never becomes 02/09.
+                let year, month, day, hours, minutes;
+                const raw = String(dateString);
+                const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+                if (dateOnly) {
+                    year = Number(dateOnly[1]); month = Number(dateOnly[2]); day = Number(dateOnly[3]);
+                    hours = 0; minutes = 0;
+                } else {
+                    const parts = new Intl.DateTimeFormat('en-CA', {
+                        timeZone: getBusinessTimeZone(), year:'numeric', month:'2-digit', day:'2-digit',
+                        hour:'2-digit', minute:'2-digit', hourCycle:'h23'
+                    }).formatToParts(date);
+                    const map = {};
+                    parts.forEach(p => { if (p.type !== 'literal') map[p.type] = p.value; });
+                    year = Number(map.year); month = Number(map.month); day = Number(map.day);
+                    hours = Number(map.hour); minutes = Number(map.minute);
                 }
-                
+
                 const dateFormat = currentUser.settings?.DISPLAY?.date_format?.value || 'dd/mm/yyyy';
-                
-                let formattedDate = '';
-                
+                let formattedDate;
                 switch(dateFormat) {
+                    case 'mm/dd/yyyy': formattedDate = `${String(month).padStart(2,'0')}/${String(day).padStart(2,'0')}/${year}`; break;
+                    case 'yyyy-mm-dd': formattedDate = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`; break;
                     case 'dd/mm/yyyy':
-                        const day = date.getDate().toString().padStart(2, '0');
-                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                        const year = date.getFullYear();
-                        formattedDate = `${day}/${month}/${year}`;
-                        break;
-                        
-                    case 'mm/dd/yyyy':
-                        const monthUS = (date.getMonth() + 1).toString().padStart(2, '0');
-                        const dayUS = date.getDate().toString().padStart(2, '0');
-                        const yearUS = date.getFullYear();
-                        formattedDate = `${monthUS}/${dayUS}/${yearUS}`;
-                        break;
-                        
-                    case 'yyyy-mm-dd':
-                        const yearISO = date.getFullYear();
-                        const monthISO = (date.getMonth() + 1).toString().padStart(2, '0');
-                        const dayISO = date.getDate().toString().padStart(2, '0');
-                        formattedDate = `${yearISO}-${monthISO}-${dayISO}`;
-                        break;
-                        
-                    default:
-                        const defDay = date.getDate().toString().padStart(2, '0');
-                        const defMonth = (date.getMonth() + 1).toString().padStart(2, '0');
-                        const defYear = date.getFullYear();
-                        formattedDate = `${defDay}/${defMonth}/${defYear}`;
+                    default: formattedDate = `${String(day).padStart(2,'0')}/${String(month).padStart(2,'0')}/${year}`;
                 }
-                
-                if (includeTime) {
-                    const hours = date.getHours().toString().padStart(2, '0');
-                    const minutes = date.getMinutes().toString().padStart(2, '0');
-                    formattedDate += ` ${hours}:${minutes}`;
-                }
-                
+                if (includeTime) formattedDate += ` ${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}`;
                 return formattedDate;
-                
             } catch (e) {
                 console.error('Error formatting date:', e);
                 return '—';
@@ -30248,7 +30417,7 @@ function buildOfflineReportHTML(reportType, filters) {
     const sections = sectionsToBuild.map(s => buildOfflineReportSection(s, filters));
     
     const now = new Date();
-    const generatedAt = formatDate(now.toISOString(), true) + ' ' + now.toLocaleTimeString();
+    const generatedAt = formatDate(now.toISOString(), true) + ' ' + new Intl.DateTimeFormat(undefined, { timeZone:getBusinessTimeZone(), hour:'2-digit', minute:'2-digit', second:'2-digit' }).format(now);
     
     const reportTypeTitle = {
         'full': 'Full Business Report',
@@ -30376,7 +30545,7 @@ function generateSaleReceipt(items, customer, paymentMethod, grandTotal) {
     const now = new Date();
     saleReceiptCounter++;
     const receiptNo = 'RCT-' + now.getTime().toString().slice(-8) + '-' + saleReceiptCounter;
-    const dateTimeDisplay = formatDate(now.toISOString(), true) + ' ' + now.toLocaleTimeString();
+    const dateTimeDisplay = formatDate(now.toISOString(), true) + ' ' + new Intl.DateTimeFormat(undefined, { timeZone:getBusinessTimeZone(), hour:'2-digit', minute:'2-digit', second:'2-digit' }).format(now);
     const sellerName = currentUser.userType === 'seller' ? (currentUser.sellerName || 'Seller') : 'Admin';
     
     const rowsHTML = items.map(item => `
@@ -30977,8 +31146,9 @@ function quickReport(type) {
     
     // Set default date ranges based on report type
     const today = new Date();
-    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const bpToday = getBusinessDateParts(today);
+    const firstDayOfMonth = new Date(Date.UTC(bpToday.year, bpToday.month - 1, 1, 12, 0, 0));
+    const lastDayOfMonth = new Date(Date.UTC(bpToday.year, bpToday.month, 0, 12, 0, 0));
     
     const formatYMD = function(date) {
         const year = date.getFullYear();
@@ -31691,7 +31861,7 @@ function openSubscriptionModal(email, business, currentPlan, currentExpiry) {
         const expiryDate = new Date(currentExpiry);
         const now = new Date();
         const isExpired = expiryDate < now;
-        currentPlanSpan.innerHTML = `Expires: ${expiryDate.toLocaleDateString()} ${isExpired ? '(Expired)' : ''}`;
+        currentPlanSpan.innerHTML = `Expires: ${formatBusinessDateTime(expiryDate)} ${isExpired ? '(Expired)' : ''}`;
         currentPlanSpan.className = isExpired ? 'badge danger' : 'badge warning';
     } else {
         currentPlanSpan.innerHTML = 'No subscription';
@@ -31801,7 +31971,7 @@ function updateExpiryPreview(expiryDate) {
     
     previewText.innerHTML = `
         <i class="fas fa-calendar-day"></i> 
-        Expires on: <strong>${expiryDate.toLocaleString()}</strong><br>
+        Expires on: <strong>${formatBusinessDateTime(expiryDate)}</strong><br>
         <i class="fas fa-hourglass-half"></i> 
         Remaining: <strong>${readableRemaining}</strong>
     `;
@@ -31858,7 +32028,7 @@ async function saveSubscription() {
         
         if (result.success) {
             var message = expiryDate ? 
-                'Subscription updated until ' + expiryDate.toLocaleString() : 
+                'Subscription updated until ' + formatBusinessDateTime(expiryDate) : 
                 'Subscription set to Unlimited';
             showNotification(message, 'success');
             
@@ -32424,7 +32594,7 @@ function setupOnlineStatusListener() {
                             expiredMinutes: 0,
                             expiredHours: 0,
                             expiredDays: 0,
-                            expiryDateFormatted: serverResult.expiryDate ? new Date(serverResult.expiryDate).toLocaleString() : null
+                            expiryDateFormatted: serverResult.expiryDate ? formatBusinessDateTime(new Date(serverResult.expiryDate)) : null
                         };
                         showAccessDeniedModal(expiryInfo);
                         showNotification('Your subscription has expired. Access restricted.', 'error');
@@ -32472,7 +32642,7 @@ function startPeriodicAccessCheck() {
                                 expiredMinutes: 0,
                                 expiredHours: 0,
                                 expiredDays: 0,
-                                expiryDateFormatted: serverResult.expiryDate ? new Date(serverResult.expiryDate).toLocaleString() : null
+                                expiryDateFormatted: serverResult.expiryDate ? formatBusinessDateTime(new Date(serverResult.expiryDate)) : null
                             };
                             showAccessDeniedModal(expiryInfo);
                             applyDisabledDashboardMode();
