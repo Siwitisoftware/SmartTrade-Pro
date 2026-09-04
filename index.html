@@ -9130,7 +9130,7 @@ function formatBusinessDateTime(dateValue = new Date(), locale='en-GB') {
     return new Intl.DateTimeFormat(locale, { timeZone:getBusinessTimeZone(), year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }).format(d);
 }
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbw5DJem83DNRcq4Ts2ElEBnL2d40JK1GNOpa7VWVWsC2Mq9ujTY_9l8aOXpFl0S0N6Lsg/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbywi7j4H8xg0wIk-PMr7V2BtVTOgfLGEUGJTkkKWTJRLISDsIHI_3J6uN2GUnFApr_qvg/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -18066,7 +18066,7 @@ async function updateStock() {
             
             for (const item of itemsToProcess) {
                 const result = await processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer, receiptNo);
-                if (result === 'online') successCount++;
+                if (result === 'online' || result === 'online-pending') successCount++;
                 else if (result === 'offline') offlineCount++;
             }
             
@@ -18159,12 +18159,97 @@ async function updateStock() {
             return order.map(key => merged[key]);
         }
         
+        function resetRecordSaleFormAfterCompletion_() {
+            const saleCustomerField = document.getElementById('saleCustomer');
+            if (saleCustomerField) saleCustomerField.value = '';
+            const salePaymentMethodField = document.getElementById('salePaymentMethod');
+            if (salePaymentMethodField) salePaymentMethodField.value = 'cash';
+            const saleProductSelectField = document.getElementById('saleProductSelect');
+            if (saleProductSelectField) saleProductSelectField.value = '';
+            const nonStockProductField = document.getElementById('nonStockProduct');
+            if (nonStockProductField) nonStockProductField.value = '';
+            const saleQuantityField = document.getElementById('saleQuantity');
+            if (saleQuantityField) saleQuantityField.value = '';
+            const saleUnitPriceField = document.getElementById('saleUnitPrice');
+            if (saleUnitPriceField) saleUnitPriceField.value = '';
+            const saleTotalField = document.getElementById('saleTotal');
+            if (saleTotalField) saleTotalField.value = '';
+            const saleUnitField = document.getElementById('saleUnit');
+            if (saleUnitField) saleUnitField.value = '';
+            const saleBranchField = document.getElementById('saleBranchSelect');
+            if (saleBranchField) saleBranchField.selectedIndex = 0;
+            const saleStockInfo = document.getElementById('saleStockInfo');
+            if (saleStockInfo) saleStockInfo.style.display = 'none';
+            const customerSuggestions = document.getElementById('customerSuggestions');
+            if (customerSuggestions) customerSuggestions.style.display = 'none';
+            window.pendingNewCustomer = null;
+        }
+
+        function addOptimisticSalesToCache_(items, customer, paymentMethod, receiptNo) {
+            if (!salesCache.data) salesCache.data = [];
+            const now = new Date().toISOString();
+            items.forEach(item => {
+                const operationId = item.operationId || generateSaleOperationId();
+                item.operationId = operationId;
+                const optimisticSale = {
+                    date: now,
+                    product: item.product,
+                    quantity: item.qty,
+                    unitPrice: item.unitPrice,
+                    total: item.subtotal,
+                    customer: customer || 'Walk-in',
+                    paymentMethod: paymentMethod,
+                    type: item.isStockProduct ? 'stock' : 'service',
+                    sellerId: currentUser.sellerId,
+                    sellerName: currentUser.userType === 'seller' ? currentUser.sellerName : 'Admin',
+                    branchId: item.branchId,
+                    unit: item.unit || '',
+                    receiptNo: receiptNo || null,
+                    operationId: operationId,
+                    _optimistic: true
+                };
+                const existing = salesCache.data.find(s => s.operationId === operationId);
+                if (!existing) salesCache.data.push(optimisticSale);
+            });
+            sortDataDescending(salesCache.data);
+            if (currentUser.userType === 'seller') {
+                salesCache.filtered = salesCache.data.filter(s => s.sellerId === currentUser.sellerId);
+            } else {
+                salesCache.filtered = salesCache.data;
+            }
+            saveSalesCache();
+            displaySalesTable();
+            const badge = document.getElementById('salesBadge');
+            if (badge) badge.textContent = salesCache.data.length;
+        }
+
         async function completeSaleConfirmed() {
             setButtonLoading('submitSaleBtn', 'saleSpinner', 'submitSaleText', true, 'Completing Sale...');
             
+            // Capture everything needed for this sale BEFORE any await.
+            // This lets the visible form clear immediately while the actual
+            // save continues silently in the background.
             const customer = document.getElementById('saleCustomer').value.trim();
             const paymentMethod = document.getElementById('salePaymentMethod').value;
-            
+            const itemsToProcess = mergeCartItemsForSubmission(currentSaleCart);
+            const receiptNo = generateClientReceiptNo();
+            itemsToProcess.forEach(item => {
+                if (!item.operationId) item.operationId = generateSaleOperationId();
+            });
+
+            // Clear the Record Sale form immediately after confirmation. The
+            // captured values above remain available to the silent save.
+            currentSaleCart = [];
+            clearSaleCartStorage();
+            resetRecordSaleFormAfterCompletion_();
+            renderSaleCartSummary();
+            renderRecentSalesInModal();
+
+            // Make the new receipt visible in All Sales immediately. The same
+            // operationId/receiptNo is reused by the real save, preventing
+            // duplicate rows when the server response arrives.
+            addOptimisticSalesToCache_(itemsToProcess, customer, paymentMethod, receiptNo);
+
             const isNewCustomer = customer && (!customersCache.data || !customersCache.data.some(c => c.name.toLowerCase() === customer.toLowerCase()));
             let customerId = null;
             
@@ -18187,23 +18272,12 @@ async function updateStock() {
                 }
             }
             
-            // Same customer, same product+unit added more than once (e.g.
-            // via repeated QR scans) - combine those lines into one before
-            // sending, so the sale records ONE consolidated quantity
-            // instead of several separate rows for the identical item.
-            const itemsToProcess = mergeCartItemsForSubmission(currentSaleCart);
-            const receiptNo = generateClientReceiptNo();
-            // Keep one stable operation id for each item in this sale.
-            // The id must NOT be regenerated during retry/sync.
-            itemsToProcess.forEach(item => {
-                if (!item.operationId) item.operationId = generateSaleOperationId();
-            });
             let successCount = 0;
             let offlineCount = 0;
             
             for (const item of itemsToProcess) {
                 const result = await processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer, receiptNo);
-                if (result === 'online') successCount++;
+                if (result === 'online' || result === 'online-pending') successCount++;
                 else if (result === 'offline') offlineCount++;
             }
             
@@ -18215,23 +18289,13 @@ async function updateStock() {
                 showNotification(`Sale completed - ${successCount} recorded, ${offlineCount} saved offline`, 'info');
             }
             
-            // Print the receipt (if the person left the checkbox checked) -
-            // using the merged cart items and the same grand total shown
-            // on screen, since itemsToProcess is about to be cleared below.
             const issueReceipt = document.getElementById('saleIssueReceipt')?.checked;
             if (issueReceipt && (successCount > 0 || offlineCount > 0)) {
                 const receiptGrandTotal = itemsToProcess.reduce((sum, it) => sum + it.subtotal, 0);
                 generateSaleReceipt(itemsToProcess, customer, paymentMethod, receiptGrandTotal);
             }
             
-            // Reset everything for the next sale - the modal stays open
-            // like a dashboard page.
-            currentSaleCart = [];
-            document.getElementById('saleCustomer').value = '';
-            renderSaleCartSummary();
-            clearSaleCartStorage();
-            renderRecentSalesInModal();
-            
+            // Refresh authoritative server data after the silent save.
             loadSales();
             loadDashboard();
             
@@ -18261,11 +18325,33 @@ async function updateStock() {
                 operationId: item.operationId || generateSaleOperationId()
             };
             
-            if (isOnline) {
-                try {
-                    const result = await apiCall('addSale', saleData);
-                    
-                    if (result.success) {
+            // navigator.onLine is the first gate. Do not classify a sale as
+            // offline merely because one fetch attempt timed out while the
+            // device was still online. Retry the SAME operation ID so the
+            // server idempotency protection remains intact.
+            if (navigator.onLine) {
+                let result = null;
+                let lastError = null;
+
+                for (let attempt = 0; attempt < 3; attempt++) {
+                    isOnline = navigator.onLine;
+                    if (!isOnline) break;
+
+                    try {
+                        result = await apiCall('addSale', saleData);
+                        if (result && (result.success || !result.success)) break;
+                    } catch (error) {
+                        lastError = error;
+                        isOnline = navigator.onLine;
+                        if (!isOnline) break;
+                        if (attempt < 2) {
+                            await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+                        }
+                    }
+                }
+
+                if (result && result.success) {
+
                         // If this is a retry after a lost response, the server
                         // has already committed the sale and stock movement.
                         // Never apply the local stock movement a second time.
@@ -18320,7 +18406,13 @@ async function updateStock() {
                                 rowIndex: result.rowIndex || null
                             };
                             
-                            salesCache.data.push(newSale);
+                            const existingSale = salesCache.data.find(s => s.operationId === newSale.operationId);
+                            if (existingSale) {
+                                Object.assign(existingSale, newSale);
+                                delete existingSale._optimistic;
+                            } else {
+                                salesCache.data.push(newSale);
+                            }
                             sortDataDescending(salesCache.data);
                             
                             if (currentUser.userType === 'seller') {
@@ -18340,16 +18432,27 @@ async function updateStock() {
                         }
                         
                         return 'online';
-                    } else {
-                        showNotification(`Failed to record ${product}: ` + (result.error || 'Unknown error'), 'error');
-                        return null;
-                    }
-                } catch (error) {
-                    console.error('Error submitting sale item:', error);
+
+                    // If the server rejected the request, this is not an
+                    // offline condition. Show the actual server error.
+                } else if (result && !result.success) {
+                    showNotification(`Failed to record ${product}: ` + (result.error || 'Unknown error'), 'error');
+                    return null;
+                } else if (!navigator.onLine) {
+                    isOnline = false;
                     saveSaleOffline(saleData, isNewCustomer);
                     return 'offline';
+                } else {
+                    // The browser still reports online, so do not tell the
+                    // user that the sale was saved offline. Keep the existing
+                    // queue only as a silent last-resort retry if the server
+                    // endpoint is temporarily unreachable.
+                    console.warn('Server unreachable while browser is online; queuing sale silently for retry.', lastError);
+                    saveSaleOffline(saleData, isNewCustomer);
+                    return 'online-pending';
                 }
             } else {
+                isOnline = false;
                 saveSaleOffline(saleData, isNewCustomer);
                 return 'offline';
             }
@@ -18436,7 +18539,13 @@ async function updateStock() {
                     operationId: data.operationId || null
                 };
                 
-                salesCache.data.push(newSale);
+                const existingSale = salesCache.data.find(s => s.operationId === newSale.operationId);
+                if (existingSale) {
+                    Object.assign(existingSale, newSale);
+                    delete existingSale._optimistic;
+                } else {
+                    salesCache.data.push(newSale);
+                }
                 sortDataDescending(salesCache.data);
                 
                 if (currentUser.userType === 'seller') {
@@ -27417,52 +27526,23 @@ function getConfirmationLoadingText(title) {
 }
 
 function captureConfirmationActionButton() {
-    const active = document.activeElement;
-    confirmationActionButton = (active && active.tagName === 'BUTTON' && active.id !== 'confirmationConfirmBtn') ? active : null;
-    confirmationActionButtonOriginalHTML = confirmationActionButton ? confirmationActionButton.innerHTML : null;
-    confirmationActionButtonOriginalDisabled = confirmationActionButton ? confirmationActionButton.disabled : false;
-    confirmationActionButtonOriginalAriaBusy = confirmationActionButton ? confirmationActionButton.getAttribute('aria-busy') : null;
+    // Kept for backward compatibility with existing confirmation callers.
+    // Confirmation dialogs no longer apply visual loading states to action buttons.
+    confirmationActionButton = null;
+    confirmationActionButtonOriginalHTML = null;
+    confirmationActionButtonOriginalDisabled = false;
+    confirmationActionButtonOriginalAriaBusy = null;
     confirmationActionButtonFallbackApplied = false;
 }
 
 function applyConfirmationFallbackLoading(title) {
-    const button = confirmationActionButton;
-    if (!button || !document.body.contains(button)) return;
-
-    // If the action itself already activated its dedicated loading UI,
-    // never overwrite it. This preserves labels such as "Completing Sale..."
-    // and the existing spinner/text elements exactly as designed.
-    if (button.disabled || button.dataset.loading === 'true' || button.querySelector('.spinner:not([style*="display: none"])')) {
-        button.setAttribute('aria-busy', 'true');
-        return;
-    }
-
-    confirmationActionButtonOriginalHTML = button.innerHTML;
-    button.disabled = true;
-    button.style.opacity = '1';
-    button.setAttribute('aria-busy', 'true');
-    button.innerHTML = '<span class="spinner small" style="display:inline-block; width:14px; height:14px; border-width:2px; margin-right:7px;"></span><span>' + escapeHtml(getConfirmationLoadingText(title)) + '</span>';
-    confirmationActionButtonFallbackApplied = true;
+    // Visual confirmation loading was intentionally removed. Saving now happens
+    // silently after the confirmation closes.
 }
 
 function restoreConfirmationActionButton() {
-    const button = confirmationActionButton;
-    if (!button || !document.body.contains(button)) {
-        confirmationActionButton = null;
-        return;
-    }
-
-    // Dedicated setButtonLoading(...) actions restore themselves. Only restore
-    // the generic fallback that this confirmation helper created.
-    if (confirmationActionButtonFallbackApplied && confirmationActionButtonOriginalHTML !== null) {
-        button.innerHTML = confirmationActionButtonOriginalHTML;
-        button.disabled = confirmationActionButtonOriginalDisabled;
-        button.style.removeProperty('opacity');
-    }
-
-    if (confirmationActionButtonOriginalAriaBusy === null) button.removeAttribute('aria-busy');
-    else button.setAttribute('aria-busy', confirmationActionButtonOriginalAriaBusy);
-
+    // Visual confirmation loading was intentionally removed. Keep this function
+    // as a no-op so older callers remain safe.
     confirmationActionButton = null;
     confirmationActionButtonOriginalHTML = null;
     confirmationActionButtonFallbackApplied = false;
@@ -27475,12 +27555,7 @@ function showConfirmationModal(title, message, onConfirm, isCustomContent = fals
     const confirmBtn = document.getElementById('confirmationConfirmBtn');
     const icon = document.getElementById('confirmationIcon');
 
-    // The caller's button is the button immediately responsible for opening
-    // this confirmation. Capture it before the modal changes focus.
-    captureConfirmationActionButton();
-
     titleEl.textContent = title;
-
     if (isCustomContent) messageEl.innerHTML = message;
     else messageEl.textContent = message;
 
@@ -27491,44 +27566,42 @@ function showConfirmationModal(title, message, onConfirm, isCustomContent = fals
     const isLogoutFlow = /logout/i.test(title);
 
     confirmBtn.onclick = async function() {
-        // Keep the old validation behaviour only for callers that explicitly
-        // request it. No current normal confirmation uses this mode.
-        if (isLogoutFlow || waitForConfirm) {
-            const result = await onConfirm();
-            if (result !== false) hideConfirmationModal();
+        // For normal confirmations, close the dialog FIRST so the user gets
+        // immediate feedback. The actual save/update/delete continues silently.
+        // Custom confirmations may contain validation input (e.g. typing DELETE),
+        // so preserve their validation behaviour before closing when necessary.
+        if (isCustomContent && !isLogoutFlow && !waitForConfirm) {
+            try {
+                const result = await onConfirm();
+                if (result !== false) hideConfirmationModal();
+            } catch (error) {
+                hideConfirmationModal();
+                console.error('Confirmation action failed:', error);
+                showNotification(error?.message || 'An unexpected error occurred.', 'error');
+            }
             return;
         }
 
-        // CLOSE FIRST. This is intentionally synchronous: once Confirm is
-        // accepted, the confirmation message disappears immediately.
-        hideConfirmationModal();
-
-        // Start the real action immediately. Existing action functions such
-        // as completeSaleConfirmed() set their own precise loading state at
-        // the first line, so their labels are preserved.
-        let result;
-        try {
-            result = onConfirm();
-        } catch (error) {
-            restoreConfirmationActionButton();
-            throw error;
+        if (isLogoutFlow || waitForConfirm) {
+            try {
+                const result = await onConfirm();
+                if (result !== false) hideConfirmationModal();
+            } catch (error) {
+                hideConfirmationModal();
+                console.error('Confirmation action failed:', error);
+                showNotification(error?.message || 'An unexpected error occurred.', 'error');
+            }
+            return;
         }
 
-        // For actions that do not have a dedicated loading implementation,
-        // add a generic state after the callback has had its synchronous
-        // opportunity to activate its own spinner/text.
-        Promise.resolve().then(() => applyConfirmationFallbackLoading(title));
+        // Normal confirmation: close instantly, then run the operation silently.
+        hideConfirmationModal();
 
-        if (result && typeof result.then === 'function') {
-            try {
-                await result;
-            } finally {
-                // Give dedicated setButtonLoading(...) calls a chance to
-                // restore themselves before this helper touches anything.
-                setTimeout(() => restoreConfirmationActionButton(), 0);
-            }
-        } else {
-            setTimeout(() => restoreConfirmationActionButton(), 0);
+        try {
+            await onConfirm();
+        } catch (error) {
+            console.error('Confirmation action failed:', error);
+            showNotification(error?.message || 'An unexpected error occurred.', 'error');
         }
     };
 
@@ -27607,31 +27680,28 @@ function showSettingsSection(section) {
         // ============================================
         
         function setButtonLoading(buttonId, spinnerId, textId, isLoading, loadingText) {
-            const button = document.getElementById(buttonId);
-            const spinner = document.getElementById(spinnerId);
-            const text = document.getElementById(textId);
-            
-            if (button && spinner && text) {
-                button.disabled = isLoading;
-                spinner.style.display = isLoading ? 'inline-block' : 'none';
-                text.style.opacity = isLoading ? '0.7' : '1';
-                
-                if (isLoading) {
-                    if (loadingText) {
-                        if (!text.dataset.originalText) text.dataset.originalText = text.textContent;
-                        text.textContent = loadingText;
-                    }
-                } else if (text.dataset.originalText) {
-                    // Always restore, even though the "stop loading" call
-                    // usually doesn't pass loadingText again - otherwise the
-                    // button stays stuck showing "Submitting Request..."
-                    // forever after the action actually finishes.
-                    text.textContent = text.dataset.originalText;
-                    delete text.dataset.originalText;
-                }
-            }
+    // Saving/loading is intentionally silent. Keep the existing function
+    // signature because many actions call it, but do not change the button
+    // text, spinner, opacity, or add any visual loading state. We only retain
+    // the disabled state as a lightweight guard against duplicate clicks.
+    const button = document.getElementById(buttonId);
+    if (button) {
+        button.disabled = !!isLoading;
+        button.removeAttribute('aria-busy');
+    }
+
+    const spinner = document.getElementById(spinnerId);
+    const text = document.getElementById(textId);
+    if (spinner) spinner.style.display = 'none';
+    if (text) {
+        text.style.opacity = '1';
+        if (text.dataset.originalText) {
+            text.textContent = text.dataset.originalText;
+            delete text.dataset.originalText;
         }
-        
+    }
+}
+
         function showLoading(elementId) {
             const element = document.getElementById(elementId);
             if (element) {
