@@ -5228,6 +5228,10 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
     
     <!-- Register Page -->
     <div class="auth-box hidden" id="registerPage">
+        <div class="auth-loading" id="registerAuthLoading">
+            <div class="auth-loading-spinner"><div class="auth-logo-icon auth-loading-logo"></div></div>
+            <div class="auth-loading-text">Creating account...<small>Please wait</small></div>
+        </div>
         <div class="auth-logo">
 <h1 class="auth-title">Create Account</h1>
 <p class="auth-subtitle">Start managing your business today</p>
@@ -5278,6 +5282,10 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
     
     <!-- Forgot Password Page -->
     <div class="auth-box hidden" id="forgotPage">
+        <div class="auth-loading" id="forgotAuthLoading">
+            <div class="auth-loading-spinner"><div class="auth-logo-icon auth-loading-logo"></div></div>
+            <div class="auth-loading-text">Recovering password...<small>Please wait</small></div>
+        </div>
         <div class="auth-logo">
 <h1 class="auth-title">Password Recovery</h1>
 <p class="auth-subtitle">Enter your email to receive password</p>
@@ -9130,7 +9138,7 @@ function formatBusinessDateTime(dateValue = new Date(), locale='en-GB') {
     return new Intl.DateTimeFormat(locale, { timeZone:getBusinessTimeZone(), year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }).format(d);
 }
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbywi7j4H8xg0wIk-PMr7V2BtVTOgfLGEUGJTkkKWTJRLISDsIHI_3J6uN2GUnFApr_qvg/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxet1xCT2JYwM0G80cz9QY5pX9NVXELRXivNbQYaM7O8jF2VdXevyhtfe6_jFTsX39jVw/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -12694,12 +12702,16 @@ function hideAccessDeniedModal() {
                 return;
             }
             
-            setButtonLoading('registerBtn', 'registerSpinner', 'registerText', true);
+            const authLoading = document.getElementById('registerAuthLoading');
+            const registerBtn = document.getElementById('registerBtn');
+            if (authLoading) authLoading.classList.add('show');
+            if (registerBtn) registerBtn.disabled = true;
             
             try {
                 const result = await apiCall('register', { business, email, password });
                 
                 if (result.success) {
+                    if (authLoading) authLoading.classList.remove('show');
                     showNotification('Account created successfully! Please login.', 'success');
                     showLoginPage();
                     
@@ -12710,13 +12722,16 @@ function hideAccessDeniedModal() {
                     document.getElementById('registerAcceptTerms').checked = false;
                     renderPasswordStrengthUI('', 'passwordStrengthFill', 'passwordStrengthLabel');
                 } else {
+                    if (authLoading) authLoading.classList.remove('show');
                     showNotification(result.error || 'Registration failed', 'error');
                 }
             } catch (error) {
+                if (authLoading) authLoading.classList.remove('show');
                 showNotification('Network error. Please check your connection.', 'error');
             }
             
-            setButtonLoading('registerBtn', 'registerSpinner', 'registerText', false);
+            if (authLoading) authLoading.classList.remove('show');
+            if (registerBtn) registerBtn.disabled = false;
         }
         
         async function forgotPassword() {
@@ -12727,22 +12742,29 @@ function hideAccessDeniedModal() {
                 return;
             }
             
-            setButtonLoading('forgotBtn', 'forgotSpinner', 'forgotText', true);
+            const authLoading = document.getElementById('forgotAuthLoading');
+            const forgotBtn = document.getElementById('forgotBtn');
+            if (authLoading) authLoading.classList.add('show');
+            if (forgotBtn) forgotBtn.disabled = true;
             
             try {
                 const result = await apiCall('forgot', { email });
                 
                 if (result.success) {
+                    if (authLoading) authLoading.classList.remove('show');
                     showNotification(result.message || 'Password sent to your email', 'success');
                     showLoginPage();
                 } else {
+                    if (authLoading) authLoading.classList.remove('show');
                     showNotification(result.error || 'Failed to recover password', 'error');
                 }
             } catch (error) {
+                if (authLoading) authLoading.classList.remove('show');
                 showNotification('Network error. Please check your connection.', 'error');
             }
             
-            setButtonLoading('forgotBtn', 'forgotSpinner', 'forgotText', false);
+            if (authLoading) authLoading.classList.remove('show');
+            if (forgotBtn) forgotBtn.disabled = false;
         }
         
         function showLogoutConfirmation() {
@@ -26698,6 +26720,11 @@ async function saveExpense() {
     // class of bug already fixed elsewhere in this app for date-only
     // values.
     const isoDate = new Date(dateValue + 'T12:00:00').toISOString();
+    // Keep the selected calendar date separate from the exact transaction
+    // instant. Accounting-period filtering uses this timestamp (including
+    // hours/minutes/seconds), so an expense recorded before Close Accounts
+    // remains in the closed period even when the date is the same.
+    const recordedAt = new Date().toISOString();
     const expenseCategory = category || 'Uncategorized';
     
     // A genuinely separate record from Purchases - Expenses are real
@@ -26712,6 +26739,7 @@ async function saveExpense() {
         paymentMethod: paymentMethod,
         branchId: branchId,
         date: isoDate,
+        recordedAt: recordedAt,
         sellerId: currentUser.sellerId
     };
     
