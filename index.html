@@ -7126,9 +7126,11 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
 <button class="logo-confirm-btn cancel" onclick="hideLogoConfirmModal()">
 <i class="fas fa-times">
 </i> Cancel</button>
-<button class="logo-confirm-btn remove" onclick="confirmRemoveLogo()">
+<button class="logo-confirm-btn remove" onclick="confirmRemoveLogo()" id="confirmRemoveLogoBtn">
 <i class="fas fa-trash-alt">
-</i> Remove Logo</button>
+</i> <span id="removeLogoText">Remove Logo</span>
+<span class="spinner small" id="removeLogoSpinner" style="display: none;"></span>
+</button>
 </div>
 </div>
 </div>
@@ -9138,7 +9140,7 @@ function formatBusinessDateTime(dateValue = new Date(), locale='en-GB') {
     return new Intl.DateTimeFormat(locale, { timeZone:getBusinessTimeZone(), year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }).format(d);
 }
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbxet1xCT2JYwM0G80cz9QY5pX9NVXELRXivNbQYaM7O8jF2VdXevyhtfe6_jFTsX39jVw/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbyYf_GULa4v5dj8xoq37B5CWIwJJN7yDzLG_FkjGIh997pr45Zh-fL0pAfF-mUjntT6PA/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -9837,6 +9839,9 @@ let debtPhotoBase64 = null;
         
         
         async function confirmRemoveLogo() {
+    setSettingsButtonLoadingByIds('confirmRemoveLogoBtn', 'removeLogoText', true, 'Removing Logo...');
+    const spinner = document.getElementById('removeLogoSpinner');
+    if (spinner) spinner.style.display = 'inline-block';
     hideLogoConfirmModal();
     
     // Clear cache
@@ -9871,6 +9876,9 @@ let debtPhotoBase64 = null;
         }
     } catch (error) {
         showNotification('Network error removing logo', 'error');
+    } finally {
+        setSettingsButtonLoadingByIds('confirmRemoveLogoBtn', 'removeLogoText', false);
+        if (spinner) spinner.style.display = 'none';
     }
 }
         
@@ -11732,11 +11740,17 @@ async function refreshSalesBackground() {
     try {
         const result = await apiCall('getSales', { sellerId: currentUser.userType !== 'admin' ? currentUser.sellerId : null, branchId: currentUser.userType !== 'admin' ? (currentUser.branchId || null) : null });
         if (result.success) {
-            salesCache.data = result.data;
+            // IMPORTANT: this is a background refresh and may run while one or
+            // more Complete Sale batches are still being saved. Never replace
+            // the whole local Sales cache with a partial server response.
+            // Use the same atomic batch merge used by loadSales().
+            salesCache.data = mergeSalesServerDataPreservingPending_(result.data);
+
+            const operationalSales = filterOperationalRecordsByClose(salesCache.data, 'branchId');
             if (currentUser.userType === 'seller') {
-                salesCache.filtered = salesCache.data.filter(s => s.sellerId === currentUser.sellerId);
+                salesCache.filtered = operationalSales.filter(s => s.sellerId === currentUser.sellerId);
             } else {
-                salesCache.filtered = salesCache.data;
+                salesCache.filtered = operationalSales;
             }
             sortDataDescending(salesCache.data);
             saveSalesCache();
@@ -13830,7 +13844,7 @@ async function saveModalRestrictions() {
         return;
     }
     
-    setButtonLoading('saveModalRestrictionsBtn', 'saveModalRestrictionsSpinner', 'saveModalRestrictionsText', true, 'Saving...');
+    setSettingsButtonLoading('saveModalRestrictionsBtn', 'saveModalRestrictionsSpinner', 'saveModalRestrictionsText', true, 'Saving Changes...');
     
     try {
         const result = await apiCall('setModalRestrictions', { restrictedModals: pendingModalRestrictions });
@@ -13845,7 +13859,7 @@ async function saveModalRestrictions() {
         showNotification('Network error. Please try again.', 'error');
     }
     
-    setButtonLoading('saveModalRestrictionsBtn', 'saveModalRestrictionsSpinner', 'saveModalRestrictionsText', false);
+    setSettingsButtonLoading('saveModalRestrictionsBtn', 'saveModalRestrictionsSpinner', 'saveModalRestrictionsText', false);
 }
 
 // Polls the (tiny, dedicated) restrictions endpoint every few seconds while
@@ -13974,7 +13988,7 @@ async function saveSellerPin() {
         return;
     }
     
-    setButtonLoading('saveSellerPinBtn', 'saveSellerPinSpinner', 'saveSellerPinText', true, 'Saving...');
+    setSettingsButtonLoading('saveSellerPinBtn', 'saveSellerPinSpinner', 'saveSellerPinText', true, 'Changing PIN...');
     
     try {
         const isAdmin = currentUser.userType === 'admin';
@@ -14000,7 +14014,7 @@ async function saveSellerPin() {
         showNotification('Network error. Try again.', 'error');
     }
     
-    setButtonLoading('saveSellerPinBtn', 'saveSellerPinSpinner', 'saveSellerPinText', false);
+    setSettingsButtonLoading('saveSellerPinBtn', 'saveSellerPinSpinner', 'saveSellerPinText', false);
 }
 
 function resetSellerPinFromAdmin(sellerId, sellerName) {
@@ -15236,7 +15250,9 @@ function updateAllCaches(result) {
         if (stockBadgeEl) stockBadgeEl.textContent = Object.keys(productsCache || {}).length;
     }
     if (result.data && result.data.sales) {
-        salesCache.data = result.data.sales;
+        // Never wipe receipts that are still being saved in the background.
+        // Keep optimistic rows until the server returns the same operationId.
+        salesCache.data = mergeSalesServerDataPreservingPending_(result.data.sales);
         sortDataDescending(salesCache.data);
         // Never allow a background/full sync to repopulate receipts from a
         // closed period into the live All Sales cache. The server already
@@ -16749,6 +16765,137 @@ function calculateTotalPurchasesFromCache() {
             });
         }
 
+        // Merge fresh server Sales without ever removing a local sale batch
+        // that is still being saved/synced. Server rows win once their
+        // operationId is confirmed. This deliberately works even when a
+        // background refresh returns only part of the batch.
+        function mergeSalesServerDataPreservingPending_(serverRows) {
+            const incoming = Array.isArray(serverRows) ? serverRows : [];
+            const current = Array.isArray(salesCache.data) ? salesCache.data : [];
+            const incomingByOperation = new Map();
+
+            incoming.forEach(row => {
+                if (row && row.operationId) {
+                    incomingByOperation.set(String(row.operationId), row);
+                }
+            });
+
+            // IMPORTANT:
+            // A Complete Sale is an atomic VISUAL batch. The server may save the
+            // individual lines one-by-one, so a background getSales() response
+            // can legitimately contain only part of the batch. Never replace a
+            // visible batch with that partial response.
+            //
+            // We therefore protect the WHOLE batch until ONE server response
+            // contains EVERY operationId belonging to that Complete Sale.
+            const blockedIncomingOperations = new Set();
+            const protectedRowsByOperation = new Map();
+
+            const protectBatchUntilComplete = (batchId, batch, sourceName) => {
+                if (!batch || !Array.isArray(batch.rows) || batch.rows.length === 0) {
+                    return;
+                }
+
+                const rows = batch.rows.filter(row => row && row.operationId);
+                if (!rows.length) return;
+
+                const completeOnServer = rows.every(row =>
+                    incomingByOperation.has(String(row.operationId))
+                );
+
+                if (completeOnServer) {
+                    // One complete server response has arrived. From this point
+                    // the server version can safely become authoritative.
+                    return;
+                }
+
+                // Partial server response: block ALL rows from this batch from
+                // replacing the local receipt, including rows already present
+                // in the partial response.
+                rows.forEach(row => {
+                    const key = String(row.operationId);
+                    blockedIncomingOperations.add(key);
+                    protectedRowsByOperation.set(key, row);
+                });
+            };
+
+            const completedPendingBatches = [];
+            Object.keys(pendingSaleBatches || {}).forEach(batchId => {
+                const batch = pendingSaleBatches[batchId];
+                if (!batch || !Array.isArray(batch.rows) || !batch.rows.length) {
+                    completedPendingBatches.push(batchId);
+                    return;
+                }
+
+                const completeOnServer = batch.rows
+                    .filter(row => row && row.operationId)
+                    .every(row => incomingByOperation.has(String(row.operationId)));
+
+                protectBatchUntilComplete(batchId, batch, 'pending');
+
+                if (completeOnServer) {
+                    completedPendingBatches.push(batchId);
+                }
+            });
+
+            // Keep a short-lived protection window after the save loop finishes.
+            // This covers the race where the first getSales() after completion
+            // is still partial.
+            const completedProtectedBatches = [];
+            Object.keys(protectedSaleBatches || {}).forEach(batchId => {
+                const batch = protectedSaleBatches[batchId];
+                if (!batch || !Array.isArray(batch.rows) || !batch.rows.length) {
+                    completedProtectedBatches.push(batchId);
+                    return;
+                }
+
+                const completeOnServer = batch.rows
+                    .filter(row => row && row.operationId)
+                    .every(row => incomingByOperation.has(String(row.operationId)));
+
+                protectBatchUntilComplete(batchId, batch, 'protected');
+
+                if (completeOnServer) {
+                    completedProtectedBatches.push(batchId);
+                }
+            });
+
+            completedPendingBatches.forEach(batchId => delete pendingSaleBatches[batchId]);
+            completedProtectedBatches.forEach(batchId => delete protectedSaleBatches[batchId]);
+
+            // Existing locally-pending rows (including offline-queued sales) are
+            // protected individually when their operationId is not yet on the
+            // server. They do NOT override the batch rule above.
+            current.forEach(row => {
+                if (!row || !row.operationId || !(row._optimistic || row._pendingLocal)) {
+                    return;
+                }
+
+                const key = String(row.operationId);
+                if (!incomingByOperation.has(key)) {
+                    protectedRowsByOperation.set(key, row);
+                }
+            });
+
+            // CRITICAL: remove partial server rows belonging to a protected
+            // batch BEFORE merging. Previously, those partial rows survived and
+            // caused a receipt to shrink from A+B+C+D to A+B+C temporarily.
+            const merged = incoming.filter(row => {
+                if (!row || !row.operationId) return true;
+                return !blockedIncomingOperations.has(String(row.operationId));
+            });
+
+            protectedRowsByOperation.forEach((row, key) => {
+                // For a protected batch we intentionally append the local row,
+                // even when the partial server response already contained it.
+                if (blockedIncomingOperations.has(key) || !incomingByOperation.has(key)) {
+                    merged.push(row);
+                }
+            });
+
+            return merged;
+        }
+
         async function loadSales() {
             const tableBody = document.getElementById('salesTableBody');
             const summaryDiv = document.getElementById('salesSummary');
@@ -16790,7 +16937,7 @@ function calculateTotalPurchasesFromCache() {
                         // even when it is empty ONLY when the server explicitly
                         // confirms success; transient server failures come back
                         // as success:false and therefore cannot erase good data.
-                        salesCache.data = Array.isArray(result.data) ? result.data : [];
+                        salesCache.data = mergeSalesServerDataPreservingPending_(result.data);
                         
                         const operationalSales = filterLiveOperationalRecords(salesCache.data, 'branchId');
                         if (!isAdmin && sellerId) {
@@ -17720,6 +17867,18 @@ async function updateStock() {
         
         
         let currentSaleCart = [];
+
+        // Each Complete Sale gets its own isolated batch. These local rows
+        // remain visible until every operation in that batch is confirmed by
+        // the server, so background refresh/sync can never make part (or all)
+        // of a just-completed receipt disappear.
+        let pendingSaleBatches = {};
+        // Completed sale batches remain protected from cache replacement until
+        // one server response contains every operation in that batch. This is
+        // intentionally separate from pendingSaleBatches: saving can finish
+        // locally while the next getSales request is still momentarily partial.
+        let protectedSaleBatches = {};
+        let saleCompletionInProgress = false;
         
         // Separate carts for customers scanned in via Connect Device -
         // keyed by the customerSessionId the phone assigns (a fresh one
@@ -18083,14 +18242,27 @@ async function updateStock() {
             
             const itemsToProcess = mergeCartItemsForSubmission(session.items);
             const receiptNo = generateClientReceiptNo();
+            const saleBatchId = generateSaleBatchId_();
             let successCount = 0;
             let offlineCount = 0;
             
             for (const item of itemsToProcess) {
-                const result = await processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer, receiptNo);
+                const result = await processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer, receiptNo, saleBatchId);
                 if (result === 'online' || result === 'online-pending') successCount++;
                 else if (result === 'offline') offlineCount++;
             }
+
+            // The visible receipt remains protected even after the save loop
+            // finishes. A background getSales can briefly return only part of
+            // the batch; never let that partial response collapse the receipt.
+            const completedBatchRows = Array.isArray(pendingSaleBatches[saleBatchId]?.rows)
+                ? pendingSaleBatches[saleBatchId].rows.slice()
+                : (salesCache.data || []).filter(s => String(s?.saleBatchId || '') === String(saleBatchId));
+            protectedSaleBatches[saleBatchId] = {
+                rows: completedBatchRows,
+                receiptNo: receiptNo || null
+            };
+            delete pendingSaleBatches[saleBatchId];
             
             if (successCount > 0 && offlineCount === 0) {
                 showNotification(`Sale completed for ${customer || 'customer'} - ${successCount} item(s) recorded`, 'success');
@@ -18100,7 +18272,6 @@ async function updateStock() {
                 showNotification(`Sale completed for ${customer || 'customer'} - ${successCount} recorded, ${offlineCount} saved offline`, 'info');
             }
             
-            const issueReceipt = document.getElementById('saleIssueReceipt')?.checked;
             if (issueReceipt && (successCount > 0 || offlineCount > 0)) {
                 const receiptGrandTotal = itemsToProcess.reduce((sum, it) => sum + it.subtotal, 0);
                 generateSaleReceipt(itemsToProcess, customer, paymentMethod, receiptGrandTotal);
@@ -18136,6 +18307,11 @@ async function updateStock() {
             return 'SALEOP-' + token.replace(/-/g, '').toUpperCase();
         }
         
+        function generateSaleBatchId_() {
+            const token = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2));
+            return 'SALEBATCH-' + token.replace(/-/g, '').toUpperCase();
+        }
+
         function completeSale() {
             if (saleModalLocked) {
                 showNotification('This form is locked. Tap "Unlock" to record a sale.', 'error');
@@ -18207,9 +18383,11 @@ async function updateStock() {
             window.pendingNewCustomer = null;
         }
 
-        function addOptimisticSalesToCache_(items, customer, paymentMethod, receiptNo) {
+        function addOptimisticSalesToCache_(items, customer, paymentMethod, receiptNo, batchId) {
             if (!salesCache.data) salesCache.data = [];
             const now = new Date().toISOString();
+            const isolatedBatchId = batchId || generateSaleBatchId_();
+            const batchRows = [];
             items.forEach(item => {
                 const operationId = item.operationId || generateSaleOperationId();
                 item.operationId = operationId;
@@ -18228,11 +18406,15 @@ async function updateStock() {
                     unit: item.unit || '',
                     receiptNo: receiptNo || null,
                     operationId: operationId,
-                    _optimistic: true
+                    saleBatchId: isolatedBatchId,
+                    _optimistic: true,
+                    _pendingLocal: true
                 };
+                batchRows.push(optimisticSale);
                 const existing = salesCache.data.find(s => s.operationId === operationId);
                 if (!existing) salesCache.data.push(optimisticSale);
             });
+            pendingSaleBatches[isolatedBatchId] = { rows: batchRows, receiptNo: receiptNo || null };
             sortDataDescending(salesCache.data);
             if (currentUser.userType === 'seller') {
                 salesCache.filtered = salesCache.data.filter(s => s.sellerId === currentUser.sellerId);
@@ -18253,8 +18435,10 @@ async function updateStock() {
             // save continues silently in the background.
             const customer = document.getElementById('saleCustomer').value.trim();
             const paymentMethod = document.getElementById('salePaymentMethod').value;
+            const issueReceipt = document.getElementById('saleIssueReceipt')?.checked;
             const itemsToProcess = mergeCartItemsForSubmission(currentSaleCart);
             const receiptNo = generateClientReceiptNo();
+            const saleBatchId = generateSaleBatchId_();
             itemsToProcess.forEach(item => {
                 if (!item.operationId) item.operationId = generateSaleOperationId();
             });
@@ -18270,7 +18454,13 @@ async function updateStock() {
             // Make the new receipt visible in All Sales immediately. The same
             // operationId/receiptNo is reused by the real save, preventing
             // duplicate rows when the server response arrives.
-            addOptimisticSalesToCache_(itemsToProcess, customer, paymentMethod, receiptNo);
+            addOptimisticSalesToCache_(itemsToProcess, customer, paymentMethod, receiptNo, saleBatchId);
+
+            // The receipt is now safely isolated in its own local batch.
+            // Re-enable Complete Sale immediately. The actual server save below
+            // continues independently in the background, so the user can start
+            // another Complete Sale without waiting for this one.
+            setButtonLoading('submitSaleBtn', 'saleSpinner', 'submitSaleText', false);
 
             const isNewCustomer = customer && (!customersCache.data || !customersCache.data.some(c => c.name.toLowerCase() === customer.toLowerCase()));
             let customerId = null;
@@ -18298,7 +18488,7 @@ async function updateStock() {
             let offlineCount = 0;
             
             for (const item of itemsToProcess) {
-                const result = await processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer, receiptNo);
+                const result = await processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer, receiptNo, saleBatchId);
                 if (result === 'online' || result === 'online-pending') successCount++;
                 else if (result === 'offline') offlineCount++;
             }
@@ -18311,7 +18501,6 @@ async function updateStock() {
                 showNotification(`Sale completed - ${successCount} recorded, ${offlineCount} saved offline`, 'info');
             }
             
-            const issueReceipt = document.getElementById('saleIssueReceipt')?.checked;
             if (issueReceipt && (successCount > 0 || offlineCount > 0)) {
                 const receiptGrandTotal = itemsToProcess.reduce((sum, it) => sum + it.subtotal, 0);
                 generateSaleReceipt(itemsToProcess, customer, paymentMethod, receiptGrandTotal);
@@ -18327,7 +18516,7 @@ async function updateStock() {
         
         // Records exactly one cart item (online with offline fallback) -
         // returns 'online' or 'offline' so completeSale() can summarize.
-        async function processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer, receiptNo) {
+        async function processSaleCartItem(item, customer, customerId, paymentMethod, isNewCustomer, receiptNo, saleBatchId) {
             const { product, qty: quantity, unitPrice, subtotal: total, isStockProduct, branchId, unit: saleUnit } = item;
             
             const saleData = {
@@ -18344,6 +18533,7 @@ async function updateStock() {
                 customerId: customerId,
                 unit: saleUnit,
                 receiptNo: receiptNo || null,
+                saleBatchId: saleBatchId || null,
                 operationId: item.operationId || generateSaleOperationId()
             };
             
@@ -18424,6 +18614,7 @@ async function updateStock() {
                                 branchId: branchId,
                                 unit: saleUnit,
                                 receiptNo: result.receiptNo || saleData.receiptNo || null,
+                                saleBatchId: saleData.saleBatchId || null,
                                 operationId: result.operationId || saleData.operationId || null,
                                 rowIndex: result.rowIndex || null
                             };
@@ -18431,6 +18622,11 @@ async function updateStock() {
                             const existingSale = salesCache.data.find(s => s.operationId === newSale.operationId);
                             if (existingSale) {
                                 Object.assign(existingSale, newSale);
+                                // Keep the row locally pending until a later
+                                // getSales response contains this operationId.
+                                // This prevents a background refresh from
+                                // briefly removing a just-saved receipt item.
+                                existingSale._pendingLocal = true;
                                 delete existingSale._optimistic;
                             } else {
                                 salesCache.data.push(newSale);
@@ -18554,11 +18750,13 @@ async function updateStock() {
                     paymentMethod: data.paymentMethod,
                     type: data.isStockProduct ? 'stock' : 'service',
                     sellerId: data.sellerId,
-                    sellerName: data.sellerId ? 'Seller' : 'Admin',
+                    sellerName: data.sellerId ? (currentUser.sellerName || 'Seller') : 'Admin',
                     branchId: data.branchId,
                     unit: data.unit || '',
                     receiptNo: data.receiptNo || null,
-                    operationId: data.operationId || null
+                    saleBatchId: data.saleBatchId || null,
+                    operationId: data.operationId || null,
+                    _pendingLocal: true
                 };
                 
                 const existingSale = salesCache.data.find(s => s.operationId === newSale.operationId);
@@ -18682,15 +18880,19 @@ async function updateStock() {
                     const payment = sale.paymentMethod || 'cash';
                     let group = null;
 
-                    // Keep an explicitly shared receipt number together.
+                    // A stored Receipt No. is a HARD boundary. Every Complete
+                    // Sale generates a fresh receipt number, so never fall back
+                    // to time/customer grouping when a receipt number exists.
+                    // This guarantees two consecutive Complete Sale actions
+                    // can never become one receipt.
                     if (sale.receiptNo || sale.receipt) {
-                        const rn = sale.receiptNo || sale.receipt;
-                        group = groups.find(g => g.receiptNo === rn);
+                        const rn = String(sale.receiptNo || sale.receipt);
+                        group = groups.find(g => String(g.receiptNo || '') === rn);
                     }
 
-                    // Legacy/offline rows may not have a stored receipt number.
-                    // Keep the existing time/customer grouping behaviour for them.
-                    if (!group) {
+                    // Only legacy rows WITHOUT a receipt number may use the
+                    // historical fallback grouping behaviour.
+                    if (!group && !(sale.receiptNo || sale.receipt)) {
                         for (let i=groups.length-1;i>=0;i--) {
                             const g=groups[i];
                             if (t-g.lastTime > 120000) break;
@@ -18705,7 +18907,7 @@ async function updateStock() {
                         }
                     }
                     if (!group) {
-                        group={receiptNo:sale.receiptNo || sale.receipt || '', customer,sellerId:seller,branchId:branch,paymentMethod:payment,items:[],lastTime:t,firstTime:t};
+                        group={receiptNo:sale.receiptNo || sale.receipt || '', saleBatchId:sale.saleBatchId || '', customer,sellerId:seller,branchId:branch,paymentMethod:payment,items:[],lastTime:t,firstTime:t};
                         groups.push(group);
                     }
                     group.items.push(sale);
@@ -27309,7 +27511,7 @@ function updateReportStatsFromCache() {
                 return;
             }
             
-            setButtonLoading('updateProfileBtn', 'profileSpinner', 'updateProfileText', true);
+            setSettingsButtonLoading('updateProfileBtn', 'profileSpinner', 'updateProfileText', true, 'Saving Changes...');
             
             try {
                 const result = await apiCall('updateProfile', {
@@ -27342,7 +27544,7 @@ function updateReportStatsFromCache() {
                 showNotification('Network error updating profile', 'error');
             }
             
-            setButtonLoading('updateProfileBtn', 'profileSpinner', 'updateProfileText', false);
+            setSettingsButtonLoading('updateProfileBtn', 'profileSpinner', 'updateProfileText', false);
         }
         
         // ============================================
@@ -27369,7 +27571,7 @@ function updateReportStatsFromCache() {
                 return;
             }
             
-            setButtonLoading('changePasswordBtn', 'passwordSpinner', 'changePasswordText', true);
+            setSettingsButtonLoading('changePasswordBtn', 'passwordSpinner', 'changePasswordText', true, 'Changing Password...');
             
             try {
                 const result = await apiCall('changePassword', {
@@ -27391,7 +27593,7 @@ function updateReportStatsFromCache() {
                 showNotification('Network error changing password', 'error');
             }
             
-            setButtonLoading('changePasswordBtn', 'passwordSpinner', 'changePasswordText', false);
+            setSettingsButtonLoading('changePasswordBtn', 'passwordSpinner', 'changePasswordText', false);
         }
         
         // ============================================
@@ -27428,7 +27630,7 @@ function updateReportStatsFromCache() {
                 return;
             }
             
-            setButtonLoading('deleteAccountBtn', 'deleteAccountSpinner', 'deleteAccountText', true);
+            setSettingsButtonLoading('deleteAccountBtn', 'deleteAccountSpinner', 'deleteAccountText', true, 'Deleting Account...');
             
             try {
                 const result = await apiCall('deleteAccount', {
@@ -27446,11 +27648,11 @@ function updateReportStatsFromCache() {
                     }, 1500);
                 } else {
                     showNotification(result.error || 'Failed to delete account', 'error');
-                    setButtonLoading('deleteAccountBtn', 'deleteAccountSpinner', 'deleteAccountText', false);
+                    setSettingsButtonLoading('deleteAccountBtn', 'deleteAccountSpinner', 'deleteAccountText', false);
                 }
             } catch (error) {
                 showNotification('Network error deleting account', 'error');
-                setButtonLoading('deleteAccountBtn', 'deleteAccountSpinner', 'deleteAccountText', false);
+                setSettingsButtonLoading('deleteAccountBtn', 'deleteAccountSpinner', 'deleteAccountText', false);
             }
         }
         
@@ -27463,7 +27665,7 @@ function updateReportStatsFromCache() {
             const currency = document.getElementById('settingCurrency').value;
             const dateFormat = document.getElementById('settingDateFormat').value;
             
-            setButtonLoading('saveDisplayBtn', 'displaySpinner', 'saveDisplayText', true);
+            setSettingsButtonLoading('saveDisplayBtn', 'displaySpinner', 'saveDisplayText', true, 'Saving Changes...');
             
             const updates = [
                 { section: 'DISPLAY', key: 'language', value: language },
@@ -27502,11 +27704,16 @@ function updateReportStatsFromCache() {
                 showNotification('Display settings saved successfully!', 'success');
             }
             
-            setButtonLoading('saveDisplayBtn', 'displaySpinner', 'saveDisplayText', false);
+            setSettingsButtonLoading('saveDisplayBtn', 'displaySpinner', 'saveDisplayText', false);
         }
         
         async function exportData() {
-            showNotification('Data export feature coming soon', 'info');
+            setSettingsButtonLoading('exportDataBtn', 'exportDataSpinner', 'exportDataText', true, 'Preparing Export...');
+            try {
+                showNotification('Data export feature coming soon', 'info');
+            } finally {
+                setSettingsButtonLoading('exportDataBtn', 'exportDataSpinner', 'exportDataText', false);
+            }
         }
         
        // Confirmation dialogs close immediately after acceptance. The actual
@@ -27707,6 +27914,51 @@ function showSettingsSection(section) {
         // UTILITY FUNCTIONS
         // ============================================
         
+        // Settings-specific loading state. This is intentionally separate
+        // from the app-wide setButtonLoading() because Settings actions must
+        // show clear progress text without changing the loading behaviour of
+        // other screens.
+        function setSettingsButtonLoading(buttonId, spinnerId, textId, isLoading, loadingText) {
+            const button = document.getElementById(buttonId);
+            const spinner = document.getElementById(spinnerId);
+            const text = document.getElementById(textId);
+
+            if (button) {
+                button.disabled = !!isLoading;
+                button.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+            }
+
+            if (spinner) spinner.style.display = isLoading ? 'inline-block' : 'none';
+
+            if (text) {
+                if (isLoading) {
+                    if (!text.dataset.originalText) text.dataset.originalText = text.textContent;
+                    text.textContent = loadingText || 'Saving Changes...';
+                } else if (text.dataset.originalText) {
+                    text.textContent = text.dataset.originalText;
+                    delete text.dataset.originalText;
+                }
+            }
+        }
+
+        function setSettingsButtonLoadingByIds(buttonId, textId, isLoading, loadingText) {
+            const button = document.getElementById(buttonId);
+            const text = document.getElementById(textId);
+            if (button) {
+                button.disabled = !!isLoading;
+                button.setAttribute('aria-busy', isLoading ? 'true' : 'false');
+            }
+            if (text) {
+                if (isLoading) {
+                    if (!text.dataset.originalText) text.dataset.originalText = text.textContent;
+                    text.textContent = loadingText || 'Processing...';
+                } else if (text.dataset.originalText) {
+                    text.textContent = text.dataset.originalText;
+                    delete text.dataset.originalText;
+                }
+            }
+        }
+
         function setButtonLoading(buttonId, spinnerId, textId, isLoading, loadingText) {
     // Saving/loading is intentionally silent. Keep the existing function
     // signature because many actions call it, but do not change the button
