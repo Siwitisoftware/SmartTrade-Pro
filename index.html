@@ -4072,8 +4072,8 @@
 .photo-viewer-content {
     background: var(--secondary);
     border-radius: 20px;
-    max-width: 90vw;
-    max-height: 90vh;
+    max-width: 96vw;
+    max-height: 96vh;
     width: auto;
     overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
@@ -4129,13 +4129,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    max-height: 70vh;
+    max-height: 82vh;
     overflow: auto;
 }
 
 .photo-viewer-body img {
-    max-width: 100%;
-    max-height: 70vh;
+    max-width: 92vw;
+    max-height: 80vh;
+    width: auto;
+    height: auto;
     object-fit: contain;
     border-radius: 10px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -4180,6 +4182,165 @@
 .photo-viewer-btn.primary:hover {
     background: #0ea5e9;
     box-shadow: 0 5px 15px rgba(56, 189, 248, 0.4);
+}
+
+/* =========================================================
+   SMARTTRADE DEBTS TABLE — REBUILT V55
+   Same light table palette used by the rest of SmartTrade, while
+   keeping the rebuilt photo/button interaction completely isolated.
+   ========================================================= */
+.st-debt-table-wrap {
+    width: 100%;
+    margin-top: 18px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+    overflow: hidden;
+}
+.st-debt-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.st-debt-table {
+    width: 100%;
+    min-width: 1250px;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    table-layout: auto;
+    margin-top: 0 !important;
+    background: #ffffff !important;
+}
+.st-debt-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    padding: 13px 12px !important;
+    background: #f1f5f9 !important;
+    color: #1e40af !important;
+    border: 0 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.st-debt-table tbody td {
+    padding: 11px 12px !important;
+    background: #ffffff !important;
+    color: #1e293b !important;
+    border: 0 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    vertical-align: middle;
+    font-size: 0.95rem;
+}
+.st-debt-table tbody tr {
+    background: #ffffff !important;
+    cursor: default !important;
+    user-select: none;
+}
+.st-debt-table tbody tr:hover,
+.st-debt-table tbody tr:focus,
+.st-debt-table tbody tr:active {
+    background: #ffffff !important;
+    outline: none !important;
+}
+.st-debt-table tbody tr:hover td,
+.st-debt-table tbody tr:focus td,
+.st-debt-table tbody tr:active td {
+    background: #ffffff !important;
+}
+.st-debt-table .st-debt-photo-cell {
+    width: 76px;
+    min-width: 76px;
+    text-align: center;
+}
+.st-debt-photo-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    padding: 0;
+    margin: 0;
+    border: 2px solid var(--accent, #38bdf8);
+    border-radius: 50%;
+    background: #1e293b;
+    overflow: hidden;
+    cursor: zoom-in;
+    outline: none;
+    box-shadow: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.st-debt-photo-btn:hover {
+    transform: scale(1.04);
+    box-shadow: 0 4px 16px rgba(0,0,0,.25);
+}
+.st-debt-photo-btn:focus,
+.st-debt-photo-btn:focus-visible,
+.st-debt-photo-btn:active {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(56,189,248,.22);
+}
+.st-debt-photo-btn img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+.st-debt-photo-btn .st-debt-photo-zoom {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 19px;
+    height: 19px;
+    border-radius: 50%;
+    background: rgba(15,23,42,.88);
+    color: #fff;
+    font-size: 9px;
+    pointer-events: none;
+}
+.st-debt-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: #fff;
+    font-size: 20px;
+    border: 2px solid var(--accent, #38bdf8);
+}
+.st-debt-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    position: relative;
+    z-index: 20;
+    pointer-events: auto !important;
+}
+.st-debt-actions button {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 21;
+    pointer-events: auto !important;
+    touch-action: manipulation;
+    cursor: pointer !important;
+}
+.st-debt-empty-row td {
+    padding: 42px 20px !important;
+    text-align: center;
+    color: #94a3b8;
+}
+@media (max-width: 700px) {
+    .st-debt-table { min-width: 1150px; }
+    .st-debt-photo-btn, .st-debt-avatar { width: 50px; height: 50px; }
 }
 
 /* Photo Thumbnail with View Icon */
@@ -5181,6 +5342,108 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 .theme-option.theme-blue * {
     color: #ffffff !important;
 }
+
+        /* V50: standalone borrower photo lightbox */
+        .smart-debt-photo-lightbox {
+            position: fixed;
+            inset: 0;
+            z-index: 20000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.88);
+            backdrop-filter: blur(4px);
+        }
+        .smart-debt-photo-lightbox.show {
+            display: flex;
+        }
+        .smart-debt-photo-lightbox-panel {
+            position: relative;
+            width: min(94vw, 900px);
+            height: min(92vh, 900px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 52px 18px 18px;
+            border-radius: 16px;
+            background: #0f172a;
+            box-shadow: 0 20px 70px rgba(0,0,0,.55);
+            overflow: hidden;
+        }
+        .smart-debt-photo-lightbox-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 42px;
+            height: 42px;
+            border: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,.12);
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 3;
+        }
+        .smart-debt-photo-lightbox-close:hover {
+            background: rgba(255,255,255,.22);
+        }
+        .smart-debt-photo-lightbox-image-wrap {
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+            border-radius: 10px;
+        }
+        .smart-debt-photo-lightbox-image {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 8px 35px rgba(0,0,0,.35);
+        }
+        .smart-debt-photo-lightbox-loading {
+            width: 42px;
+            height: 42px;
+            border: 4px solid rgba(255,255,255,.25);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: smartDebtPhotoSpin .8s linear infinite;
+        }
+        @keyframes smartDebtPhotoSpin { to { transform: rotate(360deg); } }
+        .smart-debt-photo-lightbox-name {
+            width: 100%;
+            flex: 0 0 auto;
+            margin-top: 14px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(255,255,255,.08);
+            color: #fff;
+            text-align: center;
+            font-size: 17px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @media (max-width: 600px) {
+            .smart-debt-photo-lightbox { padding: 8px; }
+            .smart-debt-photo-lightbox-panel {
+                width: 100%;
+                height: 96vh;
+                padding: 52px 10px 10px;
+                border-radius: 12px;
+            }
+            .smart-debt-photo-lightbox-name { font-size: 15px; }
+        }
+
     </style>
    
 
@@ -5829,31 +6092,33 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 <input type="text" id="debtSearch" placeholder="Search by name, phone, NIDA, product..." oninput="searchDebts()">
 </div>
 </div>
-<div class="table-container">
-<table id="debtsTable">
-<thead>
-<tr>
-<th>Photo</th>
-<th>Borrower</th>
-<th>Phone</th>
-<th>NIDA</th>
-<th>Product</th>
-<th>Qty</th>
-<th>Total</th>
-<th>Paid</th>
-<th>Balance</th>
-<th>Status</th>
-<th>Date</th>
-<th>Branch</th>
-<th>Actions</th>
-</tr>
-</thead>
-<tbody id="debtsTableBody">
-<tr>
-<td colspan="13" class="text-center" style="color: #94a3b8; padding: 40px;">Loading debts...</td>
-</tr>
-</tbody>
-</table>
+<div class="st-debt-table-wrap">
+    <div class="st-debt-table-scroll">
+        <table id="debtsTable" class="st-debt-table">
+            <thead>
+                <tr>
+                    <th class="st-debt-photo-col">Photo</th>
+                    <th>Borrower</th>
+                    <th>Phone</th>
+                    <th>NIDA</th>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th>Branch</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="debtsTableBody">
+                <tr class="st-debt-empty-row">
+                    <td colspan="13">Loading debts...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </div>
 </div>
 </div>
@@ -6767,7 +7032,7 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
                     Logo itaonekana kwenye Reports pekee
                 </p>
                 <p style="font-size: 12px; color: #94a3b8;">
-                    Supported: PNG, JPG, JPEG, GIF, WEBP (Max 2MB)
+                    Supported: PNG, JPG, JPEG, WEBP, GIF and other image formats — large images are compressed automatically
                 </p>
             </div>
             <input type="file" id="logoFile" accept="image/*" style="display: none;" onchange="handleLogoUpload(this.files[0])">
@@ -7678,10 +7943,6 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
 <strong style="color: var(--accent); font-size:1.2rem;" id="saleCartGrandTotal">TZS 0</strong>
 </div>
 </div>
-<label style="display:flex; align-items:center; gap:8px; margin:12px 0 4px; cursor:pointer; font-weight:600;">
-<input type="checkbox" id="saleIssueReceipt" checked style="width:18px; height:18px; cursor:pointer;">
-<i class="fas fa-receipt"></i> Issue Receipt to Customer
-</label>
 <div class="confirmation-buttons">
 <button class="confirmation-btn confirm" onclick="completeSale()" id="submitSaleBtn">
 <i class="fas fa-save">
@@ -8224,6 +8485,16 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
 <input type="text" id="editDebtBorrowerNIDA" placeholder="National ID number">
 </div>
 </div>
+<div class="form-group" style="margin-top:15px;">
+<label>Borrower Photo</label>
+<div style="display:flex; align-items:center;">
+<div id="editDebtPhotoPreview" onclick="openDebtPhotoOptions('edit')" title="Change borrower photo" style="width:80px; height:80px; border-radius:50%; background:var(--primary); border:2px dashed var(--accent); display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; transition:transform .15s ease, opacity .15s ease;">
+<i class="fas fa-camera" style="font-size:24px; color:var(--accent);"></i>
+</div>
+</div>
+<input type="file" id="editDebtPhotoFile" accept="image/*" capture="user" style="display:none;" onchange="handleEditDebtPhotoUpload(this.files[0])">
+<input type="file" id="editDebtPhotoGalleryFile" accept="image/*" style="display:none;" onchange="handleEditDebtPhotoUpload(this.files[0])">
+</div>
 </div>
 <div style="background: rgba(34, 197, 94, 0.1); padding: 15px; border-radius: var(--border-radius); margin-bottom: 20px;">
 <h3 style="color: var(--success); margin-bottom: 15px;">Item</h3>
@@ -8680,6 +8951,20 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
 </div>
 </div>
 
+
+<div id="smartDebtPhotoLightbox" class="smart-debt-photo-lightbox" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="smart-debt-photo-lightbox-panel" onclick="event.stopPropagation()">
+        <button type="button" class="smart-debt-photo-lightbox-close" aria-label="Close photo" onclick="closeDebtPhotoLightbox()">
+            <i class="fas fa-times"></i>
+        </button>
+        <div class="smart-debt-photo-lightbox-image-wrap">
+            <div id="smartDebtPhotoLightboxLoading" class="smart-debt-photo-lightbox-loading" aria-label="Loading photo"></div>
+            <img id="smartDebtPhotoLightboxImage" class="smart-debt-photo-lightbox-image" alt="Borrower Photo" style="display:none;">
+        </div>
+        <div id="smartDebtPhotoLightboxName" class="smart-debt-photo-lightbox-name">Borrower Photo</div>
+    </div>
+</div>
+
 <div class="photo-viewer-modal" id="photoViewerModal">
 <div class="photo-viewer-content">
 <div class="photo-viewer-header">
@@ -8696,6 +8981,24 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
 <button class="photo-viewer-btn primary" onclick="closePhotoViewer()">
 <i class="fas fa-check">
 </i> Close</button>
+</div>
+</div>
+</div>
+
+<div class="confirmation-modal fullscreen-modal" id="debtPhotoOptionsModal" style="z-index:10050;">
+<div class="confirmation-content" style="max-width:420px; text-align:center;">
+<h2 class="confirmation-title" style="margin-bottom:10px;">Borrower Photo</h2>
+<p style="color:#94a3b8; margin-bottom:20px;">Choose how you want to add the borrower's photo.</p>
+<div style="display:flex; flex-direction:column; gap:10px;">
+<button type="button" class="confirmation-btn confirm success" onclick="chooseDebtPhotoSource('camera')">
+<i class="fas fa-camera"></i> Take Photo
+</button>
+<button type="button" class="confirmation-btn confirm" onclick="chooseDebtPhotoSource('gallery')">
+<i class="fas fa-image"></i> Choose from Device
+</button>
+<button type="button" class="confirmation-btn cancel" onclick="closeDebtPhotoOptions()">
+<i class="fas fa-times"></i> Cancel
+</button>
 </div>
 </div>
 </div>
@@ -8727,19 +9030,13 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
 </div>
 <div class="form-group">
 <label>Borrower Photo</label>
-<div style="display: flex; gap: 15px; align-items: center;">
-<div style="width: 80px; height: 80px; border-radius: 50%; background: var(--primary); border: 2px dashed var(--accent); display: flex; align-items: center; justify-content: center; overflow: hidden;" id="debtPhotoPreview">
-<i class="fas fa-camera" style="font-size: 24px; color: var(--accent);">
-</i>
-</div>
-<div style="flex: 1;">
-<input type="file" id="debtPhotoFile" accept="image/*" style="display: none;" onchange="handleDebtPhotoUpload(this.files[0])">
-<button type="button" class="btn-secondary" onclick="document.getElementById('debtPhotoFile').click()">
-<i class="fas fa-upload">
-</i> Choose Photo</button>
-<p style="font-size: 12px; color: #94a3b8; margin-top: 5px;">Max 2MB, JPG/PNG</p>
+<div style="display:flex; align-items:center;">
+<div id="debtPhotoPreview" onclick="openDebtPhotoOptions('record')" title="Add borrower photo" style="width:80px; height:80px; border-radius:50%; background:var(--primary); border:2px dashed var(--accent); display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer; transition:transform .15s ease, opacity .15s ease;">
+<i class="fas fa-camera" style="font-size:24px; color:var(--accent);"></i>
 </div>
 </div>
+<input type="file" id="debtPhotoFile" accept="image/*" capture="user" style="display:none;" onchange="handleDebtPhotoUpload(this.files[0])">
+<input type="file" id="debtPhotoGalleryFile" accept="image/*" style="display:none;" onchange="handleDebtPhotoUpload(this.files[0])">
 <input type="hidden" id="debtPhotoId">
 </div>
 </div>
@@ -8839,10 +9136,6 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
 <span id="debtCartGrandTotal">TZS 0</span>
 </div>
 </div>
-<label style="display:flex; align-items:center; gap:8px; margin:12px 0 4px; cursor:pointer; font-weight:600;">
-<input type="checkbox" id="debtIssueAgreement" checked style="width:18px; height:18px; cursor:pointer;">
-<i class="fas fa-file-signature"></i> Print Agreement Form for Borrower to Sign
-</label>
 <div class="confirmation-buttons">
 <button class="confirmation-btn cancel" onclick="addDebtItemToCart()" id="addToDebtBtn" style="flex:1;">
 <i class="fas fa-plus">
@@ -9122,9 +9415,13 @@ let activeBusinessTimeZone = DETECTED_TIME_ZONE;
 
 function isValidTimeZone(tz) { try { new Intl.DateTimeFormat('en-US', { timeZone: tz }).format(); return true; } catch(e) { return false; } }
 function getBusinessTimeZone() {
-    const saved = currentUser && currentUser.settings && currentUser.settings.PROFILE && currentUser.settings.PROFILE.time_zone
-        ? currentUser.settings.PROFILE.time_zone.value : null;
-    return isValidTimeZone(saved) ? saved : (isValidTimeZone(activeBusinessTimeZone) ? activeBusinessTimeZone : 'UTC');
+    // SmartTrade is global. The current device's real IANA timezone is the
+    // source of truth for the active session. A stale saved timezone (such as
+    // UTC from an older version) must never make today's local date look like
+    // a future date. The same timezone is sent to the backend by apiCall().
+    return isValidTimeZone(DETECTED_TIME_ZONE)
+        ? DETECTED_TIME_ZONE
+        : (isValidTimeZone(activeBusinessTimeZone) ? activeBusinessTimeZone : 'UTC');
 }
 function setBusinessTimeZone(tz) { if (isValidTimeZone(tz)) activeBusinessTimeZone = tz; }
 function getBusinessDateParts(dateValue = new Date()) {
@@ -9140,7 +9437,7 @@ function formatBusinessDateTime(dateValue = new Date(), locale='en-GB') {
     return new Intl.DateTimeFormat(locale, { timeZone:getBusinessTimeZone(), year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }).format(d);
 }
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbyYf_GULa4v5dj8xoq37B5CWIwJJN7yDzLG_FkjGIh997pr45Zh-fL0pAfF-mUjntT6PA/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbxldxui6-XF4JzfBjH9y600cK-1o78-5bEuLx0bhrmBtZoQLFRDLggTTGIxzhHE4uSquw/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -9426,6 +9723,8 @@ let subscriptionCache = {
 
 let selectedDebtPhotoFile = null;
 let debtPhotoBase64 = null;
+let selectedEditDebtPhotoFile = null;
+let editDebtPhotoBase64 = null;
         
         function startSlideshow() {
             if (slideInterval) clearInterval(slideInterval);
@@ -9535,6 +9834,7 @@ let debtPhotoBase64 = null;
         saveOfflineData();
     }
     
+    if (!offlineData.expenses) offlineData.expenses = [];
     if (!offlineData.debts) {
         offlineData.debts = [];
     }
@@ -9559,6 +9859,7 @@ let debtPhotoBase64 = null;
     const totalItems = (offlineData.stock?.length || 0) + 
                        (offlineData.sales?.length || 0) + 
                        (offlineData.purchases?.length || 0) + 
+                       (offlineData.expenses?.length || 0) +
                        (offlineData.customers?.length || 0) + 
                        (offlineData.suppliers?.length || 0) + 
                        (offlineData.debts?.length || 0) +
@@ -9574,33 +9875,10 @@ let debtPhotoBase64 = null;
     showNotification(`Syncing ${totalItems} offline items...`, 'info');
     
     try {
-        for (let i = 0; i < (offlineData.debts || []).length; i++) {
-            const debt = offlineData.debts[i];
-            
-            if (debt.photoBase64 && !debt.photoId) {
-                try {
-                    let base64Data = debt.photoBase64;
-                    if (base64Data.indexOf(',') !== -1) {
-                        base64Data = base64Data.split(',')[1];
-                    }
-                    const photoResult = await apiCall('uploadBorrowerPhoto', {
-                        email: currentUser.email,
-                        debtId: debt.id,
-                        photoData: base64Data,
-                        mimeType: debt.photoFile?.type || 'image/jpeg',
-                        fileExtension: debt.photoFile?.name?.split('.').pop() || 'jpg'
-                    });
-                    
-                    if (photoResult && photoResult.success) {
-                        debt.photoId = photoResult.photoId;
-                        debt.photoUrl = photoResult.photoUrl;
-                        delete debt.photoBase64;
-                    }
-                } catch (error) {
-                    console.error('Error uploading offline photo:', error);
-                }
-            }
-        }
+        // Borrower photos are now stored directly as compressed Base64 in the
+        // DEBTS sheet. Do not upload them to Drive during sync. The same
+        // photoBase64 travels with the debt payload below, so the debt and
+        // its photo are committed together in one sync operation.
         
         // Custom units added while offline - push each to the business's
         // UNITS sheet so they're saved server-side, same as any other data.
@@ -9640,16 +9918,52 @@ let debtPhotoBase64 = null;
         });
         
         if (result && result.success) {
-            await refreshAllData();
-            await loadUnits();
-            
+            // Expenses are replayed one-by-one on the server with their own
+            // operationId. Remove only the expenses that the server actually
+            // accepted; failed ones stay in the local queue for the next sync.
+            // This prevents a temporary server error from silently deleting an
+            // expense that was already saved offline.
+            const expenseOps = Array.isArray(result.operations)
+                ? result.operations.filter(op => op && op.type === 'expense')
+                : [];
+            const failedExpenseOperationIds = new Set(
+                expenseOps.filter(op => op.status !== 'success' && op.operationId)
+                          .map(op => op.operationId)
+            );
+            const hasExpenseFailures = expenseOps.some(op => op.status !== 'success');
+            const expenseQueueBeforeClear = Array.isArray(offlineData.expenses) ? offlineData.expenses.slice() : [];
+            const remainingExpenseQueue = hasExpenseFailures
+                ? expenseQueueBeforeClear.filter(exp => !exp.operationId || failedExpenseOperationIds.has(exp.operationId))
+                : [];
+
+            // Remove only debts the server actually accepted. If one debt
+            // fails, it stays queued for the next retry instead of being lost.
+            const debtOps = Array.isArray(result.operations)
+                ? result.operations.filter(op => op && op.type === 'debt')
+                : [];
+            const failedDebtIds = new Set(
+                debtOps.filter(op => op.status !== 'success' && op.debtId)
+                       .map(op => String(op.debtId))
+            );
+            const hasDebtFailures = debtOps.some(op => op.status !== 'success');
+            const debtQueueBeforeClear = Array.isArray(offlineData.debts) ? offlineData.debts.slice() : [];
+            const remainingDebtQueue = hasDebtFailures
+                ? debtQueueBeforeClear.filter(debt => {
+                    const id = String(debt.id || '');
+                    return !debtOps.some(op => op.status === 'success' && String(op.debtId || '') === id) || failedDebtIds.has(id);
+                  })
+                : [];
+
+            // Persist the queue state BEFORE refreshing any page. This avoids
+            // a brief double-count where the server has accepted a queued
+            // record but the old local pending copy is still present during refresh.
             offlineData.stock = [];
             offlineData.sales = [];
             offlineData.purchases = [];
-            offlineData.expenses = [];
+            offlineData.expenses = remainingExpenseQueue;
             offlineData.customers = [];
             offlineData.suppliers = [];
-            offlineData.debts = [];
+            offlineData.debts = remainingDebtQueue;
             offlineData.units = [];
             offlineData.categories = [];
             offlineData.purchaseRequestActions = [];
@@ -9664,9 +9978,16 @@ let debtPhotoBase64 = null;
             
             saveOfflineData();
             updateSyncIndicator();
+            await refreshAllData();
+            await loadUnits();
             refreshCurrentPage();
             
-            showNotification('Offline data synced successfully', 'success');
+            showNotification(
+                (remainingExpenseQueue.length > 0 || remainingDebtQueue.length > 0)
+                    ? 'Offline data synced. Some records remain pending and will retry automatically.'
+                    : 'Offline data synced successfully',
+                (remainingExpenseQueue.length > 0 || remainingDebtQueue.length > 0) ? 'info' : 'success'
+            );
         } else {
             offlineData.isSyncing = false;
             updateSyncIndicator();
@@ -12851,11 +13172,6 @@ function hideAccessDeniedModal() {
         return;
     }
     
-    if (file.size > 2 * 1024 * 1024) {
-        showNotification('Image size must be less than 2MB', 'error');
-        return;
-    }
-    
     selectedFile = file;
     
     const uploadProgress = document.getElementById('logoUploadProgress');
@@ -12869,13 +13185,10 @@ function hideAccessDeniedModal() {
     reader.onload = function(e) {
         if (uploadProgress) uploadProgress.style.display = 'none';
         
-        // Cache the original image immediately for offline preview
+        // Large source images are intentionally kept only in memory here.
+        // The original is NOT written to localStorage; only the cropped,
+        // compressed image (kept safely below the Sheets cell limit) is cached.
         const originalBase64 = e.target.result;
-        logoBase64Cache = {
-            url: 'temp_' + Date.now(),
-            data: originalBase64,
-            timestamp: new Date().getTime()
-        };
         
         // Show preview immediately
         if (logoElements.preview) {
@@ -14298,6 +14611,7 @@ function toggleSaleModalLock() {
                 stock: Array.isArray(parsed.stock) ? parsed.stock : [],
                 sales: Array.isArray(parsed.sales) ? parsed.sales : [],
                 purchases: Array.isArray(parsed.purchases) ? parsed.purchases : [],
+                expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
                 customers: Array.isArray(parsed.customers) ? parsed.customers : [],
                 suppliers: Array.isArray(parsed.suppliers) ? parsed.suppliers : [],
                 debts: Array.isArray(parsed.debts) ? parsed.debts : [], // NEW - hakikisha ni array
@@ -14313,6 +14627,7 @@ function toggleSaleModalLock() {
                 purchaseEdits: Array.isArray(parsed.purchaseEdits) ? parsed.purchaseEdits : [],
                 debtEdits: Array.isArray(parsed.debtEdits) ? parsed.debtEdits : [],
                 deletes: Array.isArray(parsed.deletes) ? parsed.deletes : [],
+                syncOperationId: parsed.syncOperationId || null,
                 lastSync: parsed.lastSync || null,
                 isSyncing: false
             };
@@ -14331,6 +14646,7 @@ function resetOfflineData() {
         stock: [],
         sales: [],
         purchases: [],
+        expenses: [],
         customers: [],
         suppliers: [],
         debts: [], // NEW - hakikisha ni array
@@ -15100,6 +15416,7 @@ function showEditSupplierProductsSuggestions() {
     // Hakikisha offlineData fields zote mpya zipo (kama kuna upgrade) -
     // ulinzi wa ziada endapo loadOfflineData() haikuweza kuzirejesha kwa
     // sababu yoyote (mfano localStorage iliyoharibika).
+    if (!offlineData.expenses) offlineData.expenses = [];
     if (!offlineData.debts) offlineData.debts = [];
     if (!offlineData.stockEdits) offlineData.stockEdits = [];
     if (!offlineData.saleEdits) offlineData.saleEdits = [];
@@ -15110,6 +15427,7 @@ function showEditSupplierProductsSuggestions() {
     const hasOfflineData = (offlineData.stock && offlineData.stock.length > 0) || 
                            (offlineData.sales && offlineData.sales.length > 0) || 
                            (offlineData.purchases && offlineData.purchases.length > 0) ||
+                           (offlineData.expenses && offlineData.expenses.length > 0) ||
                            (offlineData.customers && offlineData.customers.length > 0) ||
                            (offlineData.suppliers && offlineData.suppliers.length > 0) ||
                            (offlineData.debts && offlineData.debts.length > 0) ||
@@ -15139,7 +15457,8 @@ function showEditSupplierProductsSuggestions() {
         return;
     }
     
-    // Hakikisha offlineData debts ipo
+    // Hakikisha offlineData fields zipo
+    if (!offlineData.expenses) offlineData.expenses = [];
     if (!offlineData.debts) {
         offlineData.debts = [];
     }
@@ -15152,6 +15471,7 @@ function showEditSupplierProductsSuggestions() {
     const hasOfflineData = (offlineData.stock && offlineData.stock.length > 0) || 
                            (offlineData.sales && offlineData.sales.length > 0) || 
                            (offlineData.purchases && offlineData.purchases.length > 0) ||
+                           (offlineData.expenses && offlineData.expenses.length > 0) ||
                            (offlineData.customers && offlineData.customers.length > 0) ||
                            (offlineData.suppliers && offlineData.suppliers.length > 0) ||
                            (offlineData.debts && offlineData.debts.length > 0) ||
@@ -15342,6 +15662,7 @@ function updateAllCaches(result) {
     indicator.classList.remove('hidden');
     
     // Hakikisha offlineData buckets zote zipo
+    if (!offlineData.expenses) offlineData.expenses = [];
     if (!offlineData.debts) offlineData.debts = [];
     if (!offlineData.units) offlineData.units = [];
     if (!offlineData.categories) offlineData.categories = [];
@@ -15355,6 +15676,7 @@ function updateAllCaches(result) {
     const hasOfflineData = (offlineData.stock && offlineData.stock.length > 0) || 
                            (offlineData.sales && offlineData.sales.length > 0) || 
                            (offlineData.purchases && offlineData.purchases.length > 0) ||
+                           (offlineData.expenses && offlineData.expenses.length > 0) ||
                            (offlineData.customers && offlineData.customers.length > 0) ||
                            (offlineData.suppliers && offlineData.suppliers.length > 0) ||
                            (offlineData.debts && offlineData.debts.length > 0) ||
@@ -18207,12 +18529,18 @@ async function updateStock() {
             
             showConfirmationModal(
                 'Complete Sale',
-                `Complete this sale for ${escapeHtml(customerName)} - ${session.items.length} item(s), total ${formatCurrency(grandTotal)}?`,
-                async () => { await completeSaleForSessionConfirmed(sessionId); }
+                buildCompleteSaleConfirmationContent(customerName, session.items.length, grandTotal),
+                async () => {
+                    const issueReceipt = document.getElementById('confirmationIssueReceipt')?.checked !== false;
+                    await completeSaleForSessionConfirmed(sessionId, issueReceipt);
+                },
+                true,
+                false,
+                true
             );
         }
         
-        async function completeSaleForSessionConfirmed(sessionId) {
+        async function completeSaleForSessionConfirmed(sessionId, issueReceipt = true) {
             const session = remoteSaleCartSessions[sessionId];
             if (!session) return;
             
@@ -18272,7 +18600,7 @@ async function updateStock() {
                 showNotification(`Sale completed for ${customer || 'customer'} - ${successCount} recorded, ${offlineCount} saved offline`, 'info');
             }
             
-            if (issueReceipt && (successCount > 0 || offlineCount > 0)) {
+            if (issueReceiptSelected && (successCount > 0 || offlineCount > 0)) {
                 const receiptGrandTotal = itemsToProcess.reduce((sum, it) => sum + it.subtotal, 0);
                 generateSaleReceipt(itemsToProcess, customer, paymentMethod, receiptGrandTotal);
             }
@@ -18312,6 +18640,34 @@ async function updateStock() {
             return 'SALEBATCH-' + token.replace(/-/g, '').toUpperCase();
         }
 
+        function buildCompleteSaleConfirmationContent(customerName, itemCount, grandTotal) {
+            return `
+                <span style="display:block; margin-bottom:12px;">
+                    Complete this sale for <strong>${escapeHtml(customerName)}</strong> - ${itemCount} item(s), total <strong>${formatCurrency(grandTotal)}</strong>.
+                </span>
+                <span style="display:flex; flex-direction:column; gap:10px; padding:12px; border:1px solid #cbd5e1; border-radius:10px; background:#f8fafc; text-align:left;">
+                    <span style="display:block; font-weight:700; color:#0f172a; margin-bottom:2px;">Completion Options</span>
+                    <label style="display:flex; align-items:center; gap:9px; cursor:pointer; font-weight:600; color:#1e293b;">
+                        <input type="checkbox" id="confirmationIssueReceipt" checked style="width:18px; height:18px; cursor:pointer;">
+                        <i class="fas fa-receipt"></i> Issue Receipt to Customer
+                    </label>
+                </span>`;
+        }
+
+        function buildCompleteDebtConfirmationContent(borrowerName, itemCount, grandTotal) {
+            return `
+                <span style="display:block; margin-bottom:12px;">
+                    Complete this debt for <strong>${escapeHtml(borrowerName)}</strong> - ${itemCount} item(s), total <strong>${formatCurrency(grandTotal)}</strong>.
+                </span>
+                <span style="display:flex; flex-direction:column; gap:10px; padding:12px; border:1px solid #cbd5e1; border-radius:10px; background:#f8fafc; text-align:left;">
+                    <span style="display:block; font-weight:700; color:#0f172a; margin-bottom:2px;">Completion Options</span>
+                    <label style="display:flex; align-items:center; gap:9px; cursor:pointer; font-weight:600; color:#1e293b;">
+                        <input type="checkbox" id="confirmationIssueAgreement" checked style="width:18px; height:18px; cursor:pointer;">
+                        <i class="fas fa-file-signature"></i> Print Agreement Form for Borrower to Sign
+                    </label>
+                </span>`;
+        }
+
         function completeSale() {
             if (saleModalLocked) {
                 showNotification('This form is locked. Tap "Unlock" to record a sale.', 'error');
@@ -18328,8 +18684,14 @@ async function updateStock() {
             
             showConfirmationModal(
                 'Complete Sale',
-                `Complete this sale for ${customerName} - ${currentSaleCart.length} item(s), total ${formatCurrency(grandTotal)}?`,
-                async () => { await completeSaleConfirmed(); }
+                buildCompleteSaleConfirmationContent(customerName, currentSaleCart.length, grandTotal),
+                async () => {
+                    const issueReceipt = document.getElementById('confirmationIssueReceipt')?.checked !== false;
+                    await completeSaleConfirmed(issueReceipt);
+                },
+                true,
+                false,
+                true
             );
         }
         
@@ -18427,7 +18789,7 @@ async function updateStock() {
             if (badge) badge.textContent = salesCache.data.length;
         }
 
-        async function completeSaleConfirmed() {
+        async function completeSaleConfirmed(issueReceipt = true) {
             setButtonLoading('submitSaleBtn', 'saleSpinner', 'submitSaleText', true, 'Completing Sale...');
             
             // Capture everything needed for this sale BEFORE any await.
@@ -18435,7 +18797,7 @@ async function updateStock() {
             // save continues silently in the background.
             const customer = document.getElementById('saleCustomer').value.trim();
             const paymentMethod = document.getElementById('salePaymentMethod').value;
-            const issueReceipt = document.getElementById('saleIssueReceipt')?.checked;
+            const issueReceiptSelected = issueReceipt !== false;
             const itemsToProcess = mergeCartItemsForSubmission(currentSaleCart);
             const receiptNo = generateClientReceiptNo();
             const saleBatchId = generateSaleBatchId_();
@@ -20742,7 +21104,9 @@ function showEditCustomerSuggestions() {
             } else {
                 showConfirmationModal(
                     'Complete Purchase',
-                    `Add ${formatQuantity(completeQty)} ${pluralizeUnit(item.unit, completeQty)} of "${item.product}" to Stock now?`,
+                    (item.isStockProduct === false || String(item.isStockProduct || '').trim().toLowerCase() === 'false' || String(item.isStockProduct || '').trim().toLowerCase() === 'nonstock' || String(item.isStockProduct || '').trim().toLowerCase() === 'non-stock' || String(item.isStockProduct || '').trim().toLowerCase() === 'service')
+                        ? `Record ${formatQuantity(completeQty)} ${pluralizeUnit(item.unit, completeQty)} of "${item.product}" as Non-Stock Purchase?`
+                        : `Add ${formatQuantity(completeQty)} ${pluralizeUnit(item.unit, completeQty)} of "${item.product}" to Stock now?`,
                     async () => { await completeRequestItemConfirmed(requestId, itemIndex, completeQty); }
                 );
             }
@@ -20755,8 +21119,9 @@ function showEditCustomerSuggestions() {
             const item = req.items[itemIndex];
             if (item.completed) return;
             
-            const isStockItem = item.isStockProduct !== false;
+            const isStockItem = !(item.isStockProduct === false || String(item.isStockProduct || '').trim().toLowerCase() === 'false' || String(item.isStockProduct || '').trim().toLowerCase() === 'nonstock' || String(item.isStockProduct || '').trim().toLowerCase() === 'non-stock' || String(item.isStockProduct || '').trim().toLowerCase() === 'service');
             
+            // IMPORTANT: Non-Stock must never modify local Stock.
             if (isStockItem) {
                 // Optimistic local Stock update - only for the quantity being
                 // completed right now, not necessarily the whole approved amount.
@@ -20855,7 +21220,7 @@ function showEditCustomerSuggestions() {
                 }
                 html += `<div style="margin-top:12px; display:flex; justify-content:space-between; align-items:center;">
                     <span style="color:#94a3b8; font-size:0.85rem;">${items.length} item(s) &middot; Est. total: ${formatCurrency(total)}</span>
-                    <button class="btn-sm btn-success" onclick="openReviewPurchaseRequestModal('${req.requestId}')"><i class="fas fa-eye"></i> Review &amp; Approve</button>
+                    <button class="btn-sm btn-success" id="reviewRequestBtn-${req.requestId}" onclick="openReviewPurchaseRequestModal('${req.requestId}')"><i class="fas fa-eye"></i> <span id="reviewRequestText-${req.requestId}">Review &amp; Approve</span> <span class="spinner small" id="reviewRequestSpinner-${req.requestId}" style="display:none;"></span></button>
                 </div>`;
                 html += `</div>`;
             });
@@ -20907,6 +21272,18 @@ function showEditCustomerSuggestions() {
         // ---- Review, Approve & Reject (Admin) ----
         
         function openReviewPurchaseRequestModal(requestId) {
+            const reviewBtn = document.getElementById('reviewRequestBtn-' + requestId);
+            const reviewText = document.getElementById('reviewRequestText-' + requestId);
+            const reviewSpinner = document.getElementById('reviewRequestSpinner-' + requestId);
+            if (reviewBtn) reviewBtn.disabled = true;
+            if (reviewText) { reviewText.dataset.originalText = reviewText.textContent; reviewText.textContent = 'Reviewing...'; }
+            if (reviewSpinner) reviewSpinner.style.display = 'inline-block';
+
+            const finishReviewLoading = () => {
+                if (reviewBtn) reviewBtn.disabled = false;
+                if (reviewText) { reviewText.textContent = reviewText.dataset.originalText || 'Review & Approve'; delete reviewText.dataset.originalText; }
+                if (reviewSpinner) reviewSpinner.style.display = 'none';
+            };
             const modal = document.getElementById('reviewPurchaseRequestModal');
             modal.classList.add('show');
             document.body.style.overflow = 'hidden';
@@ -20919,7 +21296,7 @@ function showEditCustomerSuggestions() {
             document.getElementById('reviewAddItemQty').value = '';
             document.getElementById('reviewAddItemPrice').value = '';
             
-            loadReviewRequest(requestId);
+            loadReviewRequest(requestId).finally(finishReviewLoading);
         }
         
         // Loads the request to review from the local cache first (instant);
@@ -26692,15 +27069,17 @@ async function previewAccountingPeriod() {
     
     if (!periodStart || !periodEnd) return;
     
-    if (new Date(periodStart) > new Date(periodEnd)) {
+    // These inputs are calendar dates (YYYY-MM-DD), not UTC timestamps.
+    // Compare the date strings directly so no country can be shifted by a
+    // UTC offset when validating today's Period End.
+    if (periodStart > periodEnd) {
         clearAccountingStatsDisplay();
         showNotification('Period Start must be before Period End', 'error');
         return;
     }
-    
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
-    if (new Date(periodEnd).getTime() > todayEnd.getTime()) {
+
+    const accountingToday = getBusinessDateString(new Date());
+    if (periodEnd > accountingToday) {
         clearAccountingStatsDisplay();
         showNotification('Period End cannot be a future date', 'error');
         return;
@@ -26711,7 +27090,7 @@ async function previewAccountingPeriod() {
         return;
     }
     
-    setButtonLoading('accountingPreviewBtn', 'accountingPreviewSpinner', 'accountingPreviewText', true);
+    setButtonLoading('accountingPreviewBtn', 'accountingPreviewSpinner', 'accountingPreviewText', true, 'Reviewing...');
     
     try {
         const result = await apiCall('previewAccountingPeriod', { periodStart, periodEnd, branchId });
@@ -26914,36 +27293,33 @@ async function saveExpense() {
     }
     
     if (category) registerCategoryIfNew(category);
+    setButtonLoading('saveExpenseBtn', 'saveExpenseSpinner', 'saveExpenseText', true, 'Saving Expense...');
     
-    setButtonLoading('saveExpenseBtn', 'saveExpenseSpinner', 'saveExpenseText', true);
-    
-    // Midday, not midnight - avoids the picked calendar date shifting to
-    // the day before/after once converted to UTC for storage, the same
-    // class of bug already fixed elsewhere in this app for date-only
-    // values.
+    // Midday is used only for the selected calendar date. The exact real
+    // transaction instant is recorded separately in recordedAt and is what
+    // Accounting uses for period boundaries.
     const isoDate = new Date(dateValue + 'T12:00:00').toISOString();
-    // Keep the selected calendar date separate from the exact transaction
-    // instant. Accounting-period filtering uses this timestamp (including
-    // hours/minutes/seconds), so an expense recorded before Close Accounts
-    // remains in the closed period even when the date is the same.
     const recordedAt = new Date().toISOString();
     const expenseCategory = category || 'Uncategorized';
+    const operationId = (window.crypto && crypto.randomUUID)
+        ? 'EXPENSEOP-' + crypto.randomUUID().replace(/-/g, '').toUpperCase()
+        : 'EXPENSEOP-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
     
-    // A genuinely separate record from Purchases - Expenses are real
-    // business operating costs (rent, electricity, transport, salaries,
-    // etc), never buying goods to resell. This never touches Stock,
-    // Purchases, or their offline queue at all - it has its own sheet,
-    // its own action (addExpense), and its own offline queue below.
     const expenseData = {
+        operationId,
         category: expenseCategory,
-        description: description,
-        amount: amount,
-        paymentMethod: paymentMethod,
-        branchId: branchId,
+        description,
+        amount,
+        paymentMethod,
+        branchId,
         date: isoDate,
-        recordedAt: recordedAt,
+        recordedAt,
         sellerId: currentUser.sellerId
     };
+    
+    // Offline-first: if there is no network, persist the expense immediately
+    // and let the normal sync pipeline send it when connectivity returns.
+    if (!offlineData.expenses) offlineData.expenses = [];
     
     if (isOnline) {
         try {
@@ -26957,18 +27333,23 @@ async function saveExpense() {
                 showNotification(result.error || 'Failed to save expense', 'error');
             }
         } catch (error) {
+            // Endpoint/network failure after the user pressed Save is treated
+            // exactly like offline mode: keep the SAME operationId so a later
+            // retry cannot create a duplicate server record.
             offlineData.expenses.push(expenseData);
             saveOfflineData();
-            showNotification('Saved offline - will sync automatically once back online.', 'info');
             await loadExpensesData();
             closeAddExpenseModal();
+            updateSyncIndicator();
+            showNotification('Saved offline - will sync automatically once back online.', 'info');
         }
     } else {
         offlineData.expenses.push(expenseData);
         saveOfflineData();
-        showNotification('Saved offline - will sync automatically once back online.', 'info');
         await loadExpensesData();
         closeAddExpenseModal();
+        updateSyncIndicator();
+        showNotification('Saved offline - will sync automatically once back online.', 'info');
     }
     
     setButtonLoading('saveExpenseBtn', 'saveExpenseSpinner', 'saveExpenseText', false);
@@ -26981,32 +27362,106 @@ async function saveExpense() {
 // blank/loading flash if it's already been viewed once this session.
 let lastExpensesResult = null;
 
+function getExpensesResultWithPendingLocal_(baseResult, filters) {
+    const result = {
+        success: true,
+        todayExpenses: Number(baseResult?.todayExpenses) || 0,
+        periodExpenses: Number(baseResult?.periodExpenses) || 0,
+        totalExpenses: Number(baseResult?.totalExpenses) || 0,
+        categories: Array.isArray(baseResult?.categories) ? baseResult.categories.map(c => ({...c})) : [],
+        recent: Array.isArray(baseResult?.recent) ? baseResult.recent.slice() : []
+    };
+    const pending = Array.isArray(offlineData.expenses) ? offlineData.expenses : [];
+    if (!pending.length) return result;
+
+    const dateFrom = filters?.dateFrom || '';
+    const dateTo = filters?.dateTo || '';
+    const categoryFilter = filters?.category || '';
+    const branchId = filters?.branchId || 'ALL';
+    const today = getBusinessDateString(new Date());
+    const categoryMap = {};
+    result.categories.forEach(c => { categoryMap[c.name] = Number(c.total) || 0; });
+
+    pending.forEach(exp => {
+        const expBranch = exp.branchId || 'MAIN';
+        if (branchId !== 'ALL' && expBranch !== branchId) return;
+        const amount = Number(exp.amount || exp.total) || 0;
+        if (amount <= 0) return;
+
+        const businessDate = getBusinessDateString(exp.date || exp.recordedAt || new Date());
+        const recordedDate = getBusinessDateString(exp.recordedAt || exp.date || new Date());
+        const category = exp.category || 'Uncategorized';
+
+        // A locally queued expense is part of the current open period unless
+        // this device already knows an exact Close Accounts boundary at/before
+        // its recorded moment.
+        const closeBoundary = getLatestLocalClosedAtForBranch(expBranch);
+        const recordedTime = new Date(exp.recordedAt || exp.date || 0).getTime();
+        if (closeBoundary !== null && !isNaN(recordedTime) && recordedTime <= closeBoundary) return;
+
+        result.periodExpenses += amount;
+        result.totalExpenses += amount;
+        if (businessDate === today) result.todayExpenses += amount;
+
+        if (categoryFilter && category !== categoryFilter) return;
+        if (dateFrom && businessDate < dateFrom) return;
+        if (dateTo && businessDate > dateTo) return;
+
+        categoryMap[category] = (categoryMap[category] || 0) + amount;
+        result.recent.push({
+            date: exp.date || exp.recordedAt,
+            recordedAt: exp.recordedAt || exp.date,
+            description: exp.description || '',
+            total: amount,
+            paymentMethod: exp.paymentMethod || 'cash',
+            category,
+            branchId: expBranch,
+            _offlinePending: true
+        });
+    });
+
+    result.categories = Object.keys(categoryMap)
+        .map(name => ({name, total: categoryMap[name]}))
+        .sort((a, b) => b.total - a.total);
+    result.recent.sort((a, b) => new Date(b.recordedAt || b.date).getTime() - new Date(a.recordedAt || a.date).getTime());
+    result.recent = result.recent.slice(0, 50);
+    return result;
+}
+
 async function loadExpensesData() {
     const dateFrom = document.getElementById('expensesDateFrom')?.value || '';
     const dateTo = document.getElementById('expensesDateTo')?.value || '';
     const category = document.getElementById('expensesCategorySelect')?.value || '';
     const branchId = document.getElementById('expensesBranchSelect')?.value || 'ALL';
+    const filters = { dateFrom, dateTo, category, branchId };
     
     if (lastExpensesResult) {
-        renderExpensesResult(lastExpensesResult);
+        renderExpensesResult(getExpensesResultWithPendingLocal_(lastExpensesResult, filters));
     }
     
     if (!isOnline) {
-        if (!lastExpensesResult) {
+        if (!lastExpensesResult && (!offlineData.expenses || offlineData.expenses.length === 0)) {
             showNotification('Expenses figures need an internet connection to calculate accurately from every record.', 'error');
+        } else if (!lastExpensesResult && offlineData.expenses?.length) {
+            renderExpensesResult(getExpensesResultWithPendingLocal_({ success: true, todayExpenses: 0, periodExpenses: 0, totalExpenses: 0, categories: [], recent: [] }, filters));
         }
         return;
     }
     
     try {
-        const result = await apiCall('getExpensesData', { dateFrom, dateTo, category, branchId });
+        const result = await apiCall('getExpensesData', filters);
         if (result.success) {
             lastExpensesResult = result;
-            renderExpensesResult(result);
+            renderExpensesResult(getExpensesResultWithPendingLocal_(result, filters));
         } else {
             showNotification(result.error || 'Failed to load expenses', 'error');
         }
     } catch (error) {
+        // If the connection disappeared during the fetch, the locally queued
+        // expenses remain visible instead of disappearing from the screen.
+        if (offlineData.expenses?.length) {
+            renderExpensesResult(getExpensesResultWithPendingLocal_(lastExpensesResult || {todayExpenses:0,periodExpenses:0,totalExpenses:0,categories:[],recent:[]}, filters));
+        }
         showNotification('Network error loading expenses', 'error');
     }
 }
@@ -27066,7 +27521,7 @@ function renderRecentExpenses(expenses) {
             <td>${escapeHtml(e.description || '-')}</td>
             <td>${escapeHtml(e.category || 'Uncategorized')}</td>
             <td>${escapeHtml(getOfflineBranchName(e.branchId))}</td>
-            <td>${formatCurrency(e.total)}</td>
+            <td>${formatCurrency(e.total)}${e._offlinePending ? ' <span class="badge info">Pending Sync</span>' : ''}</td>
         </tr>
     `).join('');
 }
@@ -27140,9 +27595,11 @@ function confirmCloseAccounts() {
         return;
     }
     
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
-    if (new Date(periodEnd).getTime() > todayEnd.getTime()) {
+    // Accounting Period End is a BUSINESS CALENDAR DATE, not a UTC instant.
+    // Compare calendar-date strings in the business timezone so Tanzania
+    // (UTC+3) does not get treated as the previous UTC day around midnight.
+    const accountingToday = getBusinessDateString(new Date());
+    if (periodEnd > accountingToday) {
         showNotification('Period End cannot be a future date', 'error');
         return;
     }
@@ -27164,7 +27621,7 @@ async function closeAccountsConfirmed() {
     const periodEnd = document.getElementById('accountingPeriodEnd').value;
     const branchId = document.getElementById('accountingBranchSelect').value;
     
-    setButtonLoading('accountingCloseBtn', 'accountingCloseSpinner', 'accountingCloseText', true);
+    setButtonLoading('accountingCloseBtn', 'accountingCloseSpinner', 'accountingCloseText', true, 'Closing Accounts...');
     
     try {
         const result = await apiCall('closeAccountingPeriod', { periodStart, periodEnd, branchId });
@@ -27783,7 +28240,7 @@ function restoreConfirmationActionButton() {
     confirmationActionButtonFallbackApplied = false;
 }
 
-function showConfirmationModal(title, message, onConfirm, isCustomContent = false, waitForConfirm = false) {
+function showConfirmationModal(title, message, onConfirm, isCustomContent = false, waitForConfirm = false, closeBeforeCustomConfirm = false) {
     const modal = document.getElementById('confirmationModal');
     const titleEl = document.getElementById('confirmationTitle');
     const messageEl = document.getElementById('confirmationMessage');
@@ -27807,6 +28264,7 @@ function showConfirmationModal(title, message, onConfirm, isCustomContent = fals
         // so preserve their validation behaviour before closing when necessary.
         if (isCustomContent && !isLogoutFlow && !waitForConfirm) {
             try {
+                if (closeBeforeCustomConfirm) hideConfirmationModal();
                 const result = await onConfirm();
                 if (result !== false) hideConfirmationModal();
             } catch (error) {
@@ -27960,24 +28418,49 @@ function showSettingsSection(section) {
         }
 
         function setButtonLoading(buttonId, spinnerId, textId, isLoading, loadingText) {
-    // Saving/loading is intentionally silent. Keep the existing function
-    // signature because many actions call it, but do not change the button
-    // text, spinner, opacity, or add any visual loading state. We only retain
-    // the disabled state as a lightweight guard against duplicate clicks.
+    // Most legacy actions intentionally keep the existing silent-loading
+    // behavior. These actions explicitly requested by the user get a visible
+    // spinner + status text without changing unrelated buttons.
+    const visibleLoadingButtons = new Set([
+        'saveExpenseBtn',
+        'accountingPreviewBtn',
+        'accountingCloseBtn',
+        'submitApprovalBtn'
+    ]);
     const button = document.getElementById(buttonId);
     if (button) {
         button.disabled = !!isLoading;
-        button.removeAttribute('aria-busy');
+        if (isLoading) button.setAttribute('aria-busy', 'true');
+        else button.removeAttribute('aria-busy');
     }
 
     const spinner = document.getElementById(spinnerId);
     const text = document.getElementById(textId);
-    if (spinner) spinner.style.display = 'none';
-    if (text) {
-        text.style.opacity = '1';
-        if (text.dataset.originalText) {
-            text.textContent = text.dataset.originalText;
-            delete text.dataset.originalText;
+    const showVisual = visibleLoadingButtons.has(buttonId);
+
+    if (showVisual) {
+        if (isLoading) {
+            if (text && !text.dataset.originalText) text.dataset.originalText = text.textContent;
+            if (text && loadingText) text.textContent = loadingText;
+            if (spinner) spinner.style.display = 'inline-block';
+        } else {
+            if (spinner) spinner.style.display = 'none';
+            if (text) {
+                text.style.opacity = '1';
+                if (text.dataset.originalText) {
+                    text.textContent = text.dataset.originalText;
+                    delete text.dataset.originalText;
+                }
+            }
+        }
+    } else {
+        if (spinner) spinner.style.display = 'none';
+        if (text) {
+            text.style.opacity = '1';
+            if (text.dataset.originalText) {
+                text.textContent = text.dataset.originalText;
+                delete text.dataset.originalText;
+            }
         }
     }
 }
@@ -28260,6 +28743,7 @@ function saveDebtOffline(debtData) {
         photoId: offlineId,
         photoUrl: debtData.photoUrl || '',
         photoBase64: debtData.photoBase64 || null,
+        photoMimeType: debtData.photoMimeType || 'image/jpeg',
         product: debtData.product,
         quantity: debtData.quantity,
         unitPrice: debtData.unitPrice,
@@ -28291,6 +28775,8 @@ function saveDebtOffline(debtData) {
         borrowerNIDA: debtData.borrowerNIDA || '',
         photoId: offlineId,
         photoUrl: debtData.photoUrl || '',
+        photoBase64: debtData.photoBase64 || '',
+        photoMimeType: debtData.photoMimeType || 'image/jpeg',
         product: debtData.product,
         quantity: debtData.quantity,
         unitPrice: debtData.unitPrice,
@@ -28363,179 +28849,395 @@ function saveDebtOffline(debtData) {
 }
 
 
+function debtPhotoDataUrl(debt) {
+    if (!debt || !debt.photoBase64) return '';
+    const raw = String(debt.photoBase64);
+    if (raw.indexOf('data:image/') === 0) return raw;
+    return 'data:' + (debt.photoMimeType || 'image/jpeg') + ';base64,' + raw;
+}
+
+function openDebtPhotoLightbox(debtId, borrowerName) {
+    // V51: create the viewer directly on <body> and use an inline fixed layer.
+    // This deliberately does NOT depend on any existing modal/lightbox CSS,
+    // stacking context, modal manager, or previously-defined viewer.
+    const debt = (debtsCache.data || []).find(function(d) {
+        return String(d.id) === String(debtId);
+    });
+    if (!debt) {
+        showNotification('Photo not available', 'warning');
+        return;
+    }
+
+    const oldViewer = document.getElementById('smartDebtPhotoViewerV51');
+    if (oldViewer) oldViewer.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'smartDebtPhotoViewerV51';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.style.cssText = [
+        'position:fixed', 'inset:0', 'width:100vw', 'height:100vh',
+        'z-index:2147483647', 'display:flex', 'align-items:center',
+        'justify-content:center', 'padding:20px', 'box-sizing:border-box',
+        'background:rgba(0,0,0,.94)', 'font-family:inherit'
+    ].join(';');
+
+    const panel = document.createElement('div');
+    panel.style.cssText = [
+        'position:relative', 'width:min(94vw,1000px)', 'height:min(94vh,1000px)',
+        'max-width:100%', 'max-height:100%', 'display:flex', 'flex-direction:column',
+        'align-items:center', 'justify-content:center', 'box-sizing:border-box',
+        'padding:58px 16px 18px', 'background:#0f172a', 'border-radius:16px',
+        'box-shadow:0 25px 80px rgba(0,0,0,.65)', 'overflow:hidden'
+    ].join(';');
+    panel.onclick = function(e) { e.stopPropagation(); };
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Close photo');
+    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+    closeBtn.style.cssText = [
+        'position:absolute', 'top:10px', 'right:10px', 'width:44px', 'height:44px',
+        'border:0', 'border-radius:50%', 'background:rgba(255,255,255,.14)',
+        'color:#fff', 'font-size:20px', 'cursor:pointer', 'z-index:5'
+    ].join(';');
+    closeBtn.onclick = closeDebtPhotoLightbox;
+
+    const imageArea = document.createElement('div');
+    imageArea.style.cssText = [
+        'width:100%', 'height:100%', 'min-height:0', 'display:flex',
+        'align-items:center', 'justify-content:center', 'overflow:auto',
+        'box-sizing:border-box'
+    ].join(';');
+
+    const img = document.createElement('img');
+    img.alt = String(borrowerName || debt.borrowerName || 'Borrower Photo');
+    img.style.cssText = [
+        'display:block', 'max-width:100%', 'max-height:100%',
+        'width:auto', 'height:auto', 'object-fit:contain',
+        'border-radius:10px', 'box-shadow:0 10px 40px rgba(0,0,0,.45)'
+    ].join(';');
+
+    const name = document.createElement('div');
+    name.textContent = String(borrowerName || debt.borrowerName || 'Borrower Photo').trim() || 'Borrower Photo';
+    name.style.cssText = [
+        'position:absolute', 'left:16px', 'right:16px', 'bottom:12px',
+        'padding:10px 14px', 'box-sizing:border-box', 'border-radius:10px',
+        'background:rgba(15,23,42,.90)', 'color:#fff', 'text-align:center',
+        'font-size:17px', 'font-weight:700', 'white-space:nowrap',
+        'overflow:hidden', 'text-overflow:ellipsis', 'z-index:4'
+    ].join(';');
+
+    imageArea.appendChild(img);
+    panel.appendChild(closeBtn);
+    panel.appendChild(imageArea);
+    panel.appendChild(name);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    const previousOverflow = document.body.style.overflow;
+    overlay.dataset.previousOverflow = previousOverflow;
+    document.body.style.overflow = 'hidden';
+
+    overlay.onclick = function(e) {
+        if (e.target === overlay) closeDebtPhotoLightbox();
+    };
+
+    // Prefer the Base64 stored in the DEBTS sheet. This works without Drive,
+    // network access, or any external image URL.
+    if (debt.photoBase64) {
+        const raw = String(debt.photoBase64);
+        img.src = raw.indexOf('data:image/') === 0
+            ? raw
+            : 'data:' + (debt.photoMimeType || 'image/jpeg') + ';base64,' + raw;
+        return;
+    }
+
+    // Backward compatibility for old Drive-based records.
+    if (debt.photoId) {
+        const cached = getDebtPhotoFromCache(debt.photoId);
+        if (cached) {
+            img.src = cached;
+            return;
+        }
+        if (isOnline && String(debt.id).indexOf('OFFLINE_') !== 0) {
+            img.src = 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(debt.photoId) + '=s1600';
+            return;
+        }
+    }
+
+    img.alt = 'Photo not available';
+    showNotification('Photo not available', 'warning');
+}
+
+function closeDebtPhotoLightbox() {
+    const viewer = document.getElementById('smartDebtPhotoViewerV51');
+    if (viewer) {
+        viewer.remove();
+    }
+    document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('smartDebtPhotoViewerV51')) closeDebtPhotoLightbox();
+});
+
+function openDebtPhotoViewer(debtId, borrowerName) {
+    const debt = (debtsCache.data || []).find(function(d) { return String(d.id) === String(debtId); });
+    if (!debt) {
+        showNotification('Photo not available', 'warning');
+        return;
+    }
+
+    const modal = document.getElementById('photoViewerModal');
+    const img = document.getElementById('photoViewerImg');
+    const title = document.getElementById('photoViewerTitle');
+    if (!modal || !img) return;
+
+    if (title) title.textContent = borrowerName ? borrowerName + "'s Photo" : 'Borrower Photo';
+    img.onload = null;
+    img.onerror = null;
+    img.removeAttribute('src');
+    img.style.opacity = '0';
+    img.style.padding = '0';
+    img.style.backgroundColor = 'transparent';
+    img.alt = 'Borrower Photo';
+
+    // Current format: photo is stored directly as compressed Base64 in the debt record.
+    if (debt.photoBase64) {
+        img.onload = function() { img.style.opacity = '1'; };
+        img.onerror = function() {
+            img.style.opacity = '1';
+            img.style.padding = '40px';
+            img.style.backgroundColor = '#1e293b';
+            img.alt = 'Failed to load image';
+        };
+        img.src = debtPhotoDataUrl(debt);
+    } else if (debt.photoId) {
+        // Backward compatibility for older debts whose photo was stored in Drive.
+        var cachedPhoto = getDebtPhotoFromCache(debt.photoId);
+        if (cachedPhoto) {
+            img.onload = function() { img.style.opacity = '1'; };
+            img.onerror = function() { img.style.opacity = '1'; img.alt = 'Failed to load image'; };
+            img.src = cachedPhoto;
+        } else if (isOnline && String(debt.id).indexOf('OFFLINE_') !== 0) {
+            var highQualityUrl = 'https://lh3.googleusercontent.com/d/' + debt.photoId + '=s1200';
+            img.onload = function() {
+                img.style.opacity = '1';
+                fetch(highQualityUrl).then(function(response) { return response.blob(); }).then(function(blob) {
+                    var reader = new FileReader();
+                    reader.onloadend = function() { saveDebtPhotoToCache(debt.photoId, reader.result); };
+                    reader.readAsDataURL(blob);
+                }).catch(function() {});
+            };
+            img.onerror = function() {
+                var altUrl = 'https://drive.google.com/uc?export=view&id=' + debt.photoId;
+                img.onerror = function() { img.style.opacity = '1'; img.alt = 'Failed to load image'; };
+                img.src = altUrl;
+            };
+            img.src = highQualityUrl;
+        } else {
+            img.style.opacity = '1';
+            img.style.padding = '40px';
+            img.style.backgroundColor = '#1e293b';
+            img.alt = 'Photo not available offline';
+            showNotification('Photo not available offline', 'warning');
+        }
+    } else {
+        showNotification('Photo not available', 'warning');
+        return;
+    }
+
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
 function displayDebtsTable() {
     var tableBody = document.getElementById('debtsTableBody');
     var summaryDiv = document.getElementById('debtsSummary');
     var isAdmin = currentUser.userType === 'admin';
     var isSeller = currentUser.userType === 'seller';
-    
+
     if (!debtsCache.filtered || debtsCache.filtered.length === 0) {
         if (tableBody) {
-            tableBody.innerHTML = '<tr><td colspan="13" class="text-center" style="color: #94a3b8; padding: 40px;"><div style="text-align: center;"><i class="fas fa-hand-holding-usd" style="font-size: 48px; color: var(--warning); margin-bottom: 15px;"></i><p>No debts found</p></div></td></tr>';
+            tableBody.innerHTML = '<tr class="st-debt-empty-row"><td colspan="13"><i class="fas fa-hand-holding-usd" style="font-size:42px;display:block;margin-bottom:12px;color:var(--warning);"></i>No debts found</td></tr>';
         }
         if (summaryDiv) summaryDiv.innerHTML = '';
         return;
     }
-    
-    // Sort: unresolved debts (pending/partial, then denied) always show
-    // before paid ones, and within each of those groups the newest debt
-    // comes first - matching how the newest, most-in-need-of-follow-up
-    // debts should be seen right away.
+
     var debtStatusOrder = { pending: 0, partial: 0, denied: 1, paid: 2 };
-    debtsCache.filtered = [...debtsCache.filtered].sort(function(a, b) {
+    debtsCache.filtered = debtsCache.filtered.slice().sort(function(a, b) {
         var orderA = debtStatusOrder[a.status] !== undefined ? debtStatusOrder[a.status] : 0;
         var orderB = debtStatusOrder[b.status] !== undefined ? debtStatusOrder[b.status] : 0;
         if (orderA !== orderB) return orderA - orderB;
         return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
-    
-    var totalPending = 0;
-    var totalPaid = 0;
-    var totalBalance = 0;
-    var totalDenied = 0;
-    
-    for (var i = 0; i < debtsCache.filtered.length; i++) {
-        var debt = debtsCache.filtered[i];
-        var totalAmount = Number(debt.totalAmount) || 0;
-        var paidAmount = Number(debt.paidAmount) || 0;
-        
-        if (debt.status === 'denied') {
-            totalDenied += totalAmount;
-        } else if (debt.status !== 'paid') {
-            totalPending += totalAmount - paidAmount;
-        }
-        if (debt.status === 'paid') {
-            totalPaid += paidAmount;
-        }
-        totalBalance += totalAmount;
-    }
-    
+
+    var totalPending = 0, totalPaid = 0, totalBalance = 0, totalDenied = 0;
+    debtsCache.filtered.forEach(function(debt) {
+        var total = Number(debt.totalAmount) || 0;
+        var paid = Number(debt.paidAmount) || 0;
+        if (debt.status === 'denied') totalDenied += total;
+        else if (debt.status !== 'paid') totalPending += total - paid;
+        if (debt.status === 'paid') totalPaid += paid;
+        totalBalance += total;
+    });
+
     if (summaryDiv) {
-        summaryDiv.innerHTML = '<div class="summary-item"><span class="summary-label">Total Debts</span><span class="summary-value">' + formatCurrency(totalBalance) + '</span></div>' +
-            '<div class="summary-item"><span class="summary-label">Paid</span><span class="summary-value" style="color: var(--success);">' + formatCurrency(totalPaid) + '</span></div>' +
-            '<div class="summary-item"><span class="summary-label">Pending</span><span class="summary-value" style="color: var(--warning);">' + formatCurrency(totalPending) + '</span></div>' +
-            (isSeller ? '<div class="summary-item"><span class="summary-label">Denied</span><span class="summary-value" style="color: var(--danger);">' + formatCurrency(totalDenied) + '</span></div>' : '') +
+        summaryDiv.innerHTML =
+            '<div class="summary-item"><span class="summary-label">Total Debts</span><span class="summary-value">' + formatCurrency(totalBalance) + '</span></div>' +
+            '<div class="summary-item"><span class="summary-label">Paid</span><span class="summary-value" style="color:var(--success);">' + formatCurrency(totalPaid) + '</span></div>' +
+            '<div class="summary-item"><span class="summary-label">Pending</span><span class="summary-value" style="color:var(--warning);">' + formatCurrency(totalPending) + '</span></div>' +
+            (isSeller ? '<div class="summary-item"><span class="summary-label">Denied</span><span class="summary-value" style="color:var(--danger);">' + formatCurrency(totalDenied) + '</span></div>' : '') +
             '<div class="summary-item"><span class="summary-label">Transactions</span><span class="summary-value">' + debtsCache.filtered.length + '</span></div>';
     }
-    
+
     var branchMap = {};
     if (branchesCache.data) {
-        for (var b = 0; b < branchesCache.data.length; b++) {
-            var br = branchesCache.data[b];
-            branchMap[br.id] = br.name;
-        }
+        branchesCache.data.forEach(function(br) { branchMap[br.id] = br.name; });
     }
-    
+
+    function attrValue(value) {
+        return encodeURIComponent(String(value == null ? '' : value));
+    }
+
+    function photoButton(debt) {
+        var id = attrValue(debt.id || '');
+        var name = attrValue(debt.borrowerName || '');
+        var isOfflineDebt = debt.id && String(debt.id).indexOf('OFFLINE_') === 0;
+        var imageSrc = '';
+
+        if (debt.photoBase64) {
+            imageSrc = debtPhotoDataUrl(debt);
+        } else if (debt.photoId && isOnline && !isOfflineDebt) {
+            imageSrc = 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(debt.photoId) + '=s100';
+        } else if (debt.photoId) {
+            imageSrc = getDebtPhotoFromCache(debt.photoId) || '';
+            if (!imageSrc && isOnline && !isOfflineDebt) {
+                imageSrc = 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(debt.photoId) + '=s100';
+            }
+        }
+
+        if (!imageSrc) {
+            return '<span class="st-debt-avatar" title="No borrower photo"><i class="fas fa-user"></i></span>';
+        }
+
+        var safeName = escapeHtml(debt.borrowerName || 'Borrower');
+        return '<button type="button" class="st-debt-photo-btn" data-st-debt-photo-id="' + id + '" data-st-debt-photo-name="' + name + '" aria-label="View photo of ' + safeName + '" title="View borrower photo">' +
+            '<img src="' + imageSrc + '" alt="' + safeName + '" onerror="this.style.display=\'none\';this.parentNode.classList.add(\'st-debt-photo-failed\');">' +
+            '<span class="st-debt-photo-zoom"><i class="fas fa-search-plus"></i></span>' +
+            '</button>';
+    }
+
     var html = '';
-    
-    for (var d = 0; d < debtsCache.filtered.length; d++) {
-        var debt = debtsCache.filtered[d];
+    debtsCache.filtered.forEach(function(debt) {
         var dateDisplay = formatDate(debt.date, true);
         var totalAmount = Number(debt.totalAmount) || 0;
         var paidAmount = Number(debt.paidAmount) || 0;
         var quantity = Number(debt.quantity) || 0;
         var balance = totalAmount - paidAmount;
         var branchName = branchMap[debt.branchId] || debt.branchId || 'Main Branch';
-        
-        var statusClass = 'warning';
-        var statusText = 'Pending';
-        if (debt.status === 'paid') {
-            statusClass = 'success';
-            statusText = 'Paid';
-        } else if (debt.status === 'partial') {
-            statusClass = 'info';
-            statusText = 'Partial';
-        } else if (debt.status === 'denied') {
-            statusClass = 'danger';
-            statusText = 'Denied';
-        }
-        
-        var photoHtml = '';
-        var isOfflineDebt = debt.id && debt.id.indexOf('OFFLINE_') === 0;
-        
-        if (debt.photoId) {
-            if (isOnline && !isOfflineDebt) {
-                var serverThumbnailUrl = 'https://lh3.googleusercontent.com/d/' + debt.photoId + '=s100';
-                photoHtml = '<div class="photo-thumbnail" onclick="openPhotoViewer(\'' + debt.photoId + '\', \'' + escapeHtml(debt.borrowerName) + '\')">' +
-                            '<img src="' + serverThumbnailUrl + '" alt="' + escapeHtml(debt.borrowerName) + '" ' +
-                            'onerror="this.onerror=null; this.src=\'' + serverThumbnailUrl + '?t=' + Date.now() + '\';">' +
-                            '<div class="view-icon"><i class="fas fa-search-plus"></i></div></div>';
-            } else {
-                var cachedPhoto = getDebtPhotoFromCache(debt.photoId);
-                if (cachedPhoto && cachedPhoto !== '') {
-                    photoHtml = '<div class="photo-thumbnail" onclick="openPhotoViewer(\'' + debt.photoId + '\', \'' + escapeHtml(debt.borrowerName) + '\')">' +
-                                '<img src="' + cachedPhoto + '" alt="' + escapeHtml(debt.borrowerName) + '">' +
-                                '<div class="view-icon"><i class="fas fa-search-plus"></i></div></div>';
-                } else if (isOnline && !isOfflineDebt) {
-                    var fallbackUrl = 'https://lh3.googleusercontent.com/d/' + debt.photoId + '=s100';
-                    photoHtml = '<div class="photo-thumbnail" onclick="openPhotoViewer(\'' + debt.photoId + '\', \'' + escapeHtml(debt.borrowerName) + '\')">' +
-                                '<img src="' + fallbackUrl + '" alt="' + escapeHtml(debt.borrowerName) + '" ' +
-                                'onerror="this.onerror=null; this.parentNode.innerHTML=\'<div class=\\\'default-avatar\\\'><i class=\\\'fas fa-user\\\'></i></div>\';">' +
-                                '<div class="view-icon"><i class="fas fa-search-plus"></i></div></div>';
-                } else {
-                    photoHtml = '<div class="default-avatar" onclick="showNotification(\'Photo not available offline\', \'warning\')"><i class="fas fa-user"></i></div>';
-                }
-            }
-        } else {
-            photoHtml = '<div class="default-avatar"><i class="fas fa-user"></i></div>';
-        }
-        
-        var hasDenialReason = debt.notes && debt.notes.indexOf('[DENIED:') !== -1;
+
+        var statusClass = 'warning', statusText = 'Pending';
+        if (debt.status === 'paid') { statusClass = 'success'; statusText = 'Paid'; }
+        else if (debt.status === 'partial') { statusClass = 'info'; statusText = 'Partial'; }
+        else if (debt.status === 'denied') { statusClass = 'danger'; statusText = 'Denied'; }
+
         var denialReason = '';
-        if (hasDenialReason) {
+        if (debt.notes && debt.notes.indexOf('[DENIED:') !== -1) {
             var match = debt.notes.match(/\[DENIED:\s*([^\]]+)\]/);
             if (match) denialReason = match[1];
         }
-        
-        var safeBorrowerName = escapeHtml(debt.borrowerName);
-        var safeProduct = escapeHtml(debt.product);
-        
+
+        var safeBorrowerName = escapeHtml(debt.borrowerName || '');
+        var safeProduct = escapeHtml(debt.product || '');
+        var idJs = JSON.stringify(String(debt.id || ''));
+        var borrowerJs = JSON.stringify(String(debt.borrowerName || '')).replace(/</g, '\\u003c');
+        var productJs = JSON.stringify(String(debt.product || '')).replace(/</g, '\\u003c');
+        var photo = photoButton(debt);
+
         html += '<tr>' +
-            '<td>' + photoHtml + '</td>' +
-            '<td><strong>' + safeBorrowerName + '</strong>' + (debt.status === 'denied' && denialReason ? '<br><small style="color: var(--danger);">⛔ ' + escapeHtml(denialReason) + '</small>' : '') + '</td>' +
-            '<td>' + (debt.borrowerPhone || '—') + '</td>' +
-            '<td>' + (debt.borrowerNIDA || '—') + '</td>' +
+            '<td class="st-debt-photo-cell">' + photo + '</td>' +
+            '<td><strong>' + safeBorrowerName + '</strong>' + (debt.status === 'denied' && denialReason ? '<br><small style="color:var(--danger);">⛔ ' + escapeHtml(denialReason) + '</small>' : '') + '</td>' +
+            '<td>' + escapeHtml(debt.borrowerPhone == null ? '—' : String(debt.borrowerPhone)) + '</td>' +
+            '<td>' + escapeHtml(debt.borrowerNIDA == null ? '—' : String(debt.borrowerNIDA)) + '</td>' +
             '<td>' + safeProduct + '</td>' +
             '<td>' + formatQuantity(quantity) + (debt.unit ? ' ' + pluralizeUnit(debt.unit, quantity) : '') + '</td>' +
             '<td>' + formatCurrency(totalAmount) + '</td>' +
             '<td>' + formatCurrency(paidAmount) + '</td>' +
-            '<td><strong style="color: ' + (balance > 0 && debt.status !== 'denied' ? 'var(--warning)' : 'var(--success)') + ';">' + formatCurrency(balance) + '</strong></td>' +
+            '<td><strong style="color:' + (balance > 0 && debt.status !== 'denied' ? 'var(--warning)' : 'var(--success)') + ';">' + formatCurrency(balance) + '</strong></td>' +
             '<td><span class="badge ' + statusClass + '">' + statusText + '</span></td>' +
             '<td>' + dateDisplay + '</td>' +
-            '<td><span class="badge info">' + escapeHtml(branchName) + '</span></td>' +
-            '<td><div class="action-buttons">';
-        
+            '<td><span class="badge info">' + escapeHtml(String(branchName)) + '</span></td>' +
+            '<td><div class="st-debt-actions">';
+
         if (isAdmin) {
             if (debt.status !== 'paid' && debt.status !== 'denied') {
                 var isOwnDebt = !debt.sellerId || debt.sellerId === '';
-                html += '<button class="btn-sm btn-secondary" onclick="editDebt(\'' + debt.id + '\')" title="Edit"><i class="fas fa-edit"></i></button>';
-                if (!isOwnDebt) {
-                    html += '<button class="btn-sm btn-danger" onclick="openDenyDebtModal(\'' + debt.id + '\', \'' + safeBorrowerName.replace(/'/g, "\\'") + '\', \'' + safeProduct.replace(/'/g, "\\'") + '\', ' + totalAmount + ')" title="Deny Debt"><i class="fas fa-ban"></i></button>';
-                }
-                html += '<button class="btn-sm btn-success" onclick="openReturnDebtModal(\'' + debt.id + '\', \'' + safeBorrowerName.replace(/'/g, "\\'") + '\', \'' + safeProduct.replace(/'/g, "\\'") + '\', ' + quantity + ', ' + totalAmount + ', ' + paidAmount + ')" title="Mark as Paid"><i class="fas fa-check-circle"></i></button>';
+                html += '<button type="button" class="btn-sm btn-secondary" data-debt-action="edit" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" title="Edit"><i class="fas fa-edit"></i></button>';
+                if (!isOwnDebt) html += '<button type="button" class="btn-sm btn-danger" data-debt-action="deny" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" data-borrower="' + escapeHtml(String(debt.borrowerName || '')) + '" data-product="' + escapeHtml(String(debt.product || '')) + '" data-total="' + totalAmount + '" title="Deny Debt"><i class="fas fa-ban"></i></button>';
+                html += '<button type="button" class="btn-sm btn-success" data-debt-action="paid" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" data-borrower="' + escapeHtml(String(debt.borrowerName || '')) + '" data-product="' + escapeHtml(String(debt.product || '')) + '" data-quantity="' + quantity + '" data-total="' + totalAmount + '" data-paid="' + paidAmount + '" title="Mark as Paid"><i class="fas fa-check-circle"></i></button>';
             }
-            if (debt.status !== 'paid') {
-                html += '<button class="btn-sm btn-danger" onclick="deleteDebt(\'' + debt.id + '\', ' + (debt.status !== 'paid') + ')" title="Delete"><i class="fas fa-trash"></i></button>';
-            }
+            if (debt.status !== 'paid') html += '<button type="button" class="btn-sm btn-danger" data-debt-action="delete" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" data-return-stock="' + (debt.status !== 'paid' ? 'true' : 'false') + '" title="Delete"><i class="fas fa-trash"></i></button>';
         }
-        
+
         if (isSeller) {
             if (debt.status === 'denied') {
-                html += '<button class="btn-sm btn-warning" onclick="reLendDebt(\'' + debt.id + '\')" title="Re-lend"><i class="fas fa-redo-alt"></i></button>' +
-                        '<button class="btn-sm btn-danger" onclick="deleteDeniedDebt(\'' + debt.id + '\')" title="Delete"><i class="fas fa-trash"></i></button>';
+                html += '<button type="button" class="btn-sm btn-warning" data-debt-action="relend" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" title="Re-lend"><i class="fas fa-redo-alt"></i></button>' +
+                        '<button type="button" class="btn-sm btn-danger" data-debt-action="delete-denied" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" title="Delete"><i class="fas fa-trash"></i></button>';
             } else if (debt.status !== 'paid') {
-                html += '<button class="btn-sm btn-secondary" onclick="editDebt(\'' + debt.id + '\')" title="Edit"><i class="fas fa-edit"></i></button>' +
-                        '<button class="btn-sm btn-success" onclick="openReturnDebtModal(\'' + debt.id + '\', \'' + safeBorrowerName.replace(/'/g, "\\'") + '\', \'' + safeProduct.replace(/'/g, "\\'") + '\', ' + quantity + ', ' + totalAmount + ', ' + paidAmount + ')" title="Mark as Paid"><i class="fas fa-check-circle"></i></button>' +
-                        '<button class="btn-sm btn-danger" onclick="deleteDebt(\'' + debt.id + '\', true)" title="Delete"><i class="fas fa-trash"></i></button>';
+                html += '<button type="button" class="btn-sm btn-secondary" data-debt-action="edit" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" title="Edit"><i class="fas fa-edit"></i></button>' +
+                        '<button type="button" class="btn-sm btn-success" data-debt-action="paid" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" data-borrower="' + escapeHtml(String(debt.borrowerName || '')) + '" data-product="' + escapeHtml(String(debt.product || '')) + '" data-quantity="' + quantity + '" data-total="' + totalAmount + '" data-paid="' + paidAmount + '" title="Mark as Paid"><i class="fas fa-check-circle"></i></button>' +
+                        '<button type="button" class="btn-sm btn-danger" data-debt-action="delete" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" data-return-stock="true" title="Delete"><i class="fas fa-trash"></i></button>';
             }
         }
-        
+
         html += '</div></td></tr>';
-    }
-    
-    if (tableBody) {
-        tableBody.innerHTML = html;
-    }
+    });
+
+    if (tableBody) tableBody.innerHTML = html;
+}
+
+// Isolated Debt action handler. Uses data-* attributes instead of inline onclick,
+// preventing malformed HTML attributes when borrower/product names contain quotes.
+if (!window.__smartTradeDebtActionHandlerV57) {
+    window.__smartTradeDebtActionHandlerV57 = true;
+    document.addEventListener('click', function(event) {
+        var button = event.target.closest ? event.target.closest('.st-debt-actions button[data-debt-action]') : null;
+        if (!button) return;
+        event.preventDefault();
+        event.stopPropagation();
+        var action = button.getAttribute('data-debt-action');
+        var id = button.getAttribute('data-debt-id') || '';
+        try {
+            if (action === 'edit' && typeof editDebt === 'function') editDebt(id);
+            else if (action === 'deny' && typeof openDenyDebtModal === 'function') openDenyDebtModal(id, button.getAttribute('data-borrower') || '', button.getAttribute('data-product') || '', Number(button.getAttribute('data-total')) || 0);
+            else if (action === 'paid' && typeof openReturnDebtModal === 'function') openReturnDebtModal(id, button.getAttribute('data-borrower') || '', button.getAttribute('data-product') || '', Number(button.getAttribute('data-quantity')) || 0, Number(button.getAttribute('data-total')) || 0, Number(button.getAttribute('data-paid')) || 0);
+            else if (action === 'delete' && typeof deleteDebt === 'function') deleteDebt(id, button.getAttribute('data-return-stock') === 'true');
+            else if (action === 'relend' && typeof reLendDebt === 'function') reLendDebt(id);
+            else if (action === 'delete-denied' && typeof deleteDeniedDebt === 'function') deleteDeniedDebt(id);
+        } catch (err) {
+            console.error('Debt action failed:', err);
+        }
+    }, true);
+}
+
+// New isolated photo click handler for the rebuilt Debts table.
+// It is attached once, uses a BUTTON target, and never selects/highlights the row.
+if (!window.__smartTradeDebtPhotoHandlerV54) {
+    window.__smartTradeDebtPhotoHandlerV54 = true;
+    document.addEventListener('click', function(event) {
+        var button = event.target.closest ? event.target.closest('.st-debt-photo-btn') : null;
+        if (!button) return;
+        event.preventDefault();
+        event.stopPropagation();
+        var debtId = decodeURIComponent(button.getAttribute('data-st-debt-photo-id') || '');
+        var borrowerName = decodeURIComponent(button.getAttribute('data-st-debt-photo-name') || '');
+        if (typeof openDebtPhotoLightbox === 'function') {
+            openDebtPhotoLightbox(debtId, borrowerName);
+        }
+    }, true);
 }
 
 
@@ -28778,6 +29480,10 @@ function openAddDebtModal() {
     document.getElementById('debtPhotoId').value = '';
     selectedDebtPhotoFile = null;
     debtPhotoBase64 = null;
+    const debtPhotoInput = document.getElementById('debtPhotoFile');
+    const debtGalleryInput = document.getElementById('debtPhotoGalleryFile');
+    if (debtPhotoInput) debtPhotoInput.value = '';
+    if (debtGalleryInput) debtGalleryInput.value = '';
     
     document.querySelector('input[name="debtProductType"][value="stock"]').checked = true;
     toggleDebtProductInputMode();
@@ -28824,29 +29530,55 @@ function hideAddDebtModal() {
 // only ever called after a debt has actually been completed, so the
 // cart itself is already empty by this point.
 function resetDebtFormAfterSubmit() {
-    document.getElementById('debtBorrowerName').value = '';
-    document.getElementById('debtBorrowerPhone').value = '';
-    document.getElementById('debtBorrowerNIDA').value = '';
-    document.getElementById('debtPhotoPreview').innerHTML = '<i class="fas fa-camera" style="font-size: 24px; color: var(--accent);"></i>';
-    document.getElementById('debtPhotoId').value = '';
+    // Fully clear the Record Debt form after a completed submission.
+    // Keep the Debt modal open, but remove every borrower/product/photo value
+    // so the next debt always starts from a clean state.
+    const clearValue = (id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    };
+
+    clearValue('debtBorrowerName');
+    clearValue('debtBorrowerPhone');
+    clearValue('debtBorrowerNIDA');
+    clearValue('debtPhotoId');
+    clearValue('debtProductSelect');
+    clearValue('debtNonStockProduct');
+    clearValue('debtNonStockUnit');
+    clearValue('debtQuantity');
+    clearValue('debtUnitPrice');
+    clearValue('debtTotal');
+    clearValue('debtNotes');
+
+    const photoPreview = document.getElementById('debtPhotoPreview');
+    if (photoPreview) {
+        photoPreview.innerHTML = '<i class="fas fa-camera" style="font-size: 24px; color: var(--accent);"></i>';
+    }
+
     selectedDebtPhotoFile = null;
     debtPhotoBase64 = null;
-    
-    document.querySelector('input[name="debtProductType"][value="stock"]').checked = true;
+
+    const debtPhotoInput = document.getElementById('debtPhotoFile');
+    const debtGalleryInput = document.getElementById('debtPhotoGalleryFile');
+    if (debtPhotoInput) debtPhotoInput.value = '';
+    if (debtGalleryInput) debtGalleryInput.value = '';
+
+    const stockType = document.querySelector('input[name="debtProductType"][value="stock"]');
+    if (stockType) stockType.checked = true;
     toggleDebtProductInputMode();
-    
+
     updateDebtProductsCache();
-    
-    document.getElementById('debtProductSelect').value = '';
-    document.getElementById('debtNonStockProduct').value = '';
-    document.getElementById('debtNonStockUnit').value = '';
-    document.getElementById('debtQuantity').value = '';
-    document.getElementById('debtUnitPrice').value = '';
-    document.getElementById('debtTotal').value = '';
-    document.getElementById('debtNotes').value = '';
-    document.getElementById('debtStockInfo').style.display = 'none';
+
+    const stockInfo = document.getElementById('debtStockInfo');
+    if (stockInfo) stockInfo.style.display = 'none';
+
+    // The submitted cart must never remain available for accidental reuse.
+    currentDebtCart = [];
+    clearDebtCartStorage();
+    renderDebtCartSummary();
     renderRecentDebtsInModal();
 }
+
 
 // ============================================
 // DEBT CART - lets several products be added to ONE debt record for the
@@ -29131,12 +29863,18 @@ function completeDebtForSession(sessionId) {
     
     showConfirmationModal(
         'Complete Debt',
-        `Complete this debt for ${escapeHtml(borrowerName)} - ${session.items.length} item(s), total ${formatCurrency(grandTotal)}?`,
-        async () => { await completeDebtForSessionConfirmed(sessionId); }
+        buildCompleteDebtConfirmationContent(borrowerName, session.items.length, grandTotal),
+        async () => {
+            const issueAgreement = document.getElementById('confirmationIssueAgreement')?.checked !== false;
+            await completeDebtForSessionConfirmed(sessionId, issueAgreement);
+        },
+        true,
+        false,
+        true
     );
 }
 
-async function completeDebtForSessionConfirmed(sessionId) {
+async function completeDebtForSessionConfirmed(sessionId, issueAgreement = true) {
     const session = remoteDebtCartSessions[sessionId];
     if (!session) return;
     
@@ -29165,8 +29903,7 @@ async function completeDebtForSessionConfirmed(sessionId) {
         showNotification(`Debt recorded for ${borrowerInfo.borrowerName} - ${successCount} saved, ${offlineCount} saved offline`, 'info');
     }
     
-    const issueAgreement = document.getElementById('debtIssueAgreement')?.checked;
-    if (issueAgreement && (successCount > 0 || offlineCount > 0)) {
+    if (issueAgreement !== false && (successCount > 0 || offlineCount > 0)) {
         const agreementGrandTotal = itemsToProcess.reduce((sum, it) => sum + it.subtotal, 0);
         generateDebtAgreement(itemsToProcess, borrowerInfo.borrowerName, '', agreementGrandTotal);
     }
@@ -29219,12 +29956,18 @@ function completeDebt() {
     
     showConfirmationModal(
         'Complete Debt',
-        `Complete this debt for ${borrowerName} - ${currentDebtCart.length} item(s), total ${formatCurrency(grandTotal)}?`,
-        async () => { await completeDebtConfirmed(); }
+        buildCompleteDebtConfirmationContent(borrowerName, currentDebtCart.length, grandTotal),
+        async () => {
+            const issueAgreement = document.getElementById('confirmationIssueAgreement')?.checked !== false;
+            await completeDebtConfirmed(issueAgreement);
+        },
+        true,
+        false,
+        true
     );
 }
 
-async function completeDebtConfirmed() {
+async function completeDebtConfirmed(issueAgreement = true) {
     setButtonLoading('submitDebtBtn', 'debtSpinner', 'submitDebtText', true, 'Completing Debt...');
     
     const borrowerName = document.getElementById('debtBorrowerName').value.trim();
@@ -29240,37 +29983,10 @@ async function completeDebtConfirmed() {
     let photoBase64 = null;
     
     if (selectedDebtPhotoFile) {
-        photoBase64 = await fileToBase64(selectedDebtPhotoFile);
+        photoBase64 = debtPhotoBase64 || (await compressImageFileForSheet(selectedDebtPhotoFile, MAX_DEBT_PHOTO_BASE64_LENGTH)).dataUrl;
         
-        if (isOnline) {
-            try {
-                let base64Data = photoBase64;
-                if (base64Data.indexOf(',') !== -1) {
-                    base64Data = base64Data.split(',')[1];
-                }
-                const fileExtension = selectedDebtPhotoFile.name.split('.').pop().toLowerCase();
-                const tempPhotoId = 'DEBT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8).toUpperCase();
-                
-                const photoResult = await apiCall('uploadBorrowerPhoto', {
-                    email: currentUser.email,
-                    debtId: tempPhotoId,
-                    photoData: base64Data,
-                    mimeType: selectedDebtPhotoFile.type,
-                    fileExtension: fileExtension
-                });
-                
-                if (photoResult && photoResult.success) {
-                    photoId = photoResult.photoId;
-                    photoUrl = photoResult.photoUrl;
-                    photoBase64 = null;
-                }
-            } catch (error) {
-                console.error('Error uploading photo:', error);
-                showNotification('Photo upload failed, but the debt will still be saved', 'warning');
-            }
-        } else {
-            showNotification('You are offline. Photo will be uploaded when online.', 'info');
-        }
+        // Photo is stored directly in the DEBTS sheet as compressed Base64.
+        // No Drive upload is needed; this also works fully offline.
     }
     
     const borrowerInfo = { borrowerName, borrowerPhone, borrowerNIDA, notes };
@@ -29295,10 +30011,9 @@ async function completeDebtConfirmed() {
     // Print the agreement form (if the checkbox was left checked) - using
     // the merged cart items and total, since currentDebtCart is about to
     // be cleared below.
-    const issueAgreement = document.getElementById('debtIssueAgreement')?.checked;
-    if (issueAgreement && (successCount > 0 || offlineCount > 0)) {
+    if (issueAgreement !== false && (successCount > 0 || offlineCount > 0)) {
         const agreementGrandTotal = itemsToProcess.reduce((sum, it) => sum + it.subtotal, 0);
-        generateDebtAgreement(itemsToProcess, borrowerName, borrowerPhone, agreementGrandTotal);
+        generateDebtAgreement(itemsToProcess, borrowerName, borrowerPhone, agreementGrandTotal, photoBase64);
     }
     
     // Reset everything for the next debt - the modal stays open like a
@@ -29361,7 +30076,7 @@ async function processDebtCartItem(item, borrowerInfo, photoId, photoUrl, photoB
         paidAmount: 0
     };
     
-    if (isOnline && !photoBase64) {
+    if (isOnline) {
         try {
             const result = await apiCall('addDebt', {
                 debtId: debtId,
@@ -29371,6 +30086,8 @@ async function processDebtCartItem(item, borrowerInfo, photoId, photoUrl, photoB
                 borrowerNIDA: borrowerNIDA,
                 photoId: photoId,
                 photoUrl: photoUrl,
+                photoBase64: photoBase64 || '',
+                photoMimeType: 'image/jpeg',
                 product: product,
                 quantity: quantity,
                 unitPrice: unitPrice,
@@ -29683,6 +30400,19 @@ function editDebt(debtId) {
     document.getElementById('editDebtBorrowerName').value = debt.borrowerName || '';
     document.getElementById('editDebtBorrowerPhone').value = debt.borrowerPhone || '';
     document.getElementById('editDebtBorrowerNIDA').value = debt.borrowerNIDA || '';
+    selectedEditDebtPhotoFile = null;
+    editDebtPhotoBase64 = null;
+    const editPhotoInput = document.getElementById('editDebtPhotoFile');
+    const editGalleryInput = document.getElementById('editDebtPhotoGalleryFile');
+    if (editPhotoInput) editPhotoInput.value = '';
+    if (editGalleryInput) editGalleryInput.value = '';
+    const editPhotoPreview = document.getElementById('editDebtPhotoPreview');
+    const existingEditPhoto = debtPhotoDataUrl(debt);
+    if (editPhotoPreview) {
+        editPhotoPreview.innerHTML = existingEditPhoto
+            ? `<img src="${existingEditPhoto}" alt="Borrower Photo" style="width:100%;height:100%;object-fit:cover;">`
+            : '<i class="fas fa-camera" style="font-size:24px; color:var(--accent);"></i>';
+    }
     
     document.getElementById('editDebtProductSelect').value = debt.product || '';
     document.getElementById('editDebtQuantity').value = debt.quantity || '';
@@ -29791,6 +30521,17 @@ async function submitDebtEdit() {
         product, quantity, unitPrice, unit, notes,
         branchId, isStockProduct: true
     };
+
+    if (selectedEditDebtPhotoFile || editDebtPhotoBase64) {
+        try {
+            payload.photoBase64 = editDebtPhotoBase64 || (await compressImageFileForSheet(selectedEditDebtPhotoFile, MAX_DEBT_PHOTO_BASE64_LENGTH)).dataUrl;
+            payload.photoMimeType = 'image/jpeg';
+        } catch (photoError) {
+            setButtonLoading('submitDebtEditBtn', 'debtEditSpinner', 'submitDebtEditText', false);
+            showNotification('Could not process the borrower photo. Please choose another image.', 'error');
+            return;
+        }
+    }
     
     const applyToCache = () => {
         const index = (debtsCache.data || []).findIndex(d => d.id === debtId);
@@ -29804,6 +30545,11 @@ async function submitDebtEdit() {
             debtsCache.data[index].totalAmount = quantity * unitPrice;
             debtsCache.data[index].unit = unit;
             debtsCache.data[index].notes = notes;
+            if (payload.photoBase64) {
+                debtsCache.data[index].photoBase64 = payload.photoBase64;
+                debtsCache.data[index].photoMimeType = payload.photoMimeType || 'image/jpeg';
+                saveDebtPhotoToCache(debtId, payload.photoBase64);
+            }
         }
         debtsCache.filtered = currentUser.userType === 'seller'
             ? debtsCache.data.filter(d => d.sellerId === currentUser.sellerId)
@@ -29854,31 +30600,135 @@ async function submitDebtEdit() {
     }
     
     setButtonLoading('submitDebtEditBtn', 'debtEditSpinner', 'submitDebtEditText', false);
+    selectedEditDebtPhotoFile = null;
+    editDebtPhotoBase64 = null;
 }
 
-function handleDebtPhotoUpload(file) {
+const MAX_DEBT_PHOTO_BASE64_LENGTH = 48000;
+
+// Compress any borrower image automatically until the Base64 payload is
+// safely below Google Sheets' 50,000-character single-cell limit. There is
+// deliberately NO input-file size restriction: large photos are resized /
+// recompressed in the browser before they are stored in the sheet.
+function compressImageFileForSheet(file, maxBase64Length) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = async function() {
+                try {
+                    let width = img.naturalWidth || img.width;
+                    let height = img.naturalHeight || img.height;
+                    const maxDimension = 1200;
+                    if (Math.max(width, height) > maxDimension) {
+                        const scale = maxDimension / Math.max(width, height);
+                        width = Math.max(1, Math.round(width * scale));
+                        height = Math.max(1, Math.round(height * scale));
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressed = await canvasToCompressedDataUrl(canvas, maxBase64Length);
+                    resolve(compressed);
+                } catch (err) { reject(err); }
+            };
+            img.onerror = () => reject(new Error('Could not decode image'));
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function openDebtPhotoOptions(mode) {
+    window.debtPhotoSelectionMode = mode === 'edit' ? 'edit' : 'record';
+    const modal = document.getElementById('debtPhotoOptionsModal');
+    if (modal) {
+        modal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeDebtPhotoOptions() {
+    const modal = document.getElementById('debtPhotoOptionsModal');
+    if (modal) modal.classList.remove('show');
+    // Restore the correct underlying modal's scroll lock.
+    const addDebt = document.getElementById('addDebtModal');
+    const editDebt = document.getElementById('editDebtModal');
+    if ((addDebt && addDebt.classList.contains('show')) || (editDebt && editDebt.classList.contains('show'))) {
+        document.body.style.overflow = 'hidden';
+    } else {
+        document.body.style.overflow = '';
+    }
+}
+
+function chooseDebtPhotoSource(source) {
+    const mode = window.debtPhotoSelectionMode === 'edit' ? 'edit' : 'record';
+    closeDebtPhotoOptions();
+    const inputId = mode === 'edit'
+        ? (source === 'camera' ? 'editDebtPhotoFile' : 'editDebtPhotoGalleryFile')
+        : (source === 'camera' ? 'debtPhotoFile' : 'debtPhotoGalleryFile');
+    const input = document.getElementById(inputId);
+    if (input) {
+        // Allow selecting the exact same photo again.
+        input.value = '';
+        input.click();
+    }
+}
+
+function showDebtPhotoPreview(previewId, dataUrl, fallbackIcon) {
+    const preview = document.getElementById(previewId);
+    if (!preview) return;
+    preview.innerHTML = dataUrl
+        ? `<img src="${dataUrl}" alt="Borrower Photo" style="width:100%;height:100%;object-fit:cover;">`
+        : fallbackIcon;
+}
+
+async function processDebtPhotoFile(file, mode) {
     if (!file) return;
-    
-    if (!file.type.match('image.*')) {
-        showNotification('Please upload an image file', 'error');
+    if (!file.type || !file.type.match(/^image\//i)) {
+        showNotification('Please select an image file', 'error');
         return;
     }
-    
-    if (file.size > 2 * 1024 * 1024) {
-        showNotification('Image size must be less than 2MB', 'error');
-        return;
+
+    const isEdit = mode === 'edit';
+    const previewId = isEdit ? 'editDebtPhotoPreview' : 'debtPhotoPreview';
+    const fallbackIcon = '<i class="fas fa-camera" style="font-size:24px; color:var(--accent);"></i>';
+    showDebtPhotoPreview(previewId, null, '<div class="spinner" style="width:24px;height:24px;"></div>');
+
+    try {
+        const compressed = await compressImageFileForSheet(file, MAX_DEBT_PHOTO_BASE64_LENGTH);
+        if (isEdit) {
+            selectedEditDebtPhotoFile = file;
+            editDebtPhotoBase64 = compressed.dataUrl;
+        } else {
+            selectedDebtPhotoFile = file;
+            debtPhotoBase64 = compressed.dataUrl;
+        }
+        showDebtPhotoPreview(previewId, compressed.dataUrl, fallbackIcon);
+        showNotification('Photo prepared and compressed automatically.', 'success');
+    } catch (error) {
+        if (isEdit) {
+            selectedEditDebtPhotoFile = null;
+            editDebtPhotoBase64 = null;
+        } else {
+            selectedDebtPhotoFile = null;
+            debtPhotoBase64 = null;
+        }
+        showDebtPhotoPreview(previewId, null, fallbackIcon);
+        showNotification('Could not process the photo. Please choose another image.', 'error');
     }
-    
-    selectedDebtPhotoFile = file;
-    
-    // Show preview immediately
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        document.getElementById('debtPhotoPreview').innerHTML = `<img src="${e.target.result}" style="width: 100%; height: 100%; object-fit: cover;">`;
-    };
-    reader.readAsDataURL(file);
 }
 
+async function handleDebtPhotoUpload(file) {
+    return processDebtPhotoFile(file, 'record');
+}
+
+async function handleEditDebtPhotoUpload(file) {
+    return processDebtPhotoFile(file, 'edit');
+}
 
 async function submitDebt() {
     const stockRadio = document.querySelector('input[name="debtProductType"][value="stock"]').checked;
@@ -29958,36 +30808,10 @@ async function submitDebt() {
     let photoBase64 = null;
     
     if (selectedDebtPhotoFile) {
-        photoBase64 = await fileToBase64(selectedDebtPhotoFile);
+        photoBase64 = debtPhotoBase64 || (await compressImageFileForSheet(selectedDebtPhotoFile, MAX_DEBT_PHOTO_BASE64_LENGTH)).dataUrl;
         
-        if (isOnline) {
-            try {
-                let base64Data = photoBase64;
-                if (base64Data.indexOf(',') !== -1) {
-                    base64Data = base64Data.split(',')[1];
-                }
-                const fileExtension = selectedDebtPhotoFile.name.split('.').pop().toLowerCase();
-                
-                const photoResult = await apiCall('uploadBorrowerPhoto', {
-                    email: currentUser.email,
-                    debtId: debtId,
-                    photoData: base64Data,
-                    mimeType: selectedDebtPhotoFile.type,
-                    fileExtension: fileExtension
-                });
-                
-                if (photoResult && photoResult.success) {
-                    photoId = photoResult.photoId;
-                    photoUrl = photoResult.photoUrl;
-                    photoBase64 = null;
-                }
-            } catch (error) {
-                console.error('Error uploading photo:', error);
-                showNotification('Photo upload failed, but debt will be saved', 'warning');
-            }
-        } else {
-            showNotification('You are offline. Photo will be uploaded when online.', 'info');
-        }
+        // Photo is stored directly in the DEBTS sheet as compressed Base64.
+        // No Drive upload is needed; this also works fully offline.
     }
     
     const debtData = {
@@ -30012,7 +30836,7 @@ async function submitDebt() {
         paidAmount: 0
     };
     
-    if (isOnline && !photoBase64) {
+    if (isOnline) {
         try {
             const result = await apiCall('addDebt', {
                 debtId: debtId,
@@ -30022,6 +30846,8 @@ async function submitDebt() {
                 borrowerNIDA: borrowerNIDA,
                 photoId: photoId,
                 photoUrl: photoUrl,
+                photoBase64: photoBase64 || '',
+                photoMimeType: 'image/jpeg',
                 product: product,
                 quantity: quantity,
                 unitPrice: unitPrice,
@@ -30081,6 +30907,8 @@ async function handleSuccessfulDebtSave(debtData, serverDebtId, photoUrl) {
         borrowerNIDA: debtData.borrowerNIDA,
         photoId: serverDebtId || debtData.photoId,
         photoUrl: photoUrl,
+        photoBase64: debtData.photoBase64 || '',
+        photoMimeType: debtData.photoMimeType || 'image/jpeg',
         product: debtData.product,
         quantity: debtData.quantity,
         unitPrice: debtData.unitPrice,
@@ -30975,7 +31803,7 @@ function generateSaleReceipt(items, customer, paymentMethod, grandTotal) {
 // offline reports above, so it works fully offline too.
 // ============================================
 
-function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal) {
+function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal, borrowerPhotoBase64) {
     const hasCachedLogo = logoBase64Cache && logoBase64Cache.data && logoBase64Cache.url === currentUser.logoUrl;
     const logoHTML = hasCachedLogo
         ? `<img src="${logoBase64Cache.data}" class="agreement-logo" alt="${escapeHtml(currentUser.business || '')} logo">`
@@ -30992,6 +31820,9 @@ function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal) {
             <td style="text-align:right;">${formatCurrency(item.subtotal)}</td>
         </tr>
     `).join('');
+    const borrowerPhotoHTML = borrowerPhotoBase64
+        ? `<div class="borrower-photo-wrap"><img src="${borrowerPhotoBase64}" class="borrower-photo" alt="Borrower Photo"><div class="borrower-photo-caption">Borrower Photo</div></div>`
+        : '';
     
     const html = `<!DOCTYPE html>
 <html>
@@ -31006,6 +31837,9 @@ function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal) {
     .agreement-header p { color: #64748b; margin: 2px 0; font-size: 0.85rem; }
     .agreement-title { text-align: center; font-size: 1.1rem; font-weight: 700; margin: 20px 0; text-decoration: underline; }
     .borrower-info { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; margin-bottom: 18px; font-size: 0.9rem; }
+    .borrower-photo-wrap { text-align:center; margin: 0 0 18px; }
+    .borrower-photo { width: 120px; height: 120px; border-radius: 10px; object-fit: cover; border: 2px solid #cbd5e1; display:block; margin: 0 auto 6px; }
+    .borrower-photo-caption { color:#64748b; font-size:0.78rem; font-weight:600; }
     .borrower-info div { display: flex; justify-content: space-between; margin: 4px 0; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-bottom: 15px; }
     th { background: #eff6ff; text-align: left; padding: 7px; border-bottom: 2px solid #cbd5e1; }
@@ -31032,6 +31866,7 @@ function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal) {
         ${borrowerPhone ? `<div><span>Phone Number:</span><span>${escapeHtml(borrowerPhone)}</span></div>` : ''}
         <div><span>Date:</span><span>${escapeHtml(dateDisplay)}</span></div>
     </div>
+    ${borrowerPhotoHTML}
     <table>
         <thead><tr><th>Item</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Price</th><th style="text-align:right;">Total</th></tr></thead>
         <tbody>${rowsHTML}</tbody>
