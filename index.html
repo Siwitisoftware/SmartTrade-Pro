@@ -4343,6 +4343,51 @@
     .st-debt-photo-btn, .st-debt-avatar { width: 50px; height: 50px; }
 }
 
+/* =========================================================
+   SMARTTRADE DEBTS — CARD VIEW
+   One independent card per debt record. This is presentation-only;
+   the existing cache, filters, actions and offline flow remain unchanged.
+   ========================================================= */
+.st-debt-legacy-table{display:none !important;}
+.st-debt-cards-grid{display:grid;grid-template-columns:minmax(0,980px);justify-content:center;gap:16px;margin-top:18px;}
+.st-debt-card{background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 4px 14px rgba(15,23,42,.07);overflow:visible;position:relative;}
+.st-debt-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 15px 12px;border-bottom:1px dashed #cbd5e1;}
+.st-debt-card-person{display:flex;align-items:center;gap:11px;min-width:0;}
+.st-debt-card-photo{width:58px;height:58px;flex:0 0 58px;border-radius:50%;object-fit:cover;border:2px solid var(--accent,#38bdf8);background:#1e293b;display:block;}
+.st-debt-card-photo.no-photo{display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,var(--primary),var(--secondary));font-size:21px;}
+.st-debt-card-name{font-weight:800;color:#0f172a;font-size:.98rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.st-debt-card-id{font-size:.72rem;color:#64748b;margin-top:3px;}
+.st-debt-card-menu-wrap{position:relative;flex:0 0 auto;}
+.st-debt-card-menu-btn{width:36px;height:36px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#334155;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.st-debt-card-menu-btn:hover{background:#f1f5f9;}
+.st-debt-card-menu{display:none;position:absolute;right:0;top:43px;z-index:5000;width:min(300px,calc(100vw - 50px));background:#fff;border:1px solid #dbe3ec;border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.16);padding:8px;}
+.st-debt-card-menu.show{display:block;}
+.st-debt-card-menu-title{font-size:.75rem;font-weight:800;color:#64748b;padding:6px 8px;text-transform:uppercase;letter-spacing:.05em;}
+.st-debt-card-menu-item{display:flex;align-items:center;gap:8px;width:100%;padding:9px 8px;border-top:1px solid #f1f5f9;font-size:.82rem;color:#334155;box-sizing:border-box;}
+.st-debt-card-menu-item button{border:1px solid #dbe3ec;background:#f8fafc;border-radius:8px;padding:7px 9px;color:#334155;font-size:.76rem;font-weight:700;cursor:pointer;}
+.st-debt-card-menu-item.full button{width:100%;text-align:left;border:0;background:transparent;padding:9px 8px;}
+.st-debt-card-menu-item button:hover{background:#f1f5f9;}
+.st-debt-card-menu-item button.danger{color:#b91c1c;}
+.st-debt-card-meta{padding:10px 15px;background:#f8fafc;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px 12px;font-size:.78rem;color:#475569;}
+.st-debt-card-meta span{min-width:0;overflow-wrap:anywhere;}
+.st-debt-card-meta strong{color:#1e293b;}
+.st-debt-card-items{padding:0 0 4px;}
+.st-debt-card-menu-product{padding:8px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:.76rem;color:#475569;}
+.st-debt-card-menu-product strong{color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.st-debt-card-menu-product span{white-space:nowrap;}
+.st-debt-card-product{padding:12px 15px 8px;}
+.st-debt-card-product-name{font-weight:800;color:#1e293b;font-size:.95rem;}
+.st-debt-card-product-sub{font-size:.76rem;color:#64748b;margin-top:3px;}
+.st-debt-card-finance{padding:8px 15px 12px;}
+.st-debt-card-finance-row{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid #eef2f7;font-size:.82rem;}
+.st-debt-card-finance-row:last-child{border-bottom:0;}
+.st-debt-card-finance-row.total{font-weight:800;color:#0f172a;}
+.st-debt-card-finance-row.balance{font-weight:800;}
+.st-debt-card-status{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 15px 14px;}
+.st-debt-card-date{font-size:.76rem;color:#64748b;}
+.st-debt-cards-empty{grid-column:1/-1;text-align:center;color:#94a3b8;padding:42px 20px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;}
+@media(max-width:600px){.st-debt-cards-grid{grid-template-columns:1fr;gap:13px;}.st-debt-card-meta{grid-template-columns:1fr 1fr;}.st-debt-card-photo{width:54px;height:54px;flex-basis:54px;}}
+
 /* Photo Thumbnail with View Icon */
 .photo-thumbnail {
     position: relative;
@@ -5445,6 +5490,16 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
         }
 
     </style>
+<style id="smartTradeDebtSavingOverlayStyles">
+#smartTradeDebtSavingOverlay{position:fixed;inset:0;z-index:2147483000;display:none;align-items:center;justify-content:center;background:rgba(15,23,42,.72);backdrop-filter:blur(2px);pointer-events:all;}
+.smart-trade-debt-saving-panel{min-width:260px;max-width:90vw;padding:28px 34px;border-radius:18px;background:#fff;box-shadow:0 20px 70px rgba(0,0,0,.35);text-align:center;font-family:inherit;}
+.smart-trade-debt-saving-spinner{width:44px;height:44px;margin:0 auto 16px;border:4px solid #e5e7eb;border-top-color:#2563eb;border-radius:50%;animation:smartTradeDebtSpin .8s linear infinite;}
+.smart-trade-debt-saving-title{font-size:20px;font-weight:800;color:#111827;}
+.smart-trade-debt-saving-message{margin-top:8px;font-size:14px;color:#64748b;}
+@keyframes smartTradeDebtSpin{to{transform:rotate(360deg)}}
+body.smart-trade-debt-saving-active{overflow:hidden;}
+</style>
+
    
 
 <!-- AUTHENTICATION CONTAINER -->
@@ -6092,33 +6147,11 @@ body:has(#accessDeniedModal.show) #accessDeniedOverlay {
 <input type="text" id="debtSearch" placeholder="Search by name, phone, NIDA, product..." oninput="searchDebts()">
 </div>
 </div>
-<div class="st-debt-table-wrap">
-    <div class="st-debt-table-scroll">
-        <table id="debtsTable" class="st-debt-table">
-            <thead>
-                <tr>
-                    <th class="st-debt-photo-col">Photo</th>
-                    <th>Borrower</th>
-                    <th>Phone</th>
-                    <th>NIDA</th>
-                    <th>Product</th>
-                    <th>Qty</th>
-                    <th>Total</th>
-                    <th>Paid</th>
-                    <th>Balance</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Branch</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="debtsTableBody">
-                <tr class="st-debt-empty-row">
-                    <td colspan="13">Loading debts...</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+<div id="debtsCardsGrid" class="st-debt-cards-grid"></div>
+<div class="st-debt-legacy-table" aria-hidden="true">
+    <table id="debtsTable" class="st-debt-table">
+        <tbody id="debtsTableBody"></tbody>
+    </table>
 </div>
 </div>
 </div>
@@ -9437,7 +9470,7 @@ function formatBusinessDateTime(dateValue = new Date(), locale='en-GB') {
     return new Intl.DateTimeFormat(locale, { timeZone:getBusinessTimeZone(), year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }).format(d);
 }
         // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbxldxui6-XF4JzfBjH9y600cK-1o78-5bEuLx0bhrmBtZoQLFRDLggTTGIxzhHE4uSquw/exec";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwMEyz_ZQvfL7ZQtlWwx9iaerRCrvdVd3Bamq-2JyIiBbfGeFDXlQIJtXwq4oLUUtNc5w/exec";
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -9637,15 +9670,15 @@ let logoElements = {
             expenses: [],
             customers: [],
             suppliers: [],
-            debts: [],
             units: [],
             categories: [],
             purchaseRequestActions: [],
             stockEdits: [],
             saleEdits: [],
             purchaseEdits: [],
-            debtEdits: [],
-            deletes: [],
+                deletes: [],
+            salesSyncInFlightOperationIds: [],
+            deletesSyncInFlightOperationIds: [],
             lastSync: null,
             isSyncing: false
         };
@@ -9720,6 +9753,11 @@ let subscriptionCache = {
     data: [],
     filtered: []
 };
+
+// Holds debt rows that have already been accepted by the UI and are being
+// saved in the background. These rows are never allowed to disappear merely
+// because a background getDebts response arrives before every item is saved.
+let pendingDebtOptimisticRows = {};
 
 let selectedDebtPhotoFile = null;
 let debtPhotoBase64 = null;
@@ -9824,6 +9862,13 @@ let editDebtPhotoBase64 = null;
         
         async function syncOfflineData() {
     if (!currentUser.databaseId || offlineData.isSyncing) return;
+    // Track the exact sale operation IDs included in this sync request.
+    // A sale deleted while the request is already in flight must use the
+    // normal server-delete path; a sale deleted before this snapshot is made
+    // is cancelled locally and must NEVER be sent to the server.
+    if (!Array.isArray(offlineData.salesSyncInFlightOperationIds)) {
+        offlineData.salesSyncInFlightOperationIds = [];
+    }
     // One persistent operation ID per pending sync batch. If the server
     // completes the batch but the response is lost, the next retry uses the
     // SAME ID and the server returns an already-processed success instead of
@@ -9835,9 +9880,6 @@ let editDebtPhotoBase64 = null;
     }
     
     if (!offlineData.expenses) offlineData.expenses = [];
-    if (!offlineData.debts) {
-        offlineData.debts = [];
-    }
     if (!offlineData.units) {
         offlineData.units = [];
     }
@@ -9850,7 +9892,6 @@ let editDebtPhotoBase64 = null;
     if (!offlineData.stockEdits) offlineData.stockEdits = [];
     if (!offlineData.saleEdits) offlineData.saleEdits = [];
     if (!offlineData.purchaseEdits) offlineData.purchaseEdits = [];
-    if (!offlineData.debtEdits) offlineData.debtEdits = [];
     if (!offlineData.deletes) offlineData.deletes = [];
     
     offlineData.isSyncing = true;
@@ -9862,23 +9903,40 @@ let editDebtPhotoBase64 = null;
                        (offlineData.expenses?.length || 0) +
                        (offlineData.customers?.length || 0) + 
                        (offlineData.suppliers?.length || 0) + 
-                       (offlineData.debts?.length || 0) +
                        (offlineData.units?.length || 0) +
                        (offlineData.categories?.length || 0) +
                        (offlineData.purchaseRequestActions?.length || 0) +
                        (offlineData.stockEdits?.length || 0) +
                        (offlineData.saleEdits?.length || 0) +
                        (offlineData.purchaseEdits?.length || 0) +
-                       (offlineData.debtEdits?.length || 0) +
                        (offlineData.deletes?.length || 0);
     
     showNotification(`Syncing ${totalItems} offline items...`, 'info');
     
     try {
-        // Borrower photos are now stored directly as compressed Base64 in the
-        // DEBTS sheet. Do not upload them to Drive during sync. The same
-        // photoBase64 travels with the debt payload below, so the debt and
-        // its photo are committed together in one sync operation.
+        // Freeze only the operation IDs that are actually being sent in this
+        // request. This creates a precise boundary for offline sale deletion:
+        // before this point = cancel locally; after this point = queue delete.
+        const salesToSync = Array.isArray(offlineData.sales)
+            ? offlineData.sales.slice()
+            : [];
+        const deletesToSync = Array.isArray(offlineData.deletes)
+            ? offlineData.deletes.slice()
+            : [];
+
+        // These snapshots are the exact transaction boundary for this request.
+        // Anything added to either queue AFTER this point belongs to the next
+        // sync cycle and MUST survive this cycle's success cleanup.
+        offlineData.salesSyncInFlightOperationIds = salesToSync
+            .map(s => s && s.operationId ? String(s.operationId) : '')
+            .filter(Boolean);
+        offlineData.deletesSyncInFlightOperationIds = deletesToSync
+            .map(d => d && d.operationId ? String(d.operationId) : '')
+            .filter(Boolean);
+        saveOfflineData();
+
+        // Borrower photos for Debt are committed directly by the online Debt endpoints.
+        // Debt itself is intentionally excluded from this offline sync path.
         
         // Custom units added while offline - push each to the business's
         // UNITS sheet so they're saved server-side, same as any other data.
@@ -9903,18 +9961,18 @@ let editDebtPhotoBase64 = null;
             databaseId: currentUser.databaseId,
             operationId: offlineData.syncOperationId,
             stock: offlineData.stock || [],
-            sales: offlineData.sales || [],
+            // Use the frozen snapshot. A newly-created sale or a sale deleted
+            // before this request started must not mutate the in-flight payload.
+            sales: salesToSync,
             purchases: offlineData.purchases || [],
             expenses: offlineData.expenses || [],
             customers: offlineData.customers || [],
             suppliers: offlineData.suppliers || [],
-            debts: offlineData.debts || [],
             purchaseRequestActions: offlineData.purchaseRequestActions || [],
             stockEdits: offlineData.stockEdits || [],
             saleEdits: offlineData.saleEdits || [],
             purchaseEdits: offlineData.purchaseEdits || [],
-            debtEdits: offlineData.debtEdits || [],
-            deletes: offlineData.deletes || []
+            deletes: deletesToSync
         });
         
         if (result && result.success) {
@@ -9936,42 +9994,88 @@ let editDebtPhotoBase64 = null;
                 ? expenseQueueBeforeClear.filter(exp => !exp.operationId || failedExpenseOperationIds.has(exp.operationId))
                 : [];
 
-            // Remove only debts the server actually accepted. If one debt
-            // fails, it stays queued for the next retry instead of being lost.
-            const debtOps = Array.isArray(result.operations)
-                ? result.operations.filter(op => op && op.type === 'debt')
-                : [];
-            const failedDebtIds = new Set(
-                debtOps.filter(op => op.status !== 'success' && op.debtId)
-                       .map(op => String(op.debtId))
-            );
-            const hasDebtFailures = debtOps.some(op => op.status !== 'success');
-            const debtQueueBeforeClear = Array.isArray(offlineData.debts) ? offlineData.debts.slice() : [];
-            const remainingDebtQueue = hasDebtFailures
-                ? debtQueueBeforeClear.filter(debt => {
-                    const id = String(debt.id || '');
-                    return !debtOps.some(op => op.status === 'success' && String(op.debtId || '') === id) || failedDebtIds.has(id);
-                  })
-                : [];
-
             // Persist the queue state BEFORE refreshing any page. This avoids
             // a brief double-count where the server has accepted a queued
             // record but the old local pending copy is still present during refresh.
+            // Reconcile ONLY the records that belonged to this request.
+            // Anything created/deleted while the request was in-flight is a
+            // NEW local operation and must remain queued for the next sync.
+            const successfulSaleOperationIds = new Set(
+                (result.operations || [])
+                    .filter(op => op && op.type === 'sale' && op.status === 'success' && op.operationId)
+                    .map(op => String(op.operationId))
+            );
+            const sentSaleObjectsWithoutIds = new Set(
+                salesToSync.filter(s => !s || !s.operationId)
+            );
+            const failedSaleOperationIds = new Set(
+                (result.operations || [])
+                    .filter(op => op && op.type === 'sale' && op.status !== 'success' && op.operationId)
+                    .map(op => String(op.operationId))
+            );
+
+            offlineData.sales = (offlineData.sales || []).filter(s => {
+                if (!s) return false;
+                if (s.operationId) {
+                    const key = String(s.operationId);
+                    // Only a server-confirmed operation from THIS request is removed.
+                    return !successfulSaleOperationIds.has(key);
+                }
+                // Legacy queue items without operationId are removed only when the
+                // exact object was part of this request. Concurrent new objects stay.
+                return !sentSaleObjectsWithoutIds.has(s);
+            });
+
+            // A sale can have been deleted while the sync request was in-flight.
+            // That delete was NOT in deletesToSync, so it must never be cleared here.
+            const sentDeleteObjects = new Set(deletesToSync);
+            const successfulDeleteOperationIds = new Set(
+                (result.operations || [])
+                    .filter(op => op && op.type === 'sale_delete' && op.status === 'success' && op.operationId)
+                    .map(op => String(op.operationId))
+            );
+            const failedDeleteOperationIds = new Set(
+                (result.operations || [])
+                    .filter(op => op && op.type === 'sale_delete' && op.status !== 'success' && op.operationId)
+                    .map(op => String(op.operationId))
+            );
+
+            offlineData.deletes = (offlineData.deletes || []).filter(d => {
+                if (!d) return false;
+                if (d.type === 'sale' && d.operationId) {
+                    const key = String(d.operationId);
+                    // Keep failed deletes for retry; remove only server-confirmed deletes.
+                    return !successfulDeleteOperationIds.has(key);
+                }
+                if (sentDeleteObjects.has(d)) {
+                    // For legacy non-sale deletes without operationId, remove the exact
+                    // object that was sent, but never remove a concurrently-added object.
+                    const op = (result.operations || []).find(x =>
+                        x && x.type === (d.type + '_delete') &&
+                        x.status === 'failed' &&
+                        (!x.operationId || x.operationId === d.operationId)
+                    );
+                    return !!op;
+                }
+                return true;
+            });
+
+            // Clear optimistic delete markers ONLY for deletes confirmed by this request.
+            successfulDeleteOperationIds.forEach(id => removePendingSaleDelete_(id));
+
             offlineData.stock = [];
-            offlineData.sales = [];
             offlineData.purchases = [];
             offlineData.expenses = remainingExpenseQueue;
             offlineData.customers = [];
             offlineData.suppliers = [];
-            offlineData.debts = remainingDebtQueue;
             offlineData.units = [];
             offlineData.categories = [];
             offlineData.purchaseRequestActions = [];
             offlineData.stockEdits = [];
             offlineData.saleEdits = [];
             offlineData.purchaseEdits = [];
-            offlineData.debtEdits = [];
-            offlineData.deletes = [];
+            offlineData.salesSyncInFlightOperationIds = [];
+            offlineData.deletesSyncInFlightOperationIds = [];
             offlineData.syncOperationId = null;
             offlineData.lastSync = new Date().toISOString();
             offlineData.isSyncing = false;
@@ -9983,21 +10087,35 @@ let editDebtPhotoBase64 = null;
             refreshCurrentPage();
             
             showNotification(
-                (remainingExpenseQueue.length > 0 || remainingDebtQueue.length > 0)
+                remainingExpenseQueue.length > 0
                     ? 'Offline data synced. Some records remain pending and will retry automatically.'
                     : 'Offline data synced successfully',
-                (remainingExpenseQueue.length > 0 || remainingDebtQueue.length > 0) ? 'info' : 'success'
+                remainingExpenseQueue.length > 0 ? 'info' : 'success'
             );
         } else {
             offlineData.isSyncing = false;
             updateSyncIndicator();
-            showNotification('Failed to sync data: ' + (result?.error || 'Unknown error'), 'error');
+
+            // A server-side PROCESSING response means the same offline batch
+            // may still be finishing (for example after a lost response).
+            // Do not show a scary failure toast and do not create another
+            // operation ID; keep the durable ID and retry shortly. Debt is
+            // never part of this sync batch.
+            if (result?.operationInProgress) {
+                // The server is already processing this non-Debt offline batch.
+                // Do NOT show a repeating toast and do NOT start another retry
+                // timer here. The regular background sync check will retry
+                // silently later using the same operationId.
+                console.log('Offline sync is already being processed by the server; waiting for the next scheduled check.');
+            } else {
+                showNotification('Offline sync failed: ' + (result?.error || 'Unknown error'), 'error');
+            }
         }
     } catch (error) {
         offlineData.isSyncing = false;
         updateSyncIndicator();
         console.error('Sync error:', error);
-        showNotification('Error syncing data: ' + error.message, 'error');
+        showNotification('Offline sync failed: ' + error.message, 'error');
     }
 }
         
@@ -10870,7 +10988,7 @@ async function login() {
             // Sync offline data kama ipo
             if (offlineData.stock.length > 0 || offlineData.sales.length > 0 || 
                 offlineData.purchases.length > 0 || offlineData.customers.length > 0 || 
-                offlineData.suppliers.length > 0 || (offlineData.debts && offlineData.debts.length > 0)) {
+                offlineData.suppliers.length > 0 || false) {
                 setTimeout(() => {
                     syncOfflineData().catch(console.error);
                 }, 500);
@@ -14614,7 +14732,6 @@ function toggleSaleModalLock() {
                 expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
                 customers: Array.isArray(parsed.customers) ? parsed.customers : [],
                 suppliers: Array.isArray(parsed.suppliers) ? parsed.suppliers : [],
-                debts: Array.isArray(parsed.debts) ? parsed.debts : [], // NEW - hakikisha ni array
                 units: Array.isArray(parsed.units) ? parsed.units : [],
                 categories: Array.isArray(parsed.categories) ? parsed.categories : [],
                 purchaseRequestActions: Array.isArray(parsed.purchaseRequestActions) ? parsed.purchaseRequestActions : [],
@@ -14625,8 +14742,9 @@ function toggleSaleModalLock() {
                 stockEdits: Array.isArray(parsed.stockEdits) ? parsed.stockEdits : [],
                 saleEdits: Array.isArray(parsed.saleEdits) ? parsed.saleEdits : [],
                 purchaseEdits: Array.isArray(parsed.purchaseEdits) ? parsed.purchaseEdits : [],
-                debtEdits: Array.isArray(parsed.debtEdits) ? parsed.debtEdits : [],
                 deletes: Array.isArray(parsed.deletes) ? parsed.deletes : [],
+                salesSyncInFlightOperationIds: [],
+                deletesSyncInFlightOperationIds: [],
                 syncOperationId: parsed.syncOperationId || null,
                 lastSync: parsed.lastSync || null,
                 isSyncing: false
@@ -14637,6 +14755,12 @@ function toggleSaleModalLock() {
         }
     } else {
         resetOfflineData();
+    }
+    // Remove legacy Debt queues from older SmartTrade versions. Debt is ONLINE-ONLY.
+    if (offlineData.debts || offlineData.debtEdits) {
+        delete offlineData.debts;
+        delete offlineData.debtEdits;
+        saveOfflineData();
     }
     updateSyncIndicator();
 }
@@ -14649,15 +14773,15 @@ function resetOfflineData() {
         expenses: [],
         customers: [],
         suppliers: [],
-        debts: [], // NEW - hakikisha ni array
         units: [],
         categories: [],
         purchaseRequestActions: [],
         stockEdits: [],
         saleEdits: [],
         purchaseEdits: [],
-        debtEdits: [],
         deletes: [],
+        salesSyncInFlightOperationIds: [],
+        deletesSyncInFlightOperationIds: [],
         lastSync: null,
         isSyncing: false
     };
@@ -15407,6 +15531,13 @@ function showEditSupplierProductsSuggestions() {
         
         
         function saveOfflineData() {
+            // Debt is ONLINE-ONLY. Never persist legacy Debt queues.
+            if (offlineData && (offlineData.debts || offlineData.debtEdits)) {
+                delete offlineData.debts;
+                delete offlineData.debtEdits;
+            }
+            // Remove the legacy Debt payment queue as well. Debt never uses queues.
+            localStorage.removeItem('smartTradePendingDebtPayments');
             localStorage.setItem('smartTradeOfflineData', JSON.stringify(offlineData));
         }
         
@@ -15417,11 +15548,9 @@ function showEditSupplierProductsSuggestions() {
     // ulinzi wa ziada endapo loadOfflineData() haikuweza kuzirejesha kwa
     // sababu yoyote (mfano localStorage iliyoharibika).
     if (!offlineData.expenses) offlineData.expenses = [];
-    if (!offlineData.debts) offlineData.debts = [];
     if (!offlineData.stockEdits) offlineData.stockEdits = [];
     if (!offlineData.saleEdits) offlineData.saleEdits = [];
     if (!offlineData.purchaseEdits) offlineData.purchaseEdits = [];
-    if (!offlineData.debtEdits) offlineData.debtEdits = [];
     if (!offlineData.deletes) offlineData.deletes = [];
     
     const hasOfflineData = (offlineData.stock && offlineData.stock.length > 0) || 
@@ -15430,14 +15559,13 @@ function showEditSupplierProductsSuggestions() {
                            (offlineData.expenses && offlineData.expenses.length > 0) ||
                            (offlineData.customers && offlineData.customers.length > 0) ||
                            (offlineData.suppliers && offlineData.suppliers.length > 0) ||
-                           (offlineData.debts && offlineData.debts.length > 0) ||
+                           false ||
                            (offlineData.units && offlineData.units.length > 0) ||
                            (offlineData.categories && offlineData.categories.length > 0) ||
                            (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0) ||
                            (offlineData.stockEdits && offlineData.stockEdits.length > 0) ||
                            (offlineData.saleEdits && offlineData.saleEdits.length > 0) ||
                            (offlineData.purchaseEdits && offlineData.purchaseEdits.length > 0) ||
-                           (offlineData.debtEdits && offlineData.debtEdits.length > 0) ||
                            (offlineData.deletes && offlineData.deletes.length > 0);
                            
     if (hasOfflineData && currentUser.databaseId) {
@@ -15459,13 +15587,9 @@ function showEditSupplierProductsSuggestions() {
     
     // Hakikisha offlineData fields zipo
     if (!offlineData.expenses) offlineData.expenses = [];
-    if (!offlineData.debts) {
-        offlineData.debts = [];
-    }
     if (!offlineData.stockEdits) offlineData.stockEdits = [];
     if (!offlineData.saleEdits) offlineData.saleEdits = [];
     if (!offlineData.purchaseEdits) offlineData.purchaseEdits = [];
-    if (!offlineData.debtEdits) offlineData.debtEdits = [];
     if (!offlineData.deletes) offlineData.deletes = [];
     
     const hasOfflineData = (offlineData.stock && offlineData.stock.length > 0) || 
@@ -15474,14 +15598,13 @@ function showEditSupplierProductsSuggestions() {
                            (offlineData.expenses && offlineData.expenses.length > 0) ||
                            (offlineData.customers && offlineData.customers.length > 0) ||
                            (offlineData.suppliers && offlineData.suppliers.length > 0) ||
-                           (offlineData.debts && offlineData.debts.length > 0) ||
+                           false ||
                            (offlineData.units && offlineData.units.length > 0) ||
                            (offlineData.categories && offlineData.categories.length > 0) ||
                            (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0) ||
                            (offlineData.stockEdits && offlineData.stockEdits.length > 0) ||
                            (offlineData.saleEdits && offlineData.saleEdits.length > 0) ||
                            (offlineData.purchaseEdits && offlineData.purchaseEdits.length > 0) ||
-                           (offlineData.debtEdits && offlineData.debtEdits.length > 0) ||
                            (offlineData.deletes && offlineData.deletes.length > 0);
                                    
     if (!hasOfflineData) {
@@ -15663,14 +15786,12 @@ function updateAllCaches(result) {
     
     // Hakikisha offlineData buckets zote zipo
     if (!offlineData.expenses) offlineData.expenses = [];
-    if (!offlineData.debts) offlineData.debts = [];
     if (!offlineData.units) offlineData.units = [];
     if (!offlineData.categories) offlineData.categories = [];
     if (!offlineData.purchaseRequestActions) offlineData.purchaseRequestActions = [];
     if (!offlineData.stockEdits) offlineData.stockEdits = [];
     if (!offlineData.saleEdits) offlineData.saleEdits = [];
     if (!offlineData.purchaseEdits) offlineData.purchaseEdits = [];
-    if (!offlineData.debtEdits) offlineData.debtEdits = [];
     if (!offlineData.deletes) offlineData.deletes = [];
     
     const hasOfflineData = (offlineData.stock && offlineData.stock.length > 0) || 
@@ -15679,14 +15800,13 @@ function updateAllCaches(result) {
                            (offlineData.expenses && offlineData.expenses.length > 0) ||
                            (offlineData.customers && offlineData.customers.length > 0) ||
                            (offlineData.suppliers && offlineData.suppliers.length > 0) ||
-                           (offlineData.debts && offlineData.debts.length > 0) ||
+                           false ||
                            (offlineData.units && offlineData.units.length > 0) ||
                            (offlineData.categories && offlineData.categories.length > 0) ||
                            (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0) ||
                            (offlineData.stockEdits && offlineData.stockEdits.length > 0) ||
                            (offlineData.saleEdits && offlineData.saleEdits.length > 0) ||
                            (offlineData.purchaseEdits && offlineData.purchaseEdits.length > 0) ||
-                           (offlineData.debtEdits && offlineData.debtEdits.length > 0) ||
                            (offlineData.deletes && offlineData.deletes.length > 0);
     
     // This function gets called very often (after almost every action), so
@@ -17087,6 +17207,107 @@ function calculateTotalPurchasesFromCache() {
             });
         }
 
+        // ============================================================
+        // INSTANT SALE DELETE PROTECTION
+        // ============================================================
+        // A sale deletion is optimistic: the visible receipt/card is removed
+        // BEFORE any network request is awaited. These markers prevent a
+        // background getSales()/loadSales() response from putting the deleted
+        // sale back while the server is still processing it.
+        const pendingSaleDeletes = new Map();
+
+        function normalizeSaleDeleteValue_(value) {
+            return String(value == null ? '' : value).trim();
+        }
+
+        function buildSaleDeleteFingerprint_(sale) {
+            if (!sale) return '';
+            return [
+                normalizeSaleDeleteValue_(sale.date),
+                normalizeSaleDeleteValue_(sale.product || sale.service),
+                normalizeSaleDeleteValue_(sale.quantity),
+                normalizeSaleDeleteValue_(sale.unitPrice),
+                normalizeSaleDeleteValue_(sale.total),
+                normalizeSaleDeleteValue_(sale.customer),
+                normalizeSaleDeleteValue_(sale.paymentMethod),
+                normalizeSaleDeleteValue_(sale.sellerId),
+                normalizeSaleDeleteValue_(sale.branchId || 'MAIN'),
+                normalizeSaleDeleteValue_(sale.unit),
+                normalizeSaleDeleteValue_(sale.receiptNo || sale.receipt),
+                normalizeSaleDeleteValue_(sale.saleBatchId)
+            ].join('|');
+        }
+
+        function addPendingSaleDelete_(operationId, sale) {
+            if (!operationId || !sale) return;
+            pendingSaleDeletes.set(String(operationId), {
+                fingerprint: buildSaleDeleteFingerprint_(sale),
+                rowIndex: Number(sale.rowIndex) || 0,
+                sale: { ...sale },
+                createdAt: Date.now()
+            });
+        }
+
+        function removePendingSaleDelete_(operationId) {
+            if (!operationId) return;
+            pendingSaleDeletes.delete(String(operationId));
+        }
+
+        function isSalePendingDelete_(sale) {
+            if (!sale) return false;
+            const fp = buildSaleDeleteFingerprint_(sale);
+            for (const pending of pendingSaleDeletes.values()) {
+                if (pending.fingerprint && pending.fingerprint === fp) return true;
+            }
+            return false;
+        }
+
+        function removeSaleFromLocalCacheInstantly_(sale) {
+            if (!sale || !Array.isArray(salesCache.data)) return false;
+            const targetFingerprint = buildSaleDeleteFingerprint_(sale);
+            let removed = false;
+            let fallbackMatched = false;
+            salesCache.data = salesCache.data.filter(item => {
+                // The receipt group points at the exact cache object. Remove
+                // that one object only; never remove every identical-looking
+                // sale line. The fingerprint is only a fallback for legacy
+                // callers where object identity is unavailable.
+                if (item === sale) {
+                    removed = true;
+                    return false;
+                }
+                if (!removed && !fallbackMatched && targetFingerprint && buildSaleDeleteFingerprint_(item) === targetFingerprint) {
+                    fallbackMatched = true;
+                    removed = true;
+                    return false;
+                }
+                return true;
+            });
+            const operationalSales = filterOperationalRecordsByClose(salesCache.data, 'branchId');
+            salesCache.filtered = currentUser.userType === 'seller'
+                ? operationalSales.filter(s => s.sellerId === currentUser.sellerId)
+                : operationalSales;
+            saveSalesCache();
+            displaySalesTable();
+            const badge = document.getElementById('salesBadge');
+            if (badge) badge.textContent = String(salesCache.data.length);
+            return removed;
+        }
+
+        function restoreSaleToLocalCache_(sale) {
+            if (!sale || !Array.isArray(salesCache.data)) return;
+            const fp = buildSaleDeleteFingerprint_(sale);
+            if (salesCache.data.some(item => buildSaleDeleteFingerprint_(item) === fp)) return;
+            salesCache.data.push({ ...sale });
+            sortDataDescending(salesCache.data);
+            const operationalSales = filterOperationalRecordsByClose(salesCache.data, 'branchId');
+            salesCache.filtered = currentUser.userType === 'seller'
+                ? operationalSales.filter(s => s.sellerId === currentUser.sellerId)
+                : operationalSales;
+            saveSalesCache();
+            displaySalesTable();
+        }
+
         // Merge fresh server Sales without ever removing a local sale batch
         // that is still being saved/synced. Server rows win once their
         // operationId is confirmed. This deliberately works even when a
@@ -17203,6 +17424,7 @@ function calculateTotalPurchasesFromCache() {
             // batch BEFORE merging. Previously, those partial rows survived and
             // caused a receipt to shrink from A+B+C+D to A+B+C temporarily.
             const merged = incoming.filter(row => {
+                if (isSalePendingDelete_(row)) return false;
                 if (!row || !row.operationId) return true;
                 return !blockedIncomingOperations.has(String(row.operationId));
             });
@@ -19297,7 +19519,7 @@ async function updateStock() {
                                 <div class="sales-receipt-menu-title">Sale options</div>
                                 <div class="sales-receipt-menu-item full-action"><button type="button" onclick="printSalesReceipt(${gi}, event)"><i class="fas fa-print"></i> Print</button></div>
                                 <div class="sales-receipt-menu-item full-action" style="position:relative"><button type="button" onclick="toggleSalesShareMenu(${gi}, event)"><i class="fas fa-share-nodes"></i> Share</button><div class="sales-share-menu" id="salesShareMenu-${gi}"><button type="button" onclick="shareSalesReceiptText(${gi}, event)"><i class="fas fa-comment-alt"></i> Share as Text</button><button type="button" onclick="shareSalesReceiptPdf(${gi}, event)"><i class="fas fa-file-pdf"></i> Share as PDF</button></div></div>
-                                ${g.items.map((x,ii)=>{ const rowIndex=x.rowIndex || ((salesCache.data ? salesCache.data.indexOf(x) : -1)+2); return `<div class="sales-receipt-menu-item"><span>${escapeHtml(x.product||x.service||'Item')}</span><span class="sales-receipt-menu-actions"><button type="button" onclick="editSalesReceiptItem(${gi},${ii},event)"><i class="fas fa-pen"></i> Edit</button><button type="button" class="danger" onclick="deleteSalesReceiptItem(${gi},${ii},event)"><i class="fas fa-trash"></i> Delete</button></span></div>`; }).join('')}
+                                ${g.items.map((x,ii)=>{ const rowIndex=x.rowIndex || ((salesCache.data ? salesCache.data.indexOf(x) : -1)+2); return `<div class="sales-receipt-menu-item"><span>${escapeHtml(x.product||x.service||'Item')}</span><span class="sales-receipt-menu-actions"><button type="button" class="sale-edit-action" data-sale-action="edit" data-sale-group-index="${gi}" data-sale-item-index="${ii}"><i class="fas fa-pen"></i> Edit</button><button type="button" class="danger sale-delete-action" data-sale-action="delete" data-sale-group-index="${gi}" data-sale-item-index="${ii}"><i class="fas fa-trash"></i> Delete</button></span></div>`; }).join('')}
                             </div></div>
                         </div>
                         <div class="sales-receipt-meta"><span><strong>Customer:</strong> ${escapeHtml(customerName)}</span><span><strong>Date:</strong> ${formatDate(first.date,true)}</span><span><strong>Payment:</strong> ${escapeHtml(g.paymentMethod)}</span><span><strong>Seller:</strong> ${escapeHtml(sellerName)}</span><span><strong>Branch:</strong> ${escapeHtml(branchName)}</span></div>
@@ -19592,7 +19814,7 @@ function deleteSalesReceiptItem(groupIndex, itemIndex, event) {
     if (rowIndex < 2) return;
     const menu = document.getElementById(`salesReceiptMenu-${groupIndex}`);
     if (menu) menu.classList.remove('show');
-    deleteSale(rowIndex);
+    deleteSale(rowIndex, sale);
 }
 
 document.addEventListener('click', function(event) {
@@ -19600,6 +19822,27 @@ document.addEventListener('click', function(event) {
         document.querySelectorAll('.sales-receipt-menu.show').forEach(m => m.classList.remove('show'));
     }
 });
+
+// Isolated All Sales action handler.  Edit/Delete are deliberately handled here
+// so no parent/card/menu listener can swallow the action.  This does not alter
+// the underlying editSale/deleteSale functions or their offline behavior.
+document.addEventListener('click', function(event) {
+    const button = event.target.closest('.sale-edit-action, .sale-delete-action');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+
+    const groupIndex = Number(button.dataset.saleGroupIndex);
+    const itemIndex = Number(button.dataset.saleItemIndex);
+    if (!Number.isInteger(groupIndex) || !Number.isInteger(itemIndex)) return;
+
+    if (button.dataset.saleAction === 'edit') {
+        editSalesReceiptItem(groupIndex, itemIndex, event);
+    } else if (button.dataset.saleAction === 'delete') {
+        deleteSalesReceiptItem(groupIndex, itemIndex, event);
+    }
+}, true);
 
 function editSale(rowIndex, product, quantity, unitPrice, total, customer, paymentMethod, sellerId, branchId, date, unit) {
             // Store the original values before editing
@@ -19728,75 +19971,160 @@ function calculateEditSaleTotal() {
 
 
 
-function deleteSale(rowIndex) {
+function findOfflineQueuedSaleIndex_(operationId) {
+    if (!operationId || !Array.isArray(offlineData.sales)) return -1;
+    const key = String(operationId);
+    return offlineData.sales.findIndex(s => s && s.operationId && String(s.operationId) === key);
+}
+
+function isOfflineSaleSyncInFlight_(operationId) {
+    if (!operationId || !Array.isArray(offlineData.salesSyncInFlightOperationIds)) return false;
+    return offlineData.salesSyncInFlightOperationIds.includes(String(operationId));
+}
+
+function cancelOfflineSaleBeforeSync_(sale) {
+    if (!sale || !sale.operationId) return false;
+    const index = findOfflineQueuedSaleIndex_(sale.operationId);
+    if (index < 0 || isOfflineSaleSyncInFlight_(sale.operationId)) return false;
+
+    // This sale has NEVER been sent in a sync request. Removing it from the
+    // sales queue is the authoritative cancellation. Do NOT create a delete
+    // queue entry, because there is nothing on the server to delete.
+    offlineData.sales.splice(index, 1);
+
+    // Also remove it from the protected optimistic receipt batch so a later
+    // getSales() merge cannot reconstruct the cancelled line locally.
+    const batchId = sale.saleBatchId;
+    if (batchId && pendingSaleBatches && pendingSaleBatches[batchId]) {
+        pendingSaleBatches[batchId].rows = (pendingSaleBatches[batchId].rows || [])
+            .filter(r => String(r?.operationId || '') !== String(sale.operationId));
+        if (!pendingSaleBatches[batchId].rows.length) {
+            delete pendingSaleBatches[batchId];
+        }
+    }
+    if (batchId && protectedSaleBatches && protectedSaleBatches[batchId]) {
+        protectedSaleBatches[batchId].rows = (protectedSaleBatches[batchId].rows || [])
+            .filter(r => String(r?.operationId || '') !== String(sale.operationId));
+        if (!protectedSaleBatches[batchId].rows.length) {
+            delete protectedSaleBatches[batchId];
+        }
+    }
+
+    saveOfflineData();
+    return true;
+}
+
+function deleteSale(rowIndex, saleOverride) {
+    const parsedRowIndex = parseInt(rowIndex, 10);
+    const saleBeingDeleted = saleOverride || (
+        salesCache.data && salesCache.data.find(s => Number(s.rowIndex) === parsedRowIndex)
+    ) || (
+        salesCache.data && salesCache.data[parsedRowIndex - 2]
+    );
+
+    if (!saleBeingDeleted) {
+        showNotification('Could not identify the selected sale. Please refresh and try again.', 'error');
+        return;
+    }
+
     showConfirmationModal(
         'Delete Sale Entry',
         'Are you sure you want to delete this sale entry? This action cannot be undone.',
         async () => {
-            // Grab the item's details BEFORE removing it from cache, so we
-            // can also give the quantity back to Stock locally right away
-            // (for instant UI feedback) - the backend performs the
-            // authoritative version of this itself once the delete
-            // actually reaches it (immediately if online, or once the
-            // offline queue syncs).
-            const cacheIndexBefore = parseInt(rowIndex) - 2;
-            const saleBeingDeleted = (salesCache.data && salesCache.data[cacheIndexBefore]) ? { ...salesCache.data[cacheIndexBefore] } : null;
-            
-            try {
-                const result = await apiCall('deleteSaleRow', { rowIndex: parseInt(rowIndex) });
-                
-                if (result.success) {
-                    // Remove from cache
-                    if (salesCache.data) {
-                        const cacheIndex = parseInt(rowIndex) - 2;
-                        if (cacheIndex >= 0 && cacheIndex < salesCache.data.length) {
-                            salesCache.data.splice(cacheIndex, 1);
-                        }
-                        if (currentUser.userType === 'seller') {
-                            salesCache.filtered = salesCache.data.filter(s => s.sellerId === currentUser.sellerId);
-                        } else {
-                            salesCache.filtered = salesCache.data;
-                        }
-                        saveSalesCache();
+            const operationId = 'DELETE_SALE_' + (
+                typeof crypto !== 'undefined' && crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : Date.now().toString(36) + '_' + Math.random().toString(36).slice(2)
+            );
+
+            // CRITICAL OFFLINE RULE: if this sale was created offline and has
+            // never entered an in-flight sync request, cancel the sale itself
+            // from offlineData.sales. Do NOT add a delete queue entry.
+            // Otherwise sync would first recreate the sale on the server and
+            // then try to delete it, which is exactly the race that previously
+            // caused deleted offline sales to come back.
+            const cancelledBeforeSync = cancelOfflineSaleBeforeSync_(saleBeingDeleted);
+            if (!cancelledBeforeSync) {
+                addPendingSaleDelete_(operationId, saleBeingDeleted);
+            }
+
+            // INSTANT: update the visible cache/card before any await/network.
+            removeSaleFromLocalCacheInstantly_(saleBeingDeleted);
+            returnQuantityToStockCacheLocally(saleBeingDeleted);
+            showNotification('Sale deleted.', 'success');
+
+            // If the sale existed only in the local offline queue and has not
+            // entered an in-flight sync request, the operation is already fully
+            // cancelled. There is NOTHING on the server to delete, so never
+            // send deleteSaleRow() and never create a delete queue entry.
+            if (cancelledBeforeSync) {
+                saveOfflineData();
+                return;
+            }
+
+            // Persist the exact intent immediately while offline.
+            if (!isOnline) {
+                if (!cancelledBeforeSync) {
+                    if (!offlineData.deletes) offlineData.deletes = [];
+                    const alreadyQueued = offlineData.deletes.some(d => d && d.operationId === operationId);
+                    if (!alreadyQueued) {
+                        offlineData.deletes.push({
+                            type: 'sale',
+                            rowIndex: parsedRowIndex,
+                            operationId,
+                            saleFingerprint: buildSaleDeleteFingerprint_(saleBeingDeleted),
+                            sale: { ...saleBeingDeleted }
+                        });
                     }
-                    
-                    returnQuantityToStockCacheLocally(saleBeingDeleted);
-                    
-                    showNotification('Sale entry deleted successfully', 'success');
-                    loadSales();
+                }
+                saveOfflineData();
+                return;
+            }
+
+            // Online: server commit happens in background; UI never waits.
+            try {
+                const result = await apiCall('deleteSaleRow', {
+                    rowIndex: parsedRowIndex,
+                    operationId,
+                    sale: { ...saleBeingDeleted }
+                });
+
+                if (result && result.success) {
+                    removePendingSaleDelete_(operationId);
+                    // Do not call loadSales() here: it can race and reinsert
+                    // an old server snapshot. Background refresh remains safe
+                    // because mergeSalesServerDataPreservingPending_ filters the
+                    // pending deletion marker until this point.
                     loadStock();
                     loadDashboard();
                 } else {
-                    showNotification(result.error || 'Failed to delete sale', 'error');
+                    removePendingSaleDelete_(operationId);
+                    restoreSaleToLocalCache_(saleBeingDeleted);
+                    showNotification(result?.error || 'Failed to delete sale. The sale has been restored.', 'error');
+                    loadStock();
+                    loadDashboard();
                 }
             } catch (error) {
-                // Offline/network failure - queue the delete for later
-                // sync and remove it from the local cache right away.
+                // Network dropped after optimistic removal: queue the same
+                // operation without restoring the Card. It stays deleted.
                 if (!offlineData.deletes) offlineData.deletes = [];
-                offlineData.deletes.push({ type: 'sale', rowIndex: parseInt(rowIndex) });
-                saveOfflineData();
-                
-                if (salesCache.data) {
-                    const cacheIndex = parseInt(rowIndex) - 2;
-                    if (cacheIndex >= 0 && cacheIndex < salesCache.data.length) {
-                        salesCache.data.splice(cacheIndex, 1);
-                    }
-                    salesCache.filtered = currentUser.userType === 'seller'
-                        ? salesCache.data.filter(s => s.sellerId === currentUser.sellerId)
-                        : salesCache.data;
-                    saveSalesCache();
+                const alreadyQueued = offlineData.deletes.some(d => d && d.operationId === operationId);
+                if (!alreadyQueued) {
+                    offlineData.deletes.push({
+                        type: 'sale',
+                        rowIndex: parsedRowIndex,
+                        operationId,
+                        saleFingerprint: buildSaleDeleteFingerprint_(saleBeingDeleted),
+                        sale: { ...saleBeingDeleted }
+                    });
+                    saveOfflineData();
                 }
-                
-                returnQuantityToStockCacheLocally(saleBeingDeleted);
-                
-                showNotification('Sale entry deleted offline. Will sync when online.', 'info');
-                loadSales();
-                loadStock();
-                loadDashboard();
+                showNotification('Sale deleted locally. It will sync automatically when online.', 'info');
             }
         }
     );
 }
+
 
 // Adds a deleted Sale or Debt's quantity back into the local Stock cache
 // immediately (matching Product+Branch+Unit, same rule the backend's
@@ -27674,6 +28002,37 @@ async function closeAccountsConfirmed() {
                         : operationalPurchases;
                     savePurchasesCache();
                 }
+                // Paid debts are historical only when their transaction timestamp
+                // is at or before the exact "Closed At" moment. A Paid debt created
+                // after Close Accounts belongs to the new open period and remains.
+                if (Array.isArray(debtsCache.data)) {
+                    const closedBranchForDebts = result.period?.branchId || branchId || 'ALL';
+                    const closedAtForDebts = new Date(
+                        result.period?.closedAt || result.closedAt || Date.now()
+                    ).getTime();
+                    debtsCache.data = debtsCache.data.filter(function(debt) {
+                        if (!debt) return true;
+                        const debtStatePaid = String(debt.status || '').toLowerCase() === 'paid' ||
+                            ((Number(debt.totalAmount) || 0) > 0 && (Number(debt.paidAmount) || 0) >= (Number(debt.totalAmount) || 0));
+                        if (!debtStatePaid) return true;
+                        const debtBranch = debt.branchId || 'MAIN';
+                        const debtTime = new Date(debt.date || debt.timestamp || 0).getTime();
+                        const branchMatches = closedBranchForDebts === 'ALL' || debtBranch === closedBranchForDebts;
+                        return !(branchMatches && !isNaN(closedAtForDebts) && !isNaN(debtTime) && debtTime <= closedAtForDebts);
+                    });
+                    if (currentUser.userType === 'seller' && currentUser.sellerId) {
+                        debtsCache.filtered = debtsCache.data.filter(function(debt) { return debt.sellerId === currentUser.sellerId; });
+                    } else if (currentUser.userType !== 'admin' && currentUser.branchId) {
+                        debtsCache.filtered = debtsCache.data.filter(function(debt) { return debt.branchId === currentUser.branchId; });
+                    } else {
+                        debtsCache.filtered = debtsCache.data.filter(function(debt) { return debt.status !== 'denied'; });
+                    }
+                    saveDebtsCache();
+                    displayDebtsTable();
+                    const debtBadgeAfterClose = document.getElementById('debtsBadge');
+                    if (debtBadgeAfterClose) debtBadgeAfterClose.textContent = String(debtsCache.filtered.length);
+                }
+
                 // Expenses are also a live-period list. Clear the in-page
                 // result immediately after a successful close so an older
                 // result cannot flash back into the Expenses table before the
@@ -28620,6 +28979,63 @@ function showSettingsSection(section) {
         
        
        
+function getDebtDisplayRowsForCurrentUser(data) {
+    var rows = Array.isArray(data) ? data : [];
+    var isAdmin = currentUser && currentUser.userType === 'admin';
+    var sellerId = currentUser && currentUser.sellerId;
+    var branchId = currentUser && currentUser.branchId;
+
+    if (!isAdmin && sellerId) {
+        return rows.filter(function(debt) { return debt.sellerId === sellerId; });
+    }
+    if (!isAdmin && branchId) {
+        return rows.filter(function(debt) { return debt.branchId === branchId; });
+    }
+    return rows.filter(function(debt) { return debt.status !== 'denied'; });
+}
+
+function mergePendingDebtRows(serverRows) {
+    const incoming = Array.isArray(serverRows) ? serverRows.slice() : [];
+    const current = Array.isArray(debtsCache.data) ? debtsCache.data : [];
+    const pending = current.filter(function(d) {
+        return d && d.operationId && (d._optimistic || d._pendingLocal);
+    });
+    const incomingByOperation = new Map();
+    incoming.forEach(function(d) {
+        if (d && d.operationId) incomingByOperation.set(String(d.operationId), d);
+    });
+    const merged = incoming.slice();
+    pending.forEach(function(opt) {
+        const key = String(opt.operationId);
+        if (!incomingByOperation.has(key)) merged.push(opt);
+    });
+    return merged;
+}
+
+function registerOptimisticDebtRow(row) {
+    // Disabled for Debt: only server-confirmed rows may enter the Debt cache.
+    return false;
+}
+
+function confirmOptimisticDebtRow(operationId, serverRow) {
+    // Compatibility wrapper: server-confirmed Debt rows are inserted through
+    // handleSuccessfulDebtSave(), never before the successful server response.
+    if (!serverRow) return;
+    if (!Array.isArray(debtsCache.data)) debtsCache.data = [];
+    const op = String(operationId || serverRow.operationId || '');
+    let idx = debtsCache.data.findIndex(function(d) {
+        return d && op && d.operationId && String(d.operationId) === op;
+    });
+    if (idx === -1 && serverRow.id) {
+        idx = debtsCache.data.findIndex(function(d) { return String(d.id || '') === String(serverRow.id); });
+    }
+    if (idx === -1) debtsCache.data.push(Object.assign({}, serverRow, {_optimistic:false, _pendingLocal:false}));
+    else debtsCache.data[idx] = Object.assign({}, debtsCache.data[idx], serverRow, {_optimistic:false, _pendingLocal:false});
+    debtsCache.filtered = getDebtDisplayRowsForCurrentUser(debtsCache.data);
+    saveDebtsCache();
+    displayDebtsTable();
+}
+
        async function loadDebts() {
     var tableBody = document.getElementById('debtsTableBody');
     var summaryDiv = document.getElementById('debtsSummary');
@@ -28633,21 +29049,9 @@ function showSettingsSection(section) {
     
     // SHOW CACHE FIRST - IMMEDIATE DISPLAY
     if (debtsCache.data.length > 0) {
-        // Filter for display based on user type
-        if (!isAdmin && sellerId) {
-            debtsCache.filtered = debtsCache.data.filter(function(debt) {
-                return debt.sellerId === sellerId;
-            });
-        } else if (!isAdmin && branchId) {
-            debtsCache.filtered = debtsCache.data.filter(function(debt) {
-                return debt.branchId === branchId;
-            });
-        } else {
-            // Admin: exclude denied debts
-            debtsCache.filtered = debtsCache.data.filter(function(debt) {
-                return debt.status !== 'denied';
-            });
-        }
+        // Filter for display based on user type. Optimistic rows are already
+        // in the cache, so they remain visible immediately after Complete Debt.
+        debtsCache.filtered = getDebtDisplayRowsForCurrentUser(debtsCache.data);
         
         displayDebtsTable();
         var badgeEl = document.getElementById('debtsBadge');
@@ -28672,27 +29076,12 @@ function showSettingsSection(section) {
                     
                     if (result && result.success) {
                         // Check if data has changed
-                        var hasChanges = JSON.stringify(debtsCache.data) !== JSON.stringify(result.data);
-                        
+                        // The server is authoritative. Debt has no optimistic/offline rows.
+                        var mergedDebtData = (result.data || []).filter(function(d) { return d && !d._optimistic && !d._pendingLocal && !d.offline; });
+                        var hasChanges = JSON.stringify(debtsCache.data) !== JSON.stringify(mergedDebtData);
                         if (hasChanges) {
-                            debtsCache.data = result.data || [];
-                            
-                            // Filter for display based on user type
-                            if (!isAdmin && sellerId) {
-                                debtsCache.filtered = debtsCache.data.filter(function(debt) {
-                                    return debt.sellerId === sellerId;
-                                });
-                            } else if (!isAdmin && branchId) {
-                                debtsCache.filtered = debtsCache.data.filter(function(debt) {
-                                    return debt.branchId === branchId;
-                                });
-                            } else {
-                                // Admin: exclude denied debts
-                                debtsCache.filtered = debtsCache.data.filter(function(debt) {
-                                    return debt.status !== 'denied';
-                                });
-                            }
-                            
+                            debtsCache.data = mergedDebtData;
+                            debtsCache.filtered = getDebtDisplayRowsForCurrentUser(debtsCache.data);
                             saveDebtsCache();
                             displayDebtsTable();
                             var badgeEl2 = document.getElementById('debtsBadge');
@@ -28719,135 +29108,11 @@ function saveDebtsCache() {
 
 
 function saveDebtOffline(debtData) {
-    // Hakikisha offlineData debts ipo
-    if (!offlineData.debts) {
-        offlineData.debts = [];
-    }
-    
-    // Generate unique ID for offline debt
-    var offlineId = 'OFFLINE_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8);
-    
-    // Kama kuna photoBase64, hifadhi kwenye cache ya picha MARA MOJA
-    if (debtData.photoBase64 && debtData.photoBase64 !== '') {
-        console.log('Saving offline photo to cache with ID:', offlineId);
-        saveDebtPhotoToCache(offlineId, debtData.photoBase64);
-    }
-    
-    // Prepare debt for offline storage
-    var offlineDebt = {
-        id: offlineId,
-        timestamp: debtData.timestamp,
-        borrowerName: debtData.borrowerName,
-        borrowerPhone: debtData.borrowerPhone || '',
-        borrowerNIDA: debtData.borrowerNIDA || '',
-        photoId: offlineId,
-        photoUrl: debtData.photoUrl || '',
-        photoBase64: debtData.photoBase64 || null,
-        photoMimeType: debtData.photoMimeType || 'image/jpeg',
-        product: debtData.product,
-        quantity: debtData.quantity,
-        unitPrice: debtData.unitPrice,
-        totalAmount: debtData.total,
-        unit: debtData.unit || '',
-        isStockProduct: debtData.isStockProduct,
-        branchId: debtData.branchId,
-        sellerId: debtData.sellerId,
-        notes: debtData.notes || '',
-        status: 'pending',
-        paidAmount: 0,
-        syncStatus: 'pending',
-        syncAttempts: 0
-    };
-    
-    offlineData.debts.push(offlineDebt);
-    saveOfflineData();
-    
-    console.log('Debt saved offline with photo:', debtData.photoBase64 ? 'Yes (length: ' + debtData.photoBase64.length + ')' : 'No');
-    
-    // Update local cache immediately
-    if (!debtsCache.data) debtsCache.data = [];
-    
-    var newDebt = {
-        id: offlineId,
-        date: debtData.timestamp,
-        borrowerName: debtData.borrowerName,
-        borrowerPhone: debtData.borrowerPhone || '',
-        borrowerNIDA: debtData.borrowerNIDA || '',
-        photoId: offlineId,
-        photoUrl: debtData.photoUrl || '',
-        photoBase64: debtData.photoBase64 || '',
-        photoMimeType: debtData.photoMimeType || 'image/jpeg',
-        product: debtData.product,
-        quantity: debtData.quantity,
-        unitPrice: debtData.unitPrice,
-        totalAmount: debtData.total,
-        unit: debtData.unit || '',
-        paidAmount: 0,
-        status: 'pending',
-        branchId: debtData.branchId,
-        sellerId: debtData.sellerId,
-        notes: debtData.notes + (debtData.photoBase64 ? ' 📸 (Offline)' : ''),
-        lastUpdated: debtData.timestamp,
-        offline: true
-    };
-    
-    debtsCache.data.push(newDebt);
-    
-    // Update filtered
-    if (currentUser.userType === 'seller') {
-        debtsCache.filtered = debtsCache.data.filter(function(d) {
-            return d.sellerId === currentUser.sellerId;
-        });
-    } else {
-        debtsCache.filtered = debtsCache.data.filter(function(d) {
-            return d.status !== 'denied';
-        });
-    }
-    
-    saveDebtsCache();
-    
-    // Reduce stock in cache if stock product
-    if (debtData.isStockProduct && stockCache.data) {
-        var remainingToReduce = debtData.quantity;
-        
-        var sortedStock = [...stockCache.data]
-            .filter(function(item) {
-                return item.product === debtData.product && (item.branchId || 'MAIN') === debtData.branchId && Number(item.quantity) > 0;
-            })
-            .sort(function(a, b) {
-                return new Date(a.date) - new Date(b.date);
-            });
-        
-        for (var i = 0; i < sortedStock.length && remainingToReduce > 0; i++) {
-            var stockItem = sortedStock[i];
-            var index = stockCache.data.findIndex(function(item) {
-                return item.date === stockItem.date && 
-                       item.product === stockItem.product && 
-                       Number(item.quantity) === Number(stockItem.quantity);
-            });
-            
-            if (index !== -1) {
-                var currentQty = Number(stockCache.data[index].quantity) || 0;
-                var reduceBy = Math.min(currentQty, remainingToReduce);
-                var newQty = currentQty - reduceBy;
-                
-                stockCache.data[index].quantity = newQty;
-                stockCache.data[index].value = newQty * (Number(stockCache.data[index].buyPrice) || 0);
-                remainingToReduce -= reduceBy;
-            }
-        }
-        
-        stockCache.summary = calculateStockSummary(stockCache.data);
-        saveStockCache();
-        updateProductsFromStock();
-    }
-    
-    resetDebtFormAfterSubmit();
-    showNotification('Debt saved offline. Will sync when online.', 'info');
-    loadDebts();
-    updateSyncIndicator();
+    // Debt is intentionally ONLINE-ONLY. Kept as a compatibility stub so any
+    // older code path cannot create an offline Debt or alter local Stock.
+    console.warn('Debt offline save disabled by design:', debtData && debtData.product);
+    return false;
 }
-
 
 function debtPhotoDataUrl(debt) {
     if (!debt || !debt.photoBase64) return '';
@@ -29052,30 +29317,76 @@ function openDebtPhotoViewer(debtId, borrowerName) {
     document.body.style.overflow = 'hidden';
 }
 
+// Resolve the shared borrower photo for a Complete Debt transaction.
+// All products in one card represent the same borrower/transaction, so if
+// the selected row does not carry the photo, use another row from that card.
+function getSharedDebtPhotoRecord(debt) {
+    if (!debt) return null;
+    if (debt.photoBase64 || debt.photoId) return debt;
+    var timestamp = debt.date || debt.timestamp || '';
+    var borrowerName = String(debt.borrowerName || '');
+    var sellerId = String(debt.sellerId || '');
+    var branchId = String(debt.branchId || 'MAIN');
+    var match = (debtsCache.data || []).find(function(d) {
+        return String(d.date || d.timestamp || '') === String(timestamp) &&
+               String(d.borrowerName || '') === borrowerName &&
+               String(d.sellerId || '') === sellerId &&
+               String(d.branchId || 'MAIN') === branchId &&
+               (d.photoBase64 || d.photoId);
+    });
+    return match || debt;
+}
+
 function displayDebtsTable() {
+    var cardsContainer = document.getElementById('debtsCardsGrid');
     var tableBody = document.getElementById('debtsTableBody');
     var summaryDiv = document.getElementById('debtsSummary');
     var isAdmin = currentUser.userType === 'admin';
     var isSeller = currentUser.userType === 'seller';
 
     if (!debtsCache.filtered || debtsCache.filtered.length === 0) {
-        if (tableBody) {
-            tableBody.innerHTML = '<tr class="st-debt-empty-row"><td colspan="13"><i class="fas fa-hand-holding-usd" style="font-size:42px;display:block;margin-bottom:12px;color:var(--warning);"></i>No debts found</td></tr>';
-        }
+        if (cardsContainer) cardsContainer.innerHTML = '<div class="st-debt-cards-empty"><i class="fas fa-hand-holding-usd" style="font-size:42px;display:block;margin-bottom:12px;color:var(--warning);"></i>No debts found</div>';
+        if (tableBody) tableBody.innerHTML = '';
         if (summaryDiv) summaryDiv.innerHTML = '';
+        window.currentDebtCardGroups = [];
         return;
     }
 
     var debtStatusOrder = { pending: 0, partial: 0, denied: 1, paid: 2 };
-    debtsCache.filtered = debtsCache.filtered.slice().sort(function(a, b) {
+    var rows = debtsCache.filtered.slice().sort(function(a, b) {
         var orderA = debtStatusOrder[a.status] !== undefined ? debtStatusOrder[a.status] : 0;
         var orderB = debtStatusOrder[b.status] !== undefined ? debtStatusOrder[b.status] : 0;
         if (orderA !== orderB) return orderA - orderB;
         return new Date(b.date).getTime() - new Date(a.date).getTime();
     });
 
+    // A Complete Debt uses one shared timestamp for all of its item rows.
+    // That timestamp is the transaction boundary, so multiple products from
+    // one Complete Debt become ONE card, while another Complete Debt remains
+    // a separate card even if it is completed immediately afterwards.
+    var groupMap = {};
+    var groupOrder = [];
+    rows.forEach(function(debt) {
+        var timestamp = debt.date || debt.timestamp || '';
+        var operationId = String(debt.operationId || '');
+        var itemMarker = operationId.indexOf('_ITEM_');
+        var transactionKey = itemMarker > 0 && operationId.indexOf('DEBT_TX_') === 0
+            ? operationId.substring(0, itemMarker)
+            : '';
+        var key = transactionKey
+            ? 'TX|||' + transactionKey
+            : (timestamp ? String(timestamp) + '|||' + String(debt.borrowerName || '') + '|||' + String(debt.sellerId || '') + '|||' + String(debt.branchId || 'MAIN') : 'ROW|||' + String(debt.id || ''));
+        if (!groupMap[key]) {
+            groupMap[key] = { key: key, items: [], first: debt };
+            groupOrder.push(key);
+        }
+        groupMap[key].items.push(debt);
+    });
+    var groups = groupOrder.map(function(k) { return groupMap[k]; });
+    window.currentDebtCardGroups = groups;
+
     var totalPending = 0, totalPaid = 0, totalBalance = 0, totalDenied = 0;
-    debtsCache.filtered.forEach(function(debt) {
+    rows.forEach(function(debt) {
         var total = Number(debt.totalAmount) || 0;
         var paid = Number(debt.paidAmount) || 0;
         if (debt.status === 'denied') totalDenied += total;
@@ -29090,153 +29401,420 @@ function displayDebtsTable() {
             '<div class="summary-item"><span class="summary-label">Paid</span><span class="summary-value" style="color:var(--success);">' + formatCurrency(totalPaid) + '</span></div>' +
             '<div class="summary-item"><span class="summary-label">Pending</span><span class="summary-value" style="color:var(--warning);">' + formatCurrency(totalPending) + '</span></div>' +
             (isSeller ? '<div class="summary-item"><span class="summary-label">Denied</span><span class="summary-value" style="color:var(--danger);">' + formatCurrency(totalDenied) + '</span></div>' : '') +
-            '<div class="summary-item"><span class="summary-label">Transactions</span><span class="summary-value">' + debtsCache.filtered.length + '</span></div>';
+            '<div class="summary-item"><span class="summary-label">Transactions</span><span class="summary-value">' + groups.length + '</span></div>';
     }
 
     var branchMap = {};
-    if (branchesCache.data) {
-        branchesCache.data.forEach(function(br) { branchMap[br.id] = br.name; });
-    }
+    if (branchesCache.data) branchesCache.data.forEach(function(br) { branchMap[br.id] = br.name; });
 
-    function attrValue(value) {
-        return encodeURIComponent(String(value == null ? '' : value));
-    }
-
-    function photoButton(debt) {
-        var id = attrValue(debt.id || '');
-        var name = attrValue(debt.borrowerName || '');
-        var isOfflineDebt = debt.id && String(debt.id).indexOf('OFFLINE_') === 0;
+    function getPhoto(debt) {
         var imageSrc = '';
-
-        if (debt.photoBase64) {
-            imageSrc = debtPhotoDataUrl(debt);
-        } else if (debt.photoId && isOnline && !isOfflineDebt) {
-            imageSrc = 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(debt.photoId) + '=s100';
-        } else if (debt.photoId) {
+        if (debt.photoBase64) imageSrc = debtPhotoDataUrl(debt);
+        else if (debt.photoId) {
             imageSrc = getDebtPhotoFromCache(debt.photoId) || '';
-            if (!imageSrc && isOnline && !isOfflineDebt) {
-                imageSrc = 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(debt.photoId) + '=s100';
-            }
+            if (!imageSrc && isOnline && String(debt.id).indexOf('OFFLINE_') !== 0) imageSrc = 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(debt.photoId) + '=s240';
         }
-
-        if (!imageSrc) {
-            return '<span class="st-debt-avatar" title="No borrower photo"><i class="fas fa-user"></i></span>';
-        }
-
-        var safeName = escapeHtml(debt.borrowerName || 'Borrower');
-        return '<button type="button" class="st-debt-photo-btn" data-st-debt-photo-id="' + id + '" data-st-debt-photo-name="' + name + '" aria-label="View photo of ' + safeName + '" title="View borrower photo">' +
-            '<img src="' + imageSrc + '" alt="' + safeName + '" onerror="this.style.display=\'none\';this.parentNode.classList.add(\'st-debt-photo-failed\');">' +
-            '<span class="st-debt-photo-zoom"><i class="fas fa-search-plus"></i></span>' +
-            '</button>';
+        return imageSrc;
     }
 
-    var html = '';
-    debtsCache.filtered.forEach(function(debt) {
-        var dateDisplay = formatDate(debt.date, true);
-        var totalAmount = Number(debt.totalAmount) || 0;
-        var paidAmount = Number(debt.paidAmount) || 0;
-        var quantity = Number(debt.quantity) || 0;
+    function actionButton(action, debt, label, icon, cls, extra) {
+        return '<button type="button" class="' + (cls || '') + '" data-debt-action="' + action + '" data-debt-id="' + escapeHtml(String(debt.id || '')) + '"' + (extra || '') + '><i class="fas ' + icon + '"></i> ' + label + '</button>';
+    }
+
+    var html = groups.map(function(group, cardIndex) {
+        var items = group.items;
+        var first = group.first;
+        var borrower = escapeHtml(first.borrowerName || '');
+        var phone = escapeHtml(first.borrowerPhone == null ? '—' : String(first.borrowerPhone));
+        var nida = escapeHtml(first.borrowerNIDA == null ? '—' : String(first.borrowerNIDA));
+        var branchName = branchMap[first.branchId] || first.branchId || 'Main Branch';
+        var dateDisplay = formatDate(first.date || first.timestamp, true);
+        var sharedPhotoRecord = getSharedDebtPhotoRecord(first);
+        var photoSrc = getPhoto(sharedPhotoRecord);
+        var photo = photoSrc
+            ? '<button type="button" class="st-debt-photo-btn st-debt-card-photo" data-st-debt-photo-id="' + encodeURIComponent(String(sharedPhotoRecord.id || first.id || '')) + '" data-st-debt-photo-name="' + encodeURIComponent(String(first.borrowerName || '')) + '" aria-label="View borrower photo" title="View borrower photo"><img src="' + photoSrc + '" alt="Borrower Photo"></button>'
+            : '<div class="st-debt-card-photo no-photo" title="No borrower photo"><i class="fas fa-user"></i></div>';
+
+        var totalAmount = items.reduce(function(sum, d) { return sum + (Number(d.totalAmount) || 0); }, 0);
+        var paidAmount = items.reduce(function(sum, d) { return sum + (Number(d.paidAmount) || 0); }, 0);
         var balance = totalAmount - paidAmount;
-        var branchName = branchMap[debt.branchId] || debt.branchId || 'Main Branch';
+        // Derive status from the actual paid amount as well as the stored status.
+        // This keeps the card correct even if an older row has a stale status value.
+        var itemState = items.map(function(d) {
+            var itemTotal = Number(d.totalAmount) || 0;
+            var itemPaid = Number(d.paidAmount) || 0;
+            if (d.status === 'denied') return 'denied';
+            if (itemTotal > 0 && itemPaid >= itemTotal) return 'paid';
+            if (itemPaid > 0 || d.status === 'partial') return 'partial';
+            return 'pending';
+        });
+        var allPaid = itemState.length > 0 && itemState.every(function(s) { return s === 'paid'; });
+        var allDenied = itemState.length > 0 && itemState.every(function(s) { return s === 'denied'; });
+        var hasPaidOrPartial = itemState.some(function(s) { return s === 'paid' || s === 'partial'; });
+        var statusClass = allPaid ? 'success' : allDenied ? 'danger' : hasPaidOrPartial ? 'info' : 'warning';
+        var statusText = allPaid ? 'Paid' : allDenied ? 'Denied' : hasPaidOrPartial ? 'Partial' : 'Pending';
 
-        var statusClass = 'warning', statusText = 'Pending';
-        if (debt.status === 'paid') { statusClass = 'success'; statusText = 'Paid'; }
-        else if (debt.status === 'partial') { statusClass = 'info'; statusText = 'Partial'; }
-        else if (debt.status === 'denied') { statusClass = 'danger'; statusText = 'Denied'; }
+        var menu = '<div class="st-debt-card-menu" id="debtCardMenu-' + cardIndex + '">' +
+            '<div class="st-debt-card-menu-title">Debt options</div>' +
+            (allPaid
+                ? '<div class="st-debt-card-menu-item full"><button type="button" data-debt-menu-action="print-paid-receipt" data-debt-card-index="' + cardIndex + '"><i class="fas fa-receipt"></i> Print Payment Receipt</button></div>'
+                : '<div class="st-debt-card-menu-item full"><button type="button" data-debt-menu-action="print-group" data-debt-card-index="' + cardIndex + '"><i class="fas fa-print"></i> Print Agreement</button></div>');
 
-        var denialReason = '';
-        if (debt.notes && debt.notes.indexOf('[DENIED:') !== -1) {
-            var match = debt.notes.match(/\[DENIED:\s*([^\]]+)\]/);
-            if (match) denialReason = match[1];
-        }
-
-        var safeBorrowerName = escapeHtml(debt.borrowerName || '');
-        var safeProduct = escapeHtml(debt.product || '');
-        var idJs = JSON.stringify(String(debt.id || ''));
-        var borrowerJs = JSON.stringify(String(debt.borrowerName || '')).replace(/</g, '\\u003c');
-        var productJs = JSON.stringify(String(debt.product || '')).replace(/</g, '\\u003c');
-        var photo = photoButton(debt);
-
-        html += '<tr>' +
-            '<td class="st-debt-photo-cell">' + photo + '</td>' +
-            '<td><strong>' + safeBorrowerName + '</strong>' + (debt.status === 'denied' && denialReason ? '<br><small style="color:var(--danger);">⛔ ' + escapeHtml(denialReason) + '</small>' : '') + '</td>' +
-            '<td>' + escapeHtml(debt.borrowerPhone == null ? '—' : String(debt.borrowerPhone)) + '</td>' +
-            '<td>' + escapeHtml(debt.borrowerNIDA == null ? '—' : String(debt.borrowerNIDA)) + '</td>' +
-            '<td>' + safeProduct + '</td>' +
-            '<td>' + formatQuantity(quantity) + (debt.unit ? ' ' + pluralizeUnit(debt.unit, quantity) : '') + '</td>' +
-            '<td>' + formatCurrency(totalAmount) + '</td>' +
-            '<td>' + formatCurrency(paidAmount) + '</td>' +
-            '<td><strong style="color:' + (balance > 0 && debt.status !== 'denied' ? 'var(--warning)' : 'var(--success)') + ';">' + formatCurrency(balance) + '</strong></td>' +
-            '<td><span class="badge ' + statusClass + '">' + statusText + '</span></td>' +
-            '<td>' + dateDisplay + '</td>' +
-            '<td><span class="badge info">' + escapeHtml(String(branchName)) + '</span></td>' +
-            '<td><div class="st-debt-actions">';
-
-        if (isAdmin) {
-            if (debt.status !== 'paid' && debt.status !== 'denied') {
-                var isOwnDebt = !debt.sellerId || debt.sellerId === '';
-                html += '<button type="button" class="btn-sm btn-secondary" data-debt-action="edit" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" title="Edit"><i class="fas fa-edit"></i></button>';
-                if (!isOwnDebt) html += '<button type="button" class="btn-sm btn-danger" data-debt-action="deny" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" data-borrower="' + escapeHtml(String(debt.borrowerName || '')) + '" data-product="' + escapeHtml(String(debt.product || '')) + '" data-total="' + totalAmount + '" title="Deny Debt"><i class="fas fa-ban"></i></button>';
-                html += '<button type="button" class="btn-sm btn-success" data-debt-action="paid" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" data-borrower="' + escapeHtml(String(debt.borrowerName || '')) + '" data-product="' + escapeHtml(String(debt.product || '')) + '" data-quantity="' + quantity + '" data-total="' + totalAmount + '" data-paid="' + paidAmount + '" title="Mark as Paid"><i class="fas fa-check-circle"></i></button>';
+        // Actions are kept per underlying debt row, exactly as the existing
+        // backend edit/pay/delete functions expect. They are simply grouped
+        // inside this transaction's single three-dot menu.
+        items.forEach(function(debt) {
+            var total = Number(debt.totalAmount) || 0;
+            var paid = Number(debt.paidAmount) || 0;
+            var quantity = Number(debt.quantity) || 0;
+            var itemName = escapeHtml(debt.product || 'Item');
+            menu += '<div class="st-debt-card-menu-product"><strong>' + itemName + '</strong><span>' + formatQuantity(quantity) + (debt.unit ? ' ' + pluralizeUnit(debt.unit, quantity) : '') + ' • ' + formatCurrency(total) + '</span></div>';
+            var itemTotalForAction = Number(debt.totalAmount) || 0;
+            var itemPaidForAction = Number(debt.paidAmount) || 0;
+            var itemIsPaid = debt.status === 'paid' || (itemTotalForAction > 0 && itemPaidForAction >= itemTotalForAction);
+            if (isAdmin) {
+                if (!itemIsPaid && debt.status !== 'denied') {
+                    var isOwnDebt = !debt.sellerId || debt.sellerId === '';
+                    menu += '<div class="st-debt-card-menu-item">' + actionButton('edit', debt, 'Edit', 'fa-edit', 'btn-sm btn-secondary') +
+                        (!isOwnDebt ? actionButton('deny', debt, 'Deny', 'fa-ban', 'btn-sm btn-danger', ' data-borrower="' + escapeHtml(String(debt.borrowerName || '')) + '" data-product="' + escapeHtml(String(debt.product || '')) + '" data-total="' + total + '"') : '') +
+                        actionButton('paid', debt, 'Mark as Paid', 'fa-check-circle', 'btn-sm btn-success', ' data-borrower="' + escapeHtml(String(debt.borrowerName || '')) + '" data-product="' + escapeHtml(String(debt.product || '')) + '" data-quantity="' + quantity + '" data-total="' + total + '" data-paid="' + paid + '"') + '</div>';
+                }
+                if (!itemIsPaid) menu += '<div class="st-debt-card-menu-item">' + actionButton('delete', debt, 'Delete', 'fa-trash', 'btn-sm btn-danger', ' data-return-stock="true"') + '</div>';
             }
-            if (debt.status !== 'paid') html += '<button type="button" class="btn-sm btn-danger" data-debt-action="delete" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" data-return-stock="' + (debt.status !== 'paid' ? 'true' : 'false') + '" title="Delete"><i class="fas fa-trash"></i></button>';
-        }
-
-        if (isSeller) {
-            if (debt.status === 'denied') {
-                html += '<button type="button" class="btn-sm btn-warning" data-debt-action="relend" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" title="Re-lend"><i class="fas fa-redo-alt"></i></button>' +
-                        '<button type="button" class="btn-sm btn-danger" data-debt-action="delete-denied" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" title="Delete"><i class="fas fa-trash"></i></button>';
-            } else if (debt.status !== 'paid') {
-                html += '<button type="button" class="btn-sm btn-secondary" data-debt-action="edit" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" title="Edit"><i class="fas fa-edit"></i></button>' +
-                        '<button type="button" class="btn-sm btn-success" data-debt-action="paid" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" data-borrower="' + escapeHtml(String(debt.borrowerName || '')) + '" data-product="' + escapeHtml(String(debt.product || '')) + '" data-quantity="' + quantity + '" data-total="' + totalAmount + '" data-paid="' + paidAmount + '" title="Mark as Paid"><i class="fas fa-check-circle"></i></button>' +
-                        '<button type="button" class="btn-sm btn-danger" data-debt-action="delete" data-debt-id="' + escapeHtml(String(debt.id || '')) + '" data-return-stock="true" title="Delete"><i class="fas fa-trash"></i></button>';
+            if (isSeller) {
+                if (debt.status === 'denied') {
+                    menu += '<div class="st-debt-card-menu-item">' + actionButton('relend', debt, 'Re-lend', 'fa-redo-alt', 'btn-sm btn-warning') + actionButton('delete-denied', debt, 'Delete', 'fa-trash', 'btn-sm btn-danger') + '</div>';
+                } else if (debt.status !== 'paid') {
+                    menu += '<div class="st-debt-card-menu-item">' + actionButton('edit', debt, 'Edit', 'fa-edit', 'btn-sm btn-secondary') + actionButton('paid', debt, 'Mark as Paid', 'fa-check-circle', 'btn-sm btn-success', ' data-borrower="' + escapeHtml(String(debt.borrowerName || '')) + '" data-product="' + escapeHtml(String(debt.product || '')) + '" data-quantity="' + quantity + '" data-total="' + total + '" data-paid="' + paid + '"') + actionButton('delete', debt, 'Delete', 'fa-trash', 'btn-sm btn-danger', ' data-return-stock="true"') + '</div>';
+                }
             }
-        }
+        });
+        menu += '</div>';
 
-        html += '</div></td></tr>';
+        var itemsHtml = items.map(function(debt) {
+            var qty = Number(debt.quantity) || 0;
+            var total = Number(debt.totalAmount) || 0;
+            var itemPaidNow = Number(debt.paidAmount) || 0;
+            var itemStatus = debt.status === 'denied' ? 'Denied' : (total > 0 && itemPaidNow >= total ? 'Paid' : (itemPaidNow > 0 || debt.status === 'partial' ? 'Partial' : 'Pending'));
+            var itemStatusClass = itemStatus === 'Paid' ? 'success' : itemStatus === 'Partial' ? 'info' : itemStatus === 'Denied' ? 'danger' : 'warning';
+            return '<div class="st-debt-card-product"><div class="st-debt-card-product-name">' + escapeHtml(debt.product || 'Item') + '</div><div class="st-debt-card-product-sub">' + formatQuantity(qty) + (debt.unit ? ' ' + pluralizeUnit(debt.unit, qty) : '') + ' × ' + formatCurrency(Number(debt.unitPrice) || 0) + '<span style="float:right;font-weight:800;color:#1e293b;">' + formatCurrency(total) + '</span></div><div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;"><span style="font-size:.82rem;color:#64748b;">Status</span><span class="badge ' + itemStatusClass + '">' + itemStatus + '</span></div></div>';
+        }).join('');
+
+        return '<article class="st-debt-card">' +
+            '<div class="st-debt-card-head"><div class="st-debt-card-person">' + photo + '<div style="min-width:0"><div class="st-debt-card-name">' + borrower + '</div><div class="st-debt-card-id">' + items.length + ' item(s) • ' + escapeHtml(String(first.id || 'Debt')) + '</div></div></div>' +
+            '<div class="st-debt-card-menu-wrap"><button type="button" class="st-debt-card-menu-btn" aria-label="Debt options" onclick="toggleDebtCardMenu(' + cardIndex + ', event)"><i class="fas fa-ellipsis-vertical"></i></button>' + menu + '</div></div>' +
+            '<div class="st-debt-card-meta"><span><strong>Phone:</strong> ' + phone + '</span><span><strong>NIDA:</strong> ' + nida + '</span><span><strong>Branch:</strong> ' + escapeHtml(String(branchName)) + '</span><span><strong>Date:</strong> ' + dateDisplay + '</span></div>' +
+            '<div class="st-debt-card-items">' + itemsHtml + '</div>' +
+            '<div class="st-debt-card-finance"><div class="st-debt-card-finance-row total"><span>Total</span><span>' + formatCurrency(totalAmount) + '</span></div><div class="st-debt-card-finance-row"><span>Paid</span><span>' + formatCurrency(paidAmount) + '</span></div><div class="st-debt-card-finance-row balance"><span>Balance</span><strong style="color:' + (balance > 0 && !allDenied ? 'var(--warning)' : 'var(--success)') + ';">' + formatCurrency(balance) + '</strong></div></div>' +
+            '<div class="st-debt-card-status"><span class="badge ' + statusClass + '">' + statusText + '</span><span class="st-debt-card-date">' + items.length + ' product(s)</span></div>' +
+            '</article>';
+    }).join('');
+
+    if (cardsContainer) cardsContainer.innerHTML = html;
+    if (tableBody) tableBody.innerHTML = '';
+}
+
+// Debt Card action loading helper MUST be global because the delegated
+// click handler and the individual Debt action functions are outside
+// displayDebtsTable(). Keeping it global preserves all existing actions.
+function setDebtCardActionLoading(button, isLoading, loadingText) {
+    if (!button) return;
+    if (isLoading) {
+        if (!button.dataset.originalHtml) button.dataset.originalHtml = button.innerHTML;
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (loadingText || 'Processing...');
+        button.style.pointerEvents = 'none';
+    } else {
+        if (button.dataset.originalHtml) {
+            button.innerHTML = button.dataset.originalHtml;
+            delete button.dataset.originalHtml;
+        }
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+        button.style.pointerEvents = '';
+    }
+}
+
+function toggleDebtCardMenu(cardIndex, event) {
+    if (event) event.stopPropagation();
+    document.querySelectorAll('.st-debt-card-menu.show').forEach(function(menu) {
+        if (menu.id !== 'debtCardMenu-' + cardIndex) menu.classList.remove('show');
     });
-
-    if (tableBody) tableBody.innerHTML = html;
+    var menu = document.getElementById('debtCardMenu-' + cardIndex);
+    if (menu) menu.classList.toggle('show');
 }
 
-// Isolated Debt action handler. Uses data-* attributes instead of inline onclick,
-// preventing malformed HTML attributes when borrower/product names contain quotes.
-if (!window.__smartTradeDebtActionHandlerV57) {
-    window.__smartTradeDebtActionHandlerV57 = true;
-    document.addEventListener('click', function(event) {
-        var button = event.target.closest ? event.target.closest('.st-debt-actions button[data-debt-action]') : null;
-        if (!button) return;
-        event.preventDefault();
-        event.stopPropagation();
-        var action = button.getAttribute('data-debt-action');
-        var id = button.getAttribute('data-debt-id') || '';
+function printDebtAgreementGroup(cardIndex) {
+    // IMPORTANT: do not depend on the first row containing all borrower fields.
+    // A Complete Debt is one card, but older/synced rows can have borrower
+    // information distributed across the rows. Resolve each field from the
+    // whole card before generating the agreement.
+    var group = (window.currentDebtCardGroups || [])[Number(cardIndex)];
+    if (!group || !Array.isArray(group.items) || !group.items.length) {
+        showNotification('Debt transaction not found', 'error');
+        return;
+    }
+
+    var items = group.items;
+    var first = items[0] || {};
+
+    function firstNonEmpty(field) {
+        for (var i = 0; i < items.length; i++) {
+            var value = items[i] && items[i][field];
+            if (value !== null && value !== undefined && String(value).trim() !== '') {
+                return String(value);
+            }
+        }
+        return '';
+    }
+
+    var borrowerName = firstNonEmpty('borrowerName');
+    var borrowerPhone = firstNonEmpty('borrowerPhone');
+    var borrowerNIDA = firstNonEmpty('borrowerNIDA');
+
+    // Open synchronously from the actual menu click. This avoids popup
+    // blocking, while the complete HTML is written only after all data has
+    // been resolved.
+    var printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        showNotification('Please allow pop-ups to print the agreement form.', 'error');
+        return;
+    }
+
+    var photoRecord = null;
+    for (var pi = 0; pi < items.length; pi++) {
+        if (items[pi].photoBase64 || items[pi].photoId) {
+            photoRecord = items[pi];
+            break;
+        }
+    }
+    if (!photoRecord) photoRecord = getSharedDebtPhotoRecord(first);
+
+    var photo = '';
+    if (photoRecord) {
+        if (photoRecord.photoBase64) photo = debtPhotoDataUrl(photoRecord);
+        else if (photoRecord.photoId) photo = getDebtPhotoFromCache(photoRecord.photoId) || '';
+        if (!photo && photoRecord.photoId && isOnline && String(photoRecord.id).indexOf('OFFLINE_') !== 0) {
+            photo = 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(photoRecord.photoId) + '=s1200';
+        }
+    }
+
+    var agreementItems = items.map(function(debt) {
+        return {
+            product: debt.product || '',
+            qty: Number(debt.quantity) || 0,
+            unitPrice: Number(debt.unitPrice) || 0,
+            subtotal: Number(debt.totalAmount) || Number(debt.total) || 0,
+            unit: debt.unit || ''
+        };
+    });
+    var grandTotal = agreementItems.reduce(function(sum, item) {
+        return sum + (Number(item.subtotal) || 0);
+    }, 0);
+
+    // Give the new window a visible loading document immediately. This also
+    // prevents a blank tab if the browser delays document rendering.
+    try {
+        printWindow.document.open();
+        printWindow.document.write('<!doctype html><html><head><meta charset="UTF-8"><title>Debt Agreement</title></head><body style="font-family:Arial,sans-serif;padding:30px;text-align:center"><p>Preparing Debt Agreement...</p></body></html>');
+        printWindow.document.close();
+    } catch (e) {
+        console.error('Unable to initialize agreement print window:', e);
+    }
+
+    // Generate the final agreement after the popup has been initialized.
+    setTimeout(function() {
         try {
-            if (action === 'edit' && typeof editDebt === 'function') editDebt(id);
-            else if (action === 'deny' && typeof openDenyDebtModal === 'function') openDenyDebtModal(id, button.getAttribute('data-borrower') || '', button.getAttribute('data-product') || '', Number(button.getAttribute('data-total')) || 0);
-            else if (action === 'paid' && typeof openReturnDebtModal === 'function') openReturnDebtModal(id, button.getAttribute('data-borrower') || '', button.getAttribute('data-product') || '', Number(button.getAttribute('data-quantity')) || 0, Number(button.getAttribute('data-total')) || 0, Number(button.getAttribute('data-paid')) || 0);
-            else if (action === 'delete' && typeof deleteDebt === 'function') deleteDebt(id, button.getAttribute('data-return-stock') === 'true');
-            else if (action === 'relend' && typeof reLendDebt === 'function') reLendDebt(id);
-            else if (action === 'delete-denied' && typeof deleteDeniedDebt === 'function') deleteDeniedDebt(id);
-        } catch (err) {
-            console.error('Debt action failed:', err);
+            if (printWindow && !printWindow.closed) {
+                generateDebtAgreement(
+                    agreementItems,
+                    borrowerName,
+                    borrowerPhone,
+                    grandTotal,
+                    photo,
+                    borrowerNIDA,
+                    printWindow
+                );
+            }
+        } catch (error) {
+            console.error('Debt Agreement generation failed:', error);
+            try {
+                if (printWindow && !printWindow.closed) {
+                    printWindow.document.open();
+                    printWindow.document.write('<!doctype html><html><body style="font-family:Arial,sans-serif;padding:30px"><h2>Debt Agreement</h2><p>Unable to generate the agreement. Please try again.</p></body></html>');
+                    printWindow.document.close();
+                }
+            } catch (fallbackError) {
+                console.error('Debt Agreement fallback failed:', fallbackError);
+            }
+            showNotification('Failed to generate Debt Agreement. Please try again.', 'error');
         }
-    }, true);
+    }, 80);
 }
 
-// New isolated photo click handler for the rebuilt Debts table.
-// It is attached once, uses a BUTTON target, and never selects/highlights the row.
-if (!window.__smartTradeDebtPhotoHandlerV54) {
-    window.__smartTradeDebtPhotoHandlerV54 = true;
+// Print a receipt confirming that the entire debt card has been fully paid.
+// This is intentionally separate from the Debt Agreement: Agreements are for
+// taking goods on credit, while this receipt confirms final settlement.
+let debtPaymentReceiptCounter = 0;
+
+function printDebtPaymentReceiptGroup(cardIndex) {
+    var group = window.currentDebtCardGroups && window.currentDebtCardGroups[Number(cardIndex)];
+    if (!group || !group.items || !group.items.length) {
+        showNotification('Unable to find this debt transaction.', 'error');
+        return;
+    }
+
+    var items = group.items;
+    var first = group.first || items[0] || {};
+    var totalAmount = items.reduce(function(sum, d) { return sum + (Number(d.totalAmount) || 0); }, 0);
+    var paidAmount = items.reduce(function(sum, d) { return sum + (Number(d.paidAmount) || 0); }, 0);
+    var balance = Math.max(0, totalAmount - paidAmount);
+
+    // Guard the action even if the displayed card became stale.
+    if (!(items.length > 0 && items.every(function(d) {
+        var t = Number(d.totalAmount) || 0;
+        var p = Number(d.paidAmount) || 0;
+        return d.status === 'paid' || (t > 0 && p >= t);
+    }))) {
+        showNotification('This debt is not fully paid yet.', 'error');
+        return;
+    }
+
+    var printWindow = window.open('', '_blank');
+    if (!printWindow) {
+        showNotification('Please allow pop-ups to print the payment receipt.', 'error');
+        return;
+    }
+
+    debtPaymentReceiptCounter++;
+    var receiptNo = 'DPR-' + Date.now().toString().slice(-8) + '-' + debtPaymentReceiptCounter;
+    var now = new Date();
+    var dateTimeDisplay = formatDate(now.toISOString(), true) + ' ' + new Intl.DateTimeFormat(undefined, {
+        timeZone: getBusinessTimeZone(), hour: '2-digit', minute: '2-digit', second: '2-digit'
+    }).format(now);
+    var sellerName = currentUser.userType === 'seller' ? (currentUser.sellerName || 'Seller') : 'Admin';
+    var borrowerName = String(first.borrowerName || '').trim();
+    var borrowerPhone = String(first.borrowerPhone || '').trim();
+    var borrowerNIDA = String(first.borrowerNIDA || '').trim();
+    var branchName = first.branchId || 'Main Branch';
+    var hasCachedLogo = logoBase64Cache && logoBase64Cache.data && logoBase64Cache.url === currentUser.logoUrl;
+    var logoHTML = hasCachedLogo ? '<img src="' + logoBase64Cache.data + '" class="receipt-logo" alt="Business logo">' : '';
+    var rows = items.map(function(item) {
+        return '<tr><td>' + escapeHtml(item.product || 'Item') + '</td><td style="text-align:center">' + formatQuantity(Number(item.quantity) || 0) + (item.unit ? ' ' + pluralizeUnit(item.unit, Number(item.quantity) || 0) : '') + '</td><td style="text-align:right">' + formatCurrency(Number(item.unitPrice) || 0) + '</td><td style="text-align:right">' + formatCurrency(Number(item.totalAmount) || 0) + '</td></tr>';
+    }).join('');
+
+    var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Debt Payment Receipt ' + escapeHtml(receiptNo) + '</title>' +
+        '<style>body{font-family:Courier New,monospace;color:#1e293b;padding:20px;max-width:460px;margin:0 auto}.receipt-header{text-align:center;margin-bottom:15px;border-bottom:2px dashed #94a3b8;padding-bottom:15px}.receipt-logo{width:60px;height:60px;border-radius:50%;object-fit:cover;margin-bottom:8px}.receipt-header h1{font-size:1.2rem;margin:0 0 4px;text-transform:uppercase}.receipt-title{font-size:1rem;font-weight:700;margin-top:6px}.receipt-meta{font-size:.8rem;margin-bottom:12px}.receipt-meta div{display:flex;justify-content:space-between;gap:12px;margin:3px 0}.receipt-meta strong,.receipt-meta span:last-child{text-align:right}table{width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:12px}th{text-align:left;border-bottom:1px solid #1e293b;padding:4px 2px}td{padding:4px 2px;border-bottom:1px dashed #cbd5e1}.receipt-total{border-top:2px dashed #94a3b8;padding-top:10px;display:flex;justify-content:space-between;font-size:1.05rem;font-weight:700}.payment-status{margin-top:12px;padding:10px;border:1px solid #94a3b8;text-align:center;font-weight:800}.receipt-footer{text-align:center;margin-top:20px;font-size:.8rem;color:#64748b}.print-btn{display:block;width:220px;margin:0 auto 20px;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;font-family:Segoe UI,sans-serif}@media print{.print-btn{display:none}body{padding:0;max-width:100%}}</style></head><body>' +
+        '<button class="print-btn" onclick="window.print()">🖨️ Print Payment Receipt</button>' +
+        '<div class="receipt-header">' + logoHTML + '<h1>' + escapeHtml(currentUser.business || 'Business') + '</h1><div class="receipt-title">DEBT PAYMENT RECEIPT</div></div>' +
+        '<div class="receipt-meta"><div><span>Receipt No:</span><strong>' + escapeHtml(receiptNo) + '</strong></div><div><span>Date & Time:</span><strong>' + escapeHtml(dateTimeDisplay) + '</strong></div><div><span>Borrower:</span><strong>' + escapeHtml(borrowerName || '-') + '</strong></div>' +
+        (borrowerPhone ? '<div><span>Phone:</span><strong>' + escapeHtml(borrowerPhone) + '</strong></div>' : '') +
+        (borrowerNIDA ? '<div><span>NIDA:</span><strong>' + escapeHtml(borrowerNIDA) + '</strong></div>' : '') +
+        '<div><span>Branch:</span><strong>' + escapeHtml(String(branchName)) + '</strong></div><div><span>Served by:</span><strong>' + escapeHtml(sellerName) + '</strong></div></div>' +
+        '<table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Price</th><th style="text-align:right">Total</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+        '<div class="receipt-total"><span>TOTAL DEBT</span><span>' + formatCurrency(totalAmount) + '</span></div>' +
+        '<div class="receipt-meta" style="margin-top:10px"><div><span>Total Paid:</span><strong>' + formatCurrency(paidAmount) + '</strong></div><div><span>Balance:</span><strong>' + formatCurrency(balance) + '</strong></div></div>' +
+        '<div class="payment-status">✓ DEBT FULLY PAID</div><div class="receipt-footer"><p>Thank you for completing your payment.</p><p>This receipt confirms that the above debt has been settled in full.</p></div></body></html>';
+
+    try {
+        printWindow.document.open();
+        printWindow.document.write(html);
+        printWindow.document.close();
+    } catch (e) {
+        try { printWindow.close(); } catch (_) {}
+        showNotification('Failed to generate the debt payment receipt.', 'error');
+    }
+}
+
+// Isolated handler for the card menu. It handles the new group-level print
+// action and the existing row-level edit/pay/delete actions without relying
+// on the old table wrapper selector.
+if (!window.__smartTradeDebtCardMenuHandlerV60) {
+    window.__smartTradeDebtCardMenuHandlerV60 = true;
     document.addEventListener('click', function(event) {
-        var button = event.target.closest ? event.target.closest('.st-debt-photo-btn') : null;
-        if (!button) return;
-        event.preventDefault();
-        event.stopPropagation();
-        var debtId = decodeURIComponent(button.getAttribute('data-st-debt-photo-id') || '');
-        var borrowerName = decodeURIComponent(button.getAttribute('data-st-debt-photo-name') || '');
-        if (typeof openDebtPhotoLightbox === 'function') {
-            openDebtPhotoLightbox(debtId, borrowerName);
+        var photoButton = event.target.closest ? event.target.closest('[data-st-debt-photo-id]') : null;
+        if (photoButton) {
+            event.preventDefault();
+            event.stopPropagation();
+            var photoId = '';
+            try { photoId = decodeURIComponent(photoButton.getAttribute('data-st-debt-photo-id') || ''); } catch (e) { photoId = photoButton.getAttribute('data-st-debt-photo-id') || ''; }
+            var photoName = '';
+            try { photoName = decodeURIComponent(photoButton.getAttribute('data-st-debt-photo-name') || ''); } catch (e) { photoName = photoButton.getAttribute('data-st-debt-photo-name') || ''; }
+            if (typeof openDebtPhotoLightbox === 'function') openDebtPhotoLightbox(photoId, photoName);
+            return;
         }
+        var paidReceiptButton = event.target.closest ? event.target.closest('[data-debt-menu-action="print-paid-receipt"]') : null;
+        if (paidReceiptButton) {
+            event.preventDefault(); event.stopPropagation();
+            printDebtPaymentReceiptGroup(paidReceiptButton.getAttribute('data-debt-card-index') || '');
+            var paidMenu = paidReceiptButton.closest('.st-debt-card-menu');
+            if (paidMenu) paidMenu.classList.remove('show');
+            return;
+        }
+        var printButton = event.target.closest ? event.target.closest('[data-debt-menu-action="print-group"]') : null;
+        if (printButton) {
+            event.preventDefault(); event.stopPropagation();
+            printDebtAgreementGroup(printButton.getAttribute('data-debt-card-index') || '');
+            var menu = printButton.closest('.st-debt-card-menu');
+            if (menu) menu.classList.remove('show');
+            return;
+        }
+        var button = event.target.closest ? event.target.closest('.st-debt-card-menu button[data-debt-action]') : null;
+        if (button) {
+            event.preventDefault(); event.stopPropagation();
+            if (button.disabled) return;
+            var action = button.getAttribute('data-debt-action');
+            var id = button.getAttribute('data-debt-id') || '';
+
+            // All Debt actions that change server data are ONLINE-ONLY.
+            // Do this at the card level as well as inside the individual
+            // functions, so the user gets an immediate, unambiguous response
+            // instead of a silent fetch/queue attempt while offline.
+            if (!navigator.onLine && ['edit','deny','paid','delete','relend','delete-denied'].includes(action)) {
+                showNotification('This Debt action requires an internet connection. No offline queue is used.', 'error');
+                return;
+            }
+
+            setDebtCardActionLoading(button, true,
+                action === 'edit' ? 'Opening...' :
+                action === 'deny' ? 'Opening...' :
+                action === 'paid' ? 'Opening...' :
+                action === 'delete' || action === 'delete-denied' ? 'Deleting...' :
+                action === 'relend' ? 'Re-lending...' : 'Processing...');
+
+            try {
+                if (action === 'edit' && typeof editDebt === 'function') {
+                    editDebt(id);
+                    setTimeout(() => setDebtCardActionLoading(button, false), 450);
+                } else if (action === 'deny' && typeof openDenyDebtModal === 'function') {
+                    openDenyDebtModal(id, button.getAttribute('data-borrower') || '', button.getAttribute('data-product') || '', Number(button.getAttribute('data-total')) || 0);
+                    setTimeout(() => setDebtCardActionLoading(button, false), 450);
+                } else if (action === 'paid' && typeof openReturnDebtModal === 'function') {
+                    openReturnDebtModal(id, button.getAttribute('data-borrower') || '', button.getAttribute('data-product') || '', Number(button.getAttribute('data-quantity')) || 0, Number(button.getAttribute('data-total')) || 0, Number(button.getAttribute('data-paid')) || 0);
+                    setTimeout(() => setDebtCardActionLoading(button, false), 450);
+                } else if (action === 'delete' && typeof deleteDebt === 'function') {
+                    deleteDebt(id, button.getAttribute('data-return-stock') === 'true', button);
+                    setTimeout(() => setDebtCardActionLoading(button, false), 700);
+                } else if (action === 'relend' && typeof reLendDebt === 'function') {
+                    reLendDebt(id, button);
+                    setTimeout(() => setDebtCardActionLoading(button, false), 700);
+                } else if (action === 'delete-denied' && typeof deleteDeniedDebt === 'function') {
+                    deleteDeniedDebt(id, button);
+                    setTimeout(() => setDebtCardActionLoading(button, false), 700);
+                } else {
+                    setDebtCardActionLoading(button, false);
+                }
+            } catch (err) {
+                setDebtCardActionLoading(button, false);
+                console.error('Debt action failed:', err);
+            }
+            var menu = button.closest('.st-debt-card-menu');
+            if (menu) menu.classList.remove('show');
+            return;
+        }
+        if (event.target.closest && event.target.closest('.st-debt-card-menu-wrap')) return;
+        document.querySelectorAll('.st-debt-card-menu.show').forEach(function(menu) { menu.classList.remove('show'); });
     }, true);
 }
 
@@ -29282,6 +29860,10 @@ function hideDenyDebtModal() {
 }
 
 async function denyDebt() {
+    if (!navigator.onLine) {
+        showNotification('Cannot deny Debt while offline. Please connect to the internet and try again.', 'error');
+        return;
+    }
     const debtId = document.getElementById('denyDebtId').value;
     const reason = document.getElementById('denyDebtReason').value.trim();
     
@@ -29330,16 +29912,27 @@ async function denyDebt() {
     setButtonLoading('denyDebtBtn', 'denyDebtSpinner', 'denyDebtText', false);
 }
 
-async function reLendDebt(debtId) {
+async function reLendDebt(debtId, sourceButton) {
+    if (!navigator.onLine) {
+        setDebtCardActionLoading(sourceButton, false);
+        showNotification('Cannot re-lend Debt while offline. Please connect to the internet and try again.', 'error');
+        return;
+    }
     showConfirmationModal(
         'Re-lend Debt',
         'Are you sure you want to re-lend this debt? It will become pending again.',
         async () => {
+            if (!navigator.onLine) {
+                setDebtCardActionLoading(sourceButton, false);
+                showNotification('Cannot re-lend Debt while offline. Please connect to the internet and try again.', 'error');
+                return;
+            }
             try {
                 // Find the debt in cache
                 const debt = debtsCache.data.find(d => d.id === debtId);
                 if (!debt) {
                     showNotification('Debt not found', 'error');
+                    setDebtCardActionLoading(sourceButton, false);
                     return;
                 }
                 
@@ -29370,21 +29963,34 @@ async function reLendDebt(debtId) {
                     
                     // Background sync
                     refreshAllData();
+                    setDebtCardActionLoading(sourceButton, false);
                 } else {
                     showNotification(result.error || 'Failed to re-lend debt', 'error');
+                    setDebtCardActionLoading(sourceButton, false);
                 }
             } catch (error) {
                 showNotification('Network error re-lending debt', 'error');
+                setDebtCardActionLoading(sourceButton, false);
             }
         }
     );
 }
 
-function deleteDeniedDebt(debtId) {
+function deleteDeniedDebt(debtId, sourceButton) {
+    if (!navigator.onLine) {
+        setDebtCardActionLoading(sourceButton, false);
+        showNotification('Cannot delete Debt while offline. Please connect to the internet and try again.', 'error');
+        return;
+    }
     showConfirmationModal(
         'Delete Denied Debt',
         'Are you sure you want to delete this denied debt? The items will be returned to stock.',
         async () => {
+            if (!navigator.onLine) {
+                setDebtCardActionLoading(sourceButton, false);
+                showNotification('Cannot delete Debt while offline. Please connect to the internet and try again.', 'error');
+                return;
+            }
             try {
                 const result = await apiCall('deleteDebt', {
                     debtId,
@@ -29420,37 +30026,14 @@ function deleteDeniedDebt(debtId) {
                     loadDashboard();
                 } else {
                     showNotification(result.error || 'Failed to delete debt', 'error');
+                    setDebtCardActionLoading(sourceButton, false);
                 }
             } catch (error) {
-                // Offline/network failure - queue the delete for later
-                // sync and remove it from the local cache right away.
-                const debt = (debtsCache.data || []).find(d => d.id === debtId);
-                
-                if (!offlineData.deletes) offlineData.deletes = [];
-                offlineData.deletes.push({ type: 'debt', debtId, returnStock: true });
-                saveOfflineData();
-                
-                const index = debtsCache.data.findIndex(d => d.id === debtId);
-                if (index !== -1) {
-                    debtsCache.data.splice(index, 1);
-                    
-                    if (currentUser.userType === 'seller') {
-                        debtsCache.filtered = debtsCache.data.filter(d => 
-                            d.sellerId === currentUser.sellerId
-                        );
-                    } else {
-                        debtsCache.filtered = debtsCache.data.filter(d => 
-                            d.status !== 'denied'
-                        );
-                    }
-                    
-                    saveDebtsCache();
-                    displayDebtsTable();
-                    document.getElementById('debtsBadge').textContent = (debtsCache.data || []).length;
-                }
-                
-                showNotification('Denied debt deleted offline. Will sync when online.', 'info');
-                loadDashboard();
+                // ONLINE-ONLY: never queue denied-Debt deletion or modify local stock.
+                console.error('Online denied Debt deletion failed:', error);
+                showNotification('Could not delete Debt from the server. No offline queue was used.', 'error');
+                setDebtCardActionLoading(sourceButton, false);
+                loadDebts();
             }
         }
     );
@@ -29590,6 +30173,7 @@ function resetDebtFormAfterSubmit() {
 // ============================================
 
 let currentDebtCart = [];
+let currentDebtTransactionId = null;
 
 // Same idea as remoteSaleCartSessions above, for Debt - separate carts
 // per customerSessionId from the phone, each an independent
@@ -29876,45 +30460,85 @@ function completeDebtForSession(sessionId) {
 
 async function completeDebtForSessionConfirmed(sessionId, issueAgreement = true) {
     const session = remoteDebtCartSessions[sessionId];
-    if (!session) return;
-    
+    if (!session || !session.items.length) return;
+    if (!navigator.onLine) {
+        showNotification('Cannot complete Debt while offline. Please connect to the internet and try again.', 'error');
+        return;
+    }
+
+    showDebtSavingOverlay('Saving scanned Debt directly to server...');
     const borrowerInfo = {
         borrowerName: session.customerName || '',
         borrowerPhone: '',
         borrowerNIDA: '',
         notes: 'Recorded via Connect Device scanner'
     };
-    
     const itemsToProcess = mergeDebtCartItemsForSubmission(session.items);
-    let successCount = 0;
-    let offlineCount = 0;
-    
-    for (const item of itemsToProcess) {
-        const result = await processDebtCartItem(item, borrowerInfo, '', '', null);
-        if (result === 'online') successCount++;
-        else if (result === 'offline') offlineCount++;
+    const transactionId = 'DEBT_TX_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
+    itemsToProcess.forEach(function(item, index) {
+        item.clientDebtId = 'DEBT_' + transactionId + '_' + index;
+        item.operationId = transactionId + '_ITEM_' + index;
+    });
+
+    try {
+        const result = await apiCall('addDebtBatch', {
+            databaseId: currentUser.databaseId,
+            transactionId: transactionId,
+            timestamp: new Date().toISOString(),
+            borrowerName: borrowerInfo.borrowerName,
+            borrowerPhone: '',
+            borrowerNIDA: '',
+            photoId: '',
+            photoUrl: '',
+            photoBase64: '',
+            photoMimeType: 'image/jpeg',
+            sellerId: currentUser.sellerId,
+            branchId: currentUser.branchId || 'MAIN',
+            notes: borrowerInfo.notes,
+            checkStock: true,
+            items: itemsToProcess.map(function(item) {
+                return {
+                    debtId: item.clientDebtId,
+                    operationId: item.operationId,
+                    product: item.product,
+                    quantity: Number(item.qty) || 0,
+                    unitPrice: Number(item.unitPrice) || 0,
+                    unit: item.unit || '',
+                    branchId: item.branchId || currentUser.branchId || 'MAIN',
+                    sellerId: currentUser.sellerId,
+                    isStockProduct: item.isStockProduct === true,
+                    status: 'pending',
+                    notes: borrowerInfo.notes
+                };
+            })
+        }, 30000);
+
+        if (!result || !result.success || !Array.isArray(result.debts) || result.debts.length !== itemsToProcess.length) {
+            throw new Error((result && result.error) || 'Bulk Debt save failed.');
+        }
+
+        showDebtSavingOverlay('Debt saved successfully. Updating records...');
+        for (const debt of result.debts) {
+            await handleSuccessfulDebtSave(debt, debt.id, '', debt, false);
+        }
+        if (typeof loadStock === 'function') {
+            try { await loadStock(); } catch(e) { console.warn('Debt Stock refresh failed:', e); }
+        }
+        showNotification(`Debt recorded for ${borrowerInfo.borrowerName} - ${result.debts.length} item(s) saved in one transaction`, 'success');
+        if (issueAgreement !== false) {
+            const agreementGrandTotal = itemsToProcess.reduce((sum,it)=>sum+(Number(it.subtotal)||0),0);
+            generateDebtAgreement(itemsToProcess, borrowerInfo.borrowerName, '', agreementGrandTotal);
+        }
+        delete remoteDebtCartSessions[sessionId];
+        renderRemoteDebtCartSessions();
+        hideDebtSavingOverlay();
+        await loadDebts();
+        await loadDashboard();
+    } catch (error) {
+        hideDebtSavingOverlay();
+        console.error('Remote Complete Debt bulk save failed:', error);
+        showNotification('Failed to complete Debt: ' + (error?.message || error) + '. The scanned cart was not cleared.', 'error');
     }
-    
-    if (successCount > 0 && offlineCount === 0) {
-        showNotification(`Debt recorded for ${borrowerInfo.borrowerName} - ${successCount} item(s) saved`, 'success');
-    } else if (offlineCount > 0 && successCount === 0) {
-        showNotification(`Debt saved offline for ${borrowerInfo.borrowerName} - ${offlineCount} item(s). Will sync when online.`, 'info');
-    } else if (successCount > 0 && offlineCount > 0) {
-        showNotification(`Debt recorded for ${borrowerInfo.borrowerName} - ${successCount} saved, ${offlineCount} saved offline`, 'info');
-    }
-    
-    if (issueAgreement !== false && (successCount > 0 || offlineCount > 0)) {
-        const agreementGrandTotal = itemsToProcess.reduce((sum, it) => sum + it.subtotal, 0);
-        generateDebtAgreement(itemsToProcess, borrowerInfo.borrowerName, '', agreementGrandTotal);
-    }
-    
-    // Only THIS session is cleared - every other cart (manual or any
-    // other remote borrower's) is left exactly as it was.
-    delete remoteDebtCartSessions[sessionId];
-    renderRemoteDebtCartSessions();
-    
-    loadDebts();
-    loadDashboard();
 }
 
 // Combines cart lines that are for the SAME product+unit+branch into one,
@@ -29967,95 +30591,181 @@ function completeDebt() {
     );
 }
 
+function showDebtSavingOverlay(message = 'Saving Debt...') {
+    let overlay = document.getElementById('smartTradeDebtSavingOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'smartTradeDebtSavingOverlay';
+        overlay.innerHTML = `
+            <div class="smart-trade-debt-saving-panel">
+                <div class="smart-trade-debt-saving-spinner"></div>
+                <div class="smart-trade-debt-saving-title">Completing Debt</div>
+                <div id="smartTradeDebtSavingMessage" class="smart-trade-debt-saving-message"></div>
+            </div>`;
+        document.body.appendChild(overlay);
+    }
+    const msg = document.getElementById('smartTradeDebtSavingMessage');
+    if (msg) msg.textContent = message;
+    overlay.style.display = 'flex';
+    document.body.classList.add('smart-trade-debt-saving-active');
+}
+
+function hideDebtSavingOverlay() {
+    const overlay = document.getElementById('smartTradeDebtSavingOverlay');
+    if (overlay) overlay.style.display = 'none';
+    document.body.classList.remove('smart-trade-debt-saving-active');
+}
+
 async function completeDebtConfirmed(issueAgreement = true) {
+    // ZINGATIA: Debt is ONLINE-ONLY. Complete Debt never writes to the
+    // offline queue and never calls syncOfflineData.
+    if (!navigator.onLine) {
+        isOnline = false;
+        showNotification('Cannot complete Debt while offline. Please connect to the internet and try again.', 'error');
+        return;
+    }
+
+    showDebtSavingOverlay('Saving Debt directly to server...');
     setButtonLoading('submitDebtBtn', 'debtSpinner', 'submitDebtText', true, 'Completing Debt...');
-    
+
     const borrowerName = document.getElementById('debtBorrowerName').value.trim();
     const borrowerPhone = document.getElementById('debtBorrowerPhone').value.trim();
     const borrowerNIDA = document.getElementById('debtBorrowerNIDA').value.trim();
     const notes = document.getElementById('debtNotes').value.trim();
-    
-    // The borrower's photo is uploaded ONCE and shared across every item
-    // in this debt (they're all the same borrower, in the same
-    // transaction) - not re-uploaded per item.
-    let photoId = '';
-    let photoUrl = '';
-    let photoBase64 = null;
-    
-    if (selectedDebtPhotoFile) {
-        photoBase64 = debtPhotoBase64 || (await compressImageFileForSheet(selectedDebtPhotoFile, MAX_DEBT_PHOTO_BASE64_LENGTH)).dataUrl;
-        
-        // Photo is stored directly in the DEBTS sheet as compressed Base64.
-        // No Drive upload is needed; this also works fully offline.
-    }
-    
-    const borrowerInfo = { borrowerName, borrowerPhone, borrowerNIDA, notes };
+    const capturedPhotoFile = selectedDebtPhotoFile;
+    let photoBase64 = debtPhotoBase64 || null;
     const itemsToProcess = mergeDebtCartItemsForSubmission(currentDebtCart);
-    let successCount = 0;
-    let offlineCount = 0;
-    
-    for (const item of itemsToProcess) {
-        const result = await processDebtCartItem(item, borrowerInfo, photoId, photoUrl, photoBase64);
-        if (result === 'online') successCount++;
-        else if (result === 'offline') offlineCount++;
+
+    // One stable transaction ID represents ONE Complete Debt. The backend
+    // saves the entire transaction in one bulk request and uses this same ID
+    // through every retry, so a lost response can never create duplicates.
+    if (!currentDebtTransactionId) {
+        currentDebtTransactionId = 'DEBT_TX_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
     }
-    
-    if (successCount > 0 && offlineCount === 0) {
-        showNotification(`Debt recorded - ${successCount} item(s) saved`, 'success');
-    } else if (offlineCount > 0 && successCount === 0) {
-        showNotification(`Debt saved offline - ${offlineCount} item(s). Will sync when online.`, 'info');
-    } else if (successCount > 0 && offlineCount > 0) {
-        showNotification(`Debt recorded - ${successCount} saved, ${offlineCount} saved offline`, 'info');
+    itemsToProcess.forEach(function(item, index) {
+        item.clientDebtId = item.clientDebtId || ('DEBT_' + currentDebtTransactionId + '_' + index);
+        item.operationId = item.operationId || (currentDebtTransactionId + '_ITEM_' + index);
+    });
+
+    try {
+        if (capturedPhotoFile && !photoBase64) {
+            const compressed = await compressImageFileForSheet(capturedPhotoFile, MAX_DEBT_PHOTO_BASE64_LENGTH);
+            photoBase64 = compressed.dataUrl;
+        }
+
+        showDebtSavingOverlay('Saving ' + itemsToProcess.length + ' item(s) in one bulk transaction...');
+
+        // BULK SAVE: ONE network request for the whole Complete Debt.
+        // No per-product requests, no offline queue, no serial waits.
+        const batchResult = await apiCall('addDebtBatch', {
+            databaseId: currentUser.databaseId,
+            transactionId: currentDebtTransactionId,
+            timestamp: new Date().toISOString(),
+            borrowerName: borrowerName,
+            borrowerPhone: borrowerPhone,
+            borrowerNIDA: borrowerNIDA,
+            photoId: '',
+            photoUrl: '',
+            photoBase64: photoBase64 || '',
+            photoMimeType: 'image/jpeg',
+            sellerId: currentUser.sellerId,
+            branchId: currentUser.branchId || 'MAIN',
+            notes: notes,
+            checkStock: true,
+            items: itemsToProcess.map(function(item) {
+                return {
+                    debtId: item.clientDebtId,
+                    operationId: item.operationId,
+                    product: item.product,
+                    quantity: Number(item.qty) || Number(item.quantity) || 0,
+                    unitPrice: Number(item.unitPrice) || 0,
+                    unit: item.unit || '',
+                    branchId: item.branchId || currentUser.branchId || 'MAIN',
+                    sellerId: currentUser.sellerId,
+                    isStockProduct: item.isStockProduct === true,
+                    status: 'pending',
+                    notes: notes
+                };
+            })
+        }, 30000);
+
+        if (!batchResult || !batchResult.success || !Array.isArray(batchResult.debts) || batchResult.debts.length !== itemsToProcess.length) {
+            throw new Error((batchResult && batchResult.error) || 'Bulk Debt save failed. Please try again.');
+        }
+
+        showDebtSavingOverlay('Debt saved successfully. Updating records...');
+        showNotification('Debt recorded successfully - ' + batchResult.debts.length + ' item(s) saved in one transaction', 'success');
+
+        // Insert only server-confirmed rows. All rows share the same timestamp
+        // and transaction operation prefix, so they render as ONE Debt Card.
+        const resultByOperation = {};
+        (batchResult.results || []).forEach(function(r) {
+            resultByOperation[String(r.operationId)] = r;
+        });
+        for (const item of itemsToProcess) {
+            const r = resultByOperation[String(item.operationId)];
+            const serverDebt = r && r.debt ? r.debt : (batchResult.debts || []).find(function(d) {
+                return d && String(d.operationId) === String(item.operationId);
+            });
+            if (serverDebt) {
+                await handleSuccessfulDebtSave(
+                    item,
+                    r ? r.debtId : serverDebt.id,
+                    '',
+                    serverDebt,
+                    r ? r.alreadyProcessed === true : false
+                );
+            }
+        }
+
+        // Stock was deducted by the backend exactly once for the aggregate
+        // quantity of each Stock product. Refresh only once for display.
+        if (typeof loadStock === 'function' && navigator.onLine) {
+            try { await loadStock(); } catch (stockError) {
+                console.warn('Debt Stock refresh failed:', stockError);
+            }
+        }
+
+        if (issueAgreement !== false) {
+            const agreementGrandTotal = itemsToProcess.reduce((sum, it) => sum + (Number(it.subtotal) || 0), 0);
+            generateDebtAgreement(itemsToProcess, borrowerName, borrowerPhone, agreementGrandTotal, photoBase64, borrowerNIDA);
+        }
+
+        // Clear only after the entire bulk transaction is confirmed.
+        currentDebtCart = [];
+        currentDebtTransactionId = null;
+        clearDebtCartStorage();
+        resetDebtFormAfterSubmit();
+        renderDebtCartSummary();
+
+        setButtonLoading('submitDebtBtn', 'debtSpinner', 'submitDebtText', false);
+        hideDebtSavingOverlay();
+        await loadDebts();
+        await loadDashboard();
+    } catch (error) {
+        hideDebtSavingOverlay();
+        setButtonLoading('submitDebtBtn', 'debtSpinner', 'submitDebtText', false);
+        console.error('Complete Debt bulk save failed:', error);
+        showNotification('Failed to complete Debt: ' + (error?.message || error) + '. No form data was cleared.', 'error');
+        // currentDebtTransactionId and the cart remain intact. Retrying sends
+        // the same operation IDs, so already-saved items are idempotently reused.
     }
-    
-    // Print the agreement form (if the checkbox was left checked) - using
-    // the merged cart items and total, since currentDebtCart is about to
-    // be cleared below.
-    if (issueAgreement !== false && (successCount > 0 || offlineCount > 0)) {
-        const agreementGrandTotal = itemsToProcess.reduce((sum, it) => sum + it.subtotal, 0);
-        generateDebtAgreement(itemsToProcess, borrowerName, borrowerPhone, agreementGrandTotal, photoBase64);
-    }
-    
-    // Reset everything for the next debt - the modal stays open like a
-    // dashboard page, same as Sale.
-    currentDebtCart = [];
-    clearDebtCartStorage();
-    resetDebtFormAfterSubmit();
-    renderDebtCartSummary();
-    
-    loadDebts();
-    loadDashboard();
-    
-    setButtonLoading('submitDebtBtn', 'debtSpinner', 'submitDebtText', false);
 }
 
-// Records exactly one cart item as its own debt row (online with offline
-// fallback) - returns 'online' or 'offline' so completeDebt() can
-// summarize, mirroring processSaleCartItem().
-async function processDebtCartItem(item, borrowerInfo, photoId, photoUrl, photoBase64) {
+// Records exactly one cart item ONLINE. Debt deliberately has no offline
+// fallback and no background queue. A lost response is checked by operationId
+// on the server so idempotency remains safe.
+async function processDebtCartItem(item, borrowerInfo, photoId, photoUrl, photoBase64, transactionTimestamp) {
     const { product, qty: quantity, unitPrice, subtotal: total, isStockProduct, branchId, unit } = item;
     const { borrowerName, borrowerPhone, borrowerNIDA, notes } = borrowerInfo;
-    
-    if (isStockProduct && isOnline) {
-        let available = 0;
-        if (stockCache.data) {
-            stockCache.data.forEach(stockItem => {
-                if (stockItem.product === product && (stockItem.branchId || 'MAIN') === branchId && (stockItem.unit || '') === (unit || '')) {
-                    available += Number(stockItem.quantity) || 0;
-                }
-            });
-        }
-        if (available < quantity) {
-            showNotification(`Insufficient stock for ${product} at ${branchId} branch - skipped`, 'error');
-            return null;
-        }
-    }
-    
-    const debtId = 'DEBT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8).toUpperCase();
-    const timestamp = new Date().toISOString();
-    
+
+    const debtId = item.clientDebtId || ('DEBT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 8).toUpperCase());
+    const operationId = item.operationId || debtId;
+    const timestamp = transactionTimestamp || new Date().toISOString();
+
     const debtData = {
         id: debtId,
+        operationId: operationId,
         timestamp: timestamp,
         borrowerName: borrowerName,
         borrowerPhone: borrowerPhone,
@@ -30068,18 +30778,32 @@ async function processDebtCartItem(item, borrowerInfo, photoId, photoUrl, photoB
         unitPrice: unitPrice,
         total: total || quantity * unitPrice,
         unit: unit,
-        isStockProduct: isStockProduct,
+        isStockProduct: isStockProduct === true,
         branchId: branchId,
         sellerId: currentUser.sellerId,
         notes: notes,
         status: 'pending',
         paidAmount: 0
     };
-    
-    if (isOnline) {
+
+    if (!navigator.onLine) {
+        isOnline = false;
+        showNotification(`Cannot record ${product} while offline.`, 'error');
+        return { status: 'offline', debtData };
+    }
+
+    let result = null;
+    let lastError = null;
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+        if (!navigator.onLine) {
+            isOnline = false;
+            break;
+        }
         try {
-            const result = await apiCall('addDebt', {
+            result = await apiCall('addDebt', {
                 debtId: debtId,
+                operationId: operationId,
                 timestamp: timestamp,
                 borrowerName: borrowerName,
                 borrowerPhone: borrowerPhone,
@@ -30093,30 +30817,64 @@ async function processDebtCartItem(item, borrowerInfo, photoId, photoUrl, photoB
                 unitPrice: unitPrice,
                 total: total || quantity * unitPrice,
                 unit: unit,
-                isStockProduct: isStockProduct,
+                isStockProduct: isStockProduct === true,
                 branchId: branchId,
                 sellerId: currentUser.sellerId,
                 notes: notes,
+                status: 'pending',
+                paidAmount: 0,
                 checkStock: true
             });
-            
-            if (result.success) {
-                await handleSuccessfulDebtSave(debtData, result.debtId || debtId, photoUrl);
-                if (isStockProduct) updateProductDropdowns();
-                return 'online';
-            } else {
-                showNotification(`Failed to record ${product}: ` + (result.error || 'Unknown error'), 'error');
-                return null;
-            }
+            if (result) break;
         } catch (error) {
-            console.error('Error recording debt item:', error);
-            saveDebtOffline(debtData);
-            return 'offline';
+            lastError = error;
+            if (!navigator.onLine) break;
+            if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
         }
-    } else {
-        saveDebtOffline(debtData);
-        return 'offline';
     }
+
+    if (result && result.success) {
+        return {
+            status: 'online',
+            debtData,
+            debtId: result.debtId || debtId,
+            operationId: result.operationId || operationId,
+            serverDebt: result.debt,
+            alreadyProcessed: result.alreadyProcessed === true
+        };
+    }
+
+    // The browser may still be online while the response was lost. Verify the
+    // exact same operation on the server. If it exists, treat it as success;
+    // never enqueue it locally and never create a second operation.
+    if (navigator.onLine) {
+        try {
+            const verify = await apiCall('getDebtByOperation', {
+                operationId: operationId,
+                debtId: debtId
+            }, 12000);
+
+            if (verify && verify.success && verify.found) {
+                return {
+                    status: 'online',
+                    debtData,
+                    debtId: verify.debtId || debtId,
+                    operationId: verify.operationId || operationId,
+                    serverDebt: verify.debt,
+                    alreadyProcessed: true
+                };
+            }
+        } catch (verifyError) {
+            console.warn('Debt server verification failed:', verifyError);
+            lastError = verifyError;
+        }
+    }
+
+    const message = result && result.error
+        ? result.error
+        : (lastError?.message || 'Server could not confirm the Debt.');
+    showNotification(`Failed to record ${product}: ${message}`, 'error');
+    return { status: 'failed', debtData, error: message };
 }
 
 function toggleDebtProductInputMode() {
@@ -30407,7 +31165,8 @@ function editDebt(debtId) {
     if (editPhotoInput) editPhotoInput.value = '';
     if (editGalleryInput) editGalleryInput.value = '';
     const editPhotoPreview = document.getElementById('editDebtPhotoPreview');
-    const existingEditPhoto = debtPhotoDataUrl(debt);
+    const sharedPhotoRecord = getSharedDebtPhotoRecord(debt);
+    const existingEditPhoto = debtPhotoDataUrl(sharedPhotoRecord);
     if (editPhotoPreview) {
         editPhotoPreview.innerHTML = existingEditPhoto
             ? `<img src="${existingEditPhoto}" alt="Borrower Photo" style="width:100%;height:100%;object-fit:cover;">`
@@ -30494,6 +31253,12 @@ function calculateEditDebtTotal() {
 }
 
 async function submitDebtEdit() {
+    // Debt Edit is ONLINE-ONLY. It never writes to or reads from an offline queue.
+    if (!navigator.onLine) {
+        showNotification('Cannot edit Debt while offline. Please connect to the internet and try again.', 'error');
+        return;
+    }
+
     const debtId = document.getElementById('editDebtId').value;
     const originalProduct = document.getElementById('editDebtOriginalProduct').value;
     const originalQuantity = parseFloat(document.getElementById('editDebtOriginalQuantity').value) || 0;
@@ -30587,16 +31352,10 @@ async function submitDebtEdit() {
             showNotification(result.error || 'Failed to update debt', 'error');
         }
     } catch (error) {
-        if (!offlineData.debtEdits) offlineData.debtEdits = [];
-        offlineData.debtEdits.push(payload);
-        saveOfflineData();
-        
-        applyToCache();
-        hideEditDebtModal();
-        showNotification('Debt updated offline. Will sync when online.', 'info');
+        // ONLINE-ONLY: do not save the edit locally and do not queue it.
+        console.error('Online Debt edit failed:', error);
+        showNotification('Could not update Debt on the server. No offline queue was used.', 'error');
         loadDebts();
-        loadStock();
-        loadDashboard();
     }
     
     setButtonLoading('submitDebtEditBtn', 'debtEditSpinner', 'submitDebtEditText', false);
@@ -30816,6 +31575,7 @@ async function submitDebt() {
     
     const debtData = {
         id: debtId,
+        operationId: debtId,
         timestamp: timestamp,
         borrowerName: borrowerName,
         borrowerPhone: borrowerPhone,
@@ -30840,6 +31600,7 @@ async function submitDebt() {
         try {
             const result = await apiCall('addDebt', {
                 debtId: debtId,
+                operationId: debtData.operationId,
                 timestamp: timestamp,
                 borrowerName: borrowerName,
                 borrowerPhone: borrowerPhone,
@@ -30860,27 +31621,25 @@ async function submitDebt() {
                 checkStock: true
             });
             
-            if (result.success) {
-                await handleSuccessfulDebtSave(debtData, result.debtId || debtId, photoUrl);
-                resetDebtFormAfterSubmit();
+            if (result && result.success) {
+                await handleSuccessfulDebtSave(debtData, result.debtId || debtId, photoUrl, result.debt, result.alreadyProcessed === true);
                 showNotification('Debt recorded successfully', 'success');
+                resetDebtFormAfterSubmit();
                 loadDebts();
                 loadDashboard();
                 if (isStockProduct) updateProductDropdowns();
             } else {
-                showNotification(result.error || 'Failed to record debt', 'error');
+                showNotification((result && result.error) || 'Failed to record debt. No data was cleared.', 'error');
             }
         } catch (error) {
             console.error('Error recording debt:', error);
-            saveDebtOffline(debtData);
+            showNotification('Failed to record debt. Please try again while online. No data was cleared.', 'error');
         }
     } else {
-        saveDebtOffline(debtData);
+        showNotification('Cannot record Debt while offline. Please connect to the internet and try again.', 'error');
     }
     
     setButtonLoading('submitDebtBtn', 'debtSpinner', 'submitDebtText', false);
-    selectedDebtPhotoFile = null;
-    debtPhotoBase64 = null;
 }
 
 function fileToBase64(file) {
@@ -30892,15 +31651,13 @@ function fileToBase64(file) {
     });
 }
 
-async function handleSuccessfulDebtSave(debtData, serverDebtId, photoUrl) {
+async function handleSuccessfulDebtSave(debtData, serverDebtId, photoUrl, serverDebt, alreadyProcessed = false) {
     if (!debtsCache.data) debtsCache.data = [];
-    
-    if (debtData.photoBase64 && serverDebtId) {
-        saveDebtPhotoToCache(serverDebtId, debtData.photoBase64);
-    }
-    
-    const newDebt = {
+    const serverRow = serverDebt && typeof serverDebt === 'object' ? serverDebt : {};
+    const operationId = String(serverRow.operationId || debtData.operationId || debtData.id || '');
+    const newDebt = Object.assign({
         id: serverDebtId || debtData.id,
+        operationId: operationId,
         date: debtData.timestamp,
         borrowerName: debtData.borrowerName,
         borrowerPhone: debtData.borrowerPhone,
@@ -30919,47 +31676,17 @@ async function handleSuccessfulDebtSave(debtData, serverDebtId, photoUrl) {
         branchId: debtData.branchId,
         sellerId: debtData.sellerId,
         notes: debtData.notes,
-        lastUpdated: debtData.timestamp
-    };
-    
-    debtsCache.data.push(newDebt);
-    
-    if (currentUser.userType === 'seller') {
-        debtsCache.filtered = debtsCache.data.filter(d => d.sellerId === currentUser.sellerId);
-    } else {
-        debtsCache.filtered = debtsCache.data.filter(d => d.status !== 'denied');
-    }
-    
-    saveDebtsCache();
-    
-    if (debtData.isStockProduct && stockCache.data) {
-        let remainingToReduce = debtData.quantity;
-        const sortedStock = [...stockCache.data]
-            .filter(item => item.product === debtData.product && (item.branchId || 'MAIN') === debtData.branchId && Number(item.quantity) > 0)
-            .sort((a, b) => new Date(a.date) - new Date(b.date));
-        
-        for (let i = 0; i < sortedStock.length && remainingToReduce > 0; i++) {
-            const stockItem = sortedStock[i];
-            const index = stockCache.data.findIndex(item => 
-                item.date === stockItem.date && 
-                item.product === stockItem.product && 
-                Number(item.quantity) === Number(stockItem.quantity)
-            );
-            
-            if (index !== -1) {
-                const currentQty = Number(stockCache.data[index].quantity) || 0;
-                const reduceBy = Math.min(currentQty, remainingToReduce);
-                const newQty = currentQty - reduceBy;
-                stockCache.data[index].quantity = newQty;
-                stockCache.data[index].value = newQty * (Number(stockCache.data[index].buyPrice) || 0);
-                remainingToReduce -= reduceBy;
-            }
-        }
-        
-        stockCache.summary = calculateStockSummary(stockCache.data);
-        saveStockCache();
-        updateProductsFromStock();
-    }
+        lastUpdated: debtData.timestamp,
+        _optimistic: false,
+        _pendingLocal: false
+    }, serverRow);
+    if (debtData.photoBase64 && newDebt.id) saveDebtPhotoToCache(newDebt.id, debtData.photoBase64);
+    confirmOptimisticDebtRow(operationId, newDebt);
+    // STOCK IS ALREADY UPDATED BY addDebt() ON THE SERVER. Do not deduct
+    // local Stock here, because doing so can double-apply a successful request.
+
+    // Keep calculations authoritative after a server-confirmed/idempotent save.
+    // This refresh is read-only and never performs another stock mutation.
 }
 
 function saveDebtPhotoToCache(photoId, base64Data) {
@@ -31043,126 +31770,94 @@ function confirmReturnDebt() {
 }
 
 async function returnDebt() {
+    // Debt payments are ONLINE-ONLY. No Debt payment queue or retry is used.
+    if (!navigator.onLine) {
+        showNotification('Cannot record Debt payment while offline. Please connect to the internet and try again.', 'error');
+        return;
+    }
     const debtId = document.getElementById('returnDebtId').value;
     const paidAmount = parseFloat(document.getElementById('returnDebtPaidAmount').value);
     const totalAmount = parseFloat(document.getElementById('returnDebtTotal').value);
-    
-    if (!paidAmount || paidAmount <= 0) {
-        showNotification('Please enter a valid amount', 'error');
-        return;
-    }
-    
-    if (paidAmount > totalAmount) {
-        showNotification('Amount paid cannot exceed total amount', 'error');
-        return;
-    }
-    
+    if (!paidAmount || paidAmount <= 0) { showNotification('Please enter a valid amount', 'error'); return; }
+    if (paidAmount > totalAmount) { showNotification('Amount paid cannot exceed total amount', 'error'); return; }
+
+    // One immutable id per payment attempt. Every retry reuses this exact ID.
+    var operationId = 'DEBT_PAYMENT_' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '_' + Math.random().toString(36).slice(2));
+    var payment = { operationId: operationId, debtId: debtId, paidAmount: paidAmount, createdAt: new Date().toISOString() };
     setButtonLoading('returnDebtBtn', 'returnDebtSpinner', 'returnDebtText', true);
-    
     try {
-        const result = await apiCall('returnDebt', {
-            debtId,
-            paidAmount
-            // Hatutumi returnStock tena
-        });
-        
+        const result = await apiCall('returnDebt', payment);
         if (result.success) {
-            // Update local cache immediately
             const index = debtsCache.data.findIndex(d => d.id === debtId);
             if (index !== -1) {
-                const newPaidAmount = (debtsCache.data[index].paidAmount || 0) + paidAmount;
-                debtsCache.data[index].paidAmount = newPaidAmount;
-                debtsCache.data[index].status = newPaidAmount >= totalAmount ? 'paid' : 'partial';
-                debtsCache.data[index].lastUpdated = new Date().toISOString();
-                
-                // Update filtered
-                if (currentUser.userType === 'seller') {
-                    debtsCache.filtered = debtsCache.data.filter(d => 
-                        d.sellerId === currentUser.sellerId
-                    );
-                } else {
-                    debtsCache.filtered = debtsCache.data.filter(d => 
-                        d.status !== 'denied'
-                    );
-                }
-                
+                debtsCache.data[index].paidAmount = Number(result.paidAmount);
+                debtsCache.data[index].status = result.status;
+                debtsCache.data[index].lastUpdated = result.timestamp || new Date().toISOString();
+                debtsCache.filtered = currentUser.userType === 'seller'
+                    ? debtsCache.data.filter(d => d.sellerId === currentUser.sellerId)
+                    : debtsCache.data.filter(d => d.status !== 'denied');
                 saveDebtsCache();
                 displayDebtsTable();
                 document.getElementById('debtsBadge').textContent = (debtsCache.data || []).length;
             }
-            
             hideReturnDebtModal();
             showNotification(result.message, 'success');
-            
-            // Background sync
             refreshAllData();
             loadDashboard();
         } else {
+            // A non-retryable server rejection is authoritative; do not queue a bad payment.
             showNotification(result.error || 'Failed to process payment', 'error');
         }
     } catch (error) {
-        showNotification('Network error processing payment', 'error');
+        // ONLINE-ONLY: do not queue or retry Debt payments in the background.
+        console.error('Online Debt payment failed:', error);
+        showNotification('Could not process Debt payment on the server. No offline queue was used.', 'error');
     }
-    
     setButtonLoading('returnDebtBtn', 'returnDebtSpinner', 'returnDebtText', false);
 }
 
-function deleteDebt(debtId, returnStock) {
+function deleteDebt(debtId, returnStock, sourceButton) {
+    // Debt deletion is ONLINE-ONLY. Never queue, cache-delete, or perform
+    // local stock changes when the server cannot be reached.
+    if (!navigator.onLine) {
+        setDebtCardActionLoading(sourceButton, false);
+        showNotification('Cannot delete Debt while offline. Please connect to the internet and try again.', 'error');
+        return;
+    }
+
     showConfirmationModal(
         'Delete Debt',
-        returnStock ? 
-            'Are you sure you want to delete this debt? The items will be returned to stock.' : 
+        returnStock ?
+            'Are you sure you want to delete this debt? The items will be returned to stock.' :
             'Are you sure you want to delete this debt? This action cannot be undone.',
         async () => {
+            if (!navigator.onLine) {
+                setDebtCardActionLoading(sourceButton, false);
+                showNotification('Cannot delete Debt while offline. Please connect to the internet and try again.', 'error');
+                return;
+            }
             try {
                 const result = await apiCall('deleteDebt', {
                     debtId,
                     returnStock
                 });
-                
+
                 if (result.success) {
                     await refreshAllData();
                     showNotification(result.message, 'success');
+                    setDebtCardActionLoading(sourceButton, false);
                     loadDebts();
                     loadDashboard();
                 } else {
+                    setDebtCardActionLoading(sourceButton, false);
                     showNotification(result.error || 'Failed to delete debt', 'error');
                 }
             } catch (error) {
-                // Offline/network failure - queue the delete for later
-                // sync and remove it from the local cache right away.
-                const debt = (debtsCache.data || []).find(d => d.id === debtId);
-                
-                if (!offlineData.deletes) offlineData.deletes = [];
-                offlineData.deletes.push({ type: 'debt', debtId, returnStock });
-                saveOfflineData();
-                
-                if (debtsCache.data) {
-                    const index = debtsCache.data.findIndex(d => d.id === debtId);
-                    if (index !== -1) {
-                        debtsCache.data.splice(index, 1);
-                    }
-                    debtsCache.filtered = currentUser.userType === 'seller'
-                        ? debtsCache.data.filter(d => d.sellerId === currentUser.sellerId)
-                        : debtsCache.data.filter(d => d.status !== 'denied');
-                    saveDebtsCache();
-                    
-                    // Mirror the backend's own stock-return rule locally too.
-                    if (debt && returnStock && debt.status !== 'paid' && stockCache.data) {
-                        const restore = stockCache.data.find(s => s.product === debt.product && (s.branchId || 'MAIN') === (debt.branchId || 'MAIN') && (s.unit || '') === (debt.unit || ''));
-                        if (restore) {
-                            restore.quantity = (restore.quantity || 0) + (Number(debt.quantity) || 0);
-                            restore.value = restore.quantity * (restore.buyPrice || 0);
-                            stockCache.summary = calculateStockSummary(stockCache.data);
-                            saveStockCache();
-                        }
-                    }
-                }
-                
-                showNotification('Debt deleted offline. Will sync when online.', 'info');
+                // ONLINE-ONLY: never place Debt deletion into any offline queue.
+                console.error('Online Debt deletion failed:', error);
+                showNotification('Could not delete Debt from the server. No offline queue was used.', 'error');
+                setDebtCardActionLoading(sourceButton, false);
                 loadDebts();
-                loadStock();
-                loadDashboard();
             }
         }
     );
@@ -31803,7 +32498,12 @@ function generateSaleReceipt(items, customer, paymentMethod, grandTotal) {
 // offline reports above, so it works fully offline too.
 // ============================================
 
-function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal, borrowerPhotoBase64) {
+function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal, borrowerPhotoBase64, borrowerNIDA, targetWindow) {
+    borrowerName = borrowerName == null ? '' : String(borrowerName).trim();
+    borrowerPhone = borrowerPhone == null ? '' : String(borrowerPhone).trim();
+    borrowerNIDA = borrowerNIDA == null ? '' : String(borrowerNIDA).trim();
+    items = Array.isArray(items) ? items : [];
+    grandTotal = Number(grandTotal) || 0;
     const hasCachedLogo = logoBase64Cache && logoBase64Cache.data && logoBase64Cache.url === currentUser.logoUrl;
     const logoHTML = hasCachedLogo
         ? `<img src="${logoBase64Cache.data}" class="agreement-logo" alt="${escapeHtml(currentUser.business || '')} logo">`
@@ -31864,6 +32564,7 @@ function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal, b
     <div class="borrower-info">
         <div><span>Borrower Name:</span><strong>${escapeHtml(borrowerName || '-')}</strong></div>
         ${borrowerPhone ? `<div><span>Phone Number:</span><span>${escapeHtml(borrowerPhone)}</span></div>` : ''}
+        ${borrowerNIDA ? `<div><span>NIDA:</span><span>${escapeHtml(borrowerNIDA)}</span></div>` : ''}
         <div><span>Date:</span><span>${escapeHtml(dateDisplay)}</span></div>
     </div>
     ${borrowerPhotoHTML}
@@ -31888,7 +32589,8 @@ function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal, b
 </body>
 </html>`;
     
-    const agreementWindow = window.open('', '_blank');
+    const agreementWindow = targetWindow || window.__smartTradeDebtPrintWindow || window.open('', '_blank');
+    window.__smartTradeDebtPrintWindow = null;
     if (!agreementWindow) {
         showNotification('Please allow pop-ups to view the agreement form.', 'error');
         return;
@@ -33747,7 +34449,7 @@ document.addEventListener('keydown', function(e) {
 // Listen for online/offline events to trigger immediate checks
 function setupOnlineStatusListener() {
     window.addEventListener('online', function() {
-        console.log('Device came online - checking subscription...');
+            console.log('Device came online - checking subscription...');
         isOnline = true;
         updateSyncIndicator();
         
