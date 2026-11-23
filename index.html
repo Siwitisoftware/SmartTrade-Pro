@@ -9469,8 +9469,11 @@ function formatBusinessDateTime(dateValue = new Date(), locale='en-GB') {
     const d = dateValue instanceof Date ? dateValue : new Date(dateValue);
     return new Intl.DateTimeFormat(locale, { timeZone:getBusinessTimeZone(), year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }).format(d);
 }
-        // Configuration
-        const API_URL = "https://script.google.com/macros/s/AKfycbwMEyz_ZQvfL7ZQtlWwx9iaerRCrvdVd3Bamq-2JyIiBbfGeFDXlQIJtXwq4oLUUtNc5w/exec";
+        // D1-only transport. Apps Script is deliberately not configured or used.
+        const API_URL = "https://smarttrade-pro-api.daxsystems-tz.workers.dev/api";
+        async function smartTradeFetch(_url, options = {}) {
+            return fetch(API_URL, options);
+        }
         const DEFAULT_LOGO_URL = "https://i.imgur.com/XrJpD6d.png";
         
        // State management
@@ -9677,6 +9680,7 @@ let logoElements = {
             saleEdits: [],
             purchaseEdits: [],
                 deletes: [],
+            debts: [],
             salesSyncInFlightOperationIds: [],
             deletesSyncInFlightOperationIds: [],
             lastSync: null,
@@ -9862,267 +9866,132 @@ let editDebtPhotoBase64 = null;
         
         async function syncOfflineData() {
     if (!currentUser.databaseId || offlineData.isSyncing) return;
-    // Track the exact sale operation IDs included in this sync request.
-    // A sale deleted while the request is already in flight must use the
-    // normal server-delete path; a sale deleted before this snapshot is made
-    // is cancelled locally and must NEVER be sent to the server.
-    if (!Array.isArray(offlineData.salesSyncInFlightOperationIds)) {
-        offlineData.salesSyncInFlightOperationIds = [];
-    }
-    // One persistent operation ID per pending sync batch. If the server
-    // completes the batch but the response is lost, the next retry uses the
-    // SAME ID and the server returns an already-processed success instead of
-    // executing the batch a second time. The ID is cleared only after the
-    // queue is successfully cleared.
-    if (!offlineData.syncOperationId) {
-        offlineData.syncOperationId = 'SYNC_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2);
-        saveOfflineData();
-    }
-    
-    if (!offlineData.expenses) offlineData.expenses = [];
-    if (!offlineData.units) {
-        offlineData.units = [];
-    }
-    if (!offlineData.categories) {
-        offlineData.categories = [];
-    }
-    if (!offlineData.purchaseRequestActions) {
-        offlineData.purchaseRequestActions = [];
-    }
-    if (!offlineData.stockEdits) offlineData.stockEdits = [];
-    if (!offlineData.saleEdits) offlineData.saleEdits = [];
-    if (!offlineData.purchaseEdits) offlineData.purchaseEdits = [];
-    if (!offlineData.deletes) offlineData.deletes = [];
-    
-    offlineData.isSyncing = true;
-    updateSyncIndicator();
-    
-    const totalItems = (offlineData.stock?.length || 0) + 
-                       (offlineData.sales?.length || 0) + 
-                       (offlineData.purchases?.length || 0) + 
-                       (offlineData.expenses?.length || 0) +
-                       (offlineData.customers?.length || 0) + 
-                       (offlineData.suppliers?.length || 0) + 
-                       (offlineData.units?.length || 0) +
-                       (offlineData.categories?.length || 0) +
-                       (offlineData.purchaseRequestActions?.length || 0) +
-                       (offlineData.stockEdits?.length || 0) +
-                       (offlineData.saleEdits?.length || 0) +
-                       (offlineData.purchaseEdits?.length || 0) +
-                       (offlineData.deletes?.length || 0);
-    
-    showNotification(`Syncing ${totalItems} offline items...`, 'info');
-    
-    try {
-        // Freeze only the operation IDs that are actually being sent in this
-        // request. This creates a precise boundary for offline sale deletion:
-        // before this point = cancel locally; after this point = queue delete.
-        const salesToSync = Array.isArray(offlineData.sales)
-            ? offlineData.sales.slice()
-            : [];
-        const deletesToSync = Array.isArray(offlineData.deletes)
-            ? offlineData.deletes.slice()
-            : [];
-
-        // These snapshots are the exact transaction boundary for this request.
-        // Anything added to either queue AFTER this point belongs to the next
-        // sync cycle and MUST survive this cycle's success cleanup.
-        offlineData.salesSyncInFlightOperationIds = salesToSync
-            .map(s => s && s.operationId ? String(s.operationId) : '')
-            .filter(Boolean);
-        offlineData.deletesSyncInFlightOperationIds = deletesToSync
-            .map(d => d && d.operationId ? String(d.operationId) : '')
-            .filter(Boolean);
-        saveOfflineData();
-
-        // Borrower photos for Debt are committed directly by the online Debt endpoints.
-        // Debt itself is intentionally excluded from this offline sync path.
-        
-        // Custom units added while offline - push each to the business's
-        // UNITS sheet so they're saved server-side, same as any other data.
-        for (let u = 0; u < (offlineData.units || []).length; u++) {
-            try {
-                await apiCall('addUnit', { unit: offlineData.units[u] });
-            } catch (error) {
-                console.error('Error syncing offline unit:', error);
-            }
-        }
-        
-        // Custom categories added while offline - same idea as units.
-        for (let c = 0; c < (offlineData.categories || []).length; c++) {
-            try {
-                await apiCall('addCategory', { category: offlineData.categories[c] });
-            } catch (error) {
-                console.error('Error syncing offline category:', error);
-            }
-        }
-        
-        const result = await apiCall('syncOfflineData', {
-            databaseId: currentUser.databaseId,
-            operationId: offlineData.syncOperationId,
-            stock: offlineData.stock || [],
-            // Use the frozen snapshot. A newly-created sale or a sale deleted
-            // before this request started must not mutate the in-flight payload.
-            sales: salesToSync,
-            purchases: offlineData.purchases || [],
-            expenses: offlineData.expenses || [],
-            customers: offlineData.customers || [],
-            suppliers: offlineData.suppliers || [],
-            purchaseRequestActions: offlineData.purchaseRequestActions || [],
-            stockEdits: offlineData.stockEdits || [],
-            saleEdits: offlineData.saleEdits || [],
-            purchaseEdits: offlineData.purchaseEdits || [],
-            deletes: deletesToSync
+    const queueNames = [
+        'stock','sales','purchases','expenses','customers','suppliers','units','categories',
+        'purchaseRequestActions','stockEdits','saleEdits','purchaseEdits','deletes','debts'
+    ];
+    for (const name of queueNames) if (!Array.isArray(offlineData[name])) offlineData[name] = [];
+    const makeOperationId = (kind) => 'OFF_' + kind + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,10);
+    // Units/categories were historically stored as plain strings. Upgrade them
+    // to small queue objects so each entry also has a durable idempotency key.
+    offlineData.units = offlineData.units.map(item => typeof item === 'string' ? {unit:item} : item);
+    offlineData.categories = offlineData.categories.map(item => typeof item === 'string' ? {category:item} : item);
+    // Give every queued item its own durable identity BEFORE taking the snapshot.
+    // The identity survives retries, reloads and a lost network response.
+    for (const name of queueNames) {
+        offlineData[name].forEach(item => {
+            if (item && typeof item === 'object' && !item.operationId) item.operationId = makeOperationId(name);
         });
-        
-        if (result && result.success) {
-            // Expenses are replayed one-by-one on the server with their own
-            // operationId. Remove only the expenses that the server actually
-            // accepted; failed ones stay in the local queue for the next sync.
-            // This prevents a temporary server error from silently deleting an
-            // expense that was already saved offline.
-            const expenseOps = Array.isArray(result.operations)
-                ? result.operations.filter(op => op && op.type === 'expense')
-                : [];
-            const failedExpenseOperationIds = new Set(
-                expenseOps.filter(op => op.status !== 'success' && op.operationId)
-                          .map(op => op.operationId)
-            );
-            const hasExpenseFailures = expenseOps.some(op => op.status !== 'success');
-            const expenseQueueBeforeClear = Array.isArray(offlineData.expenses) ? offlineData.expenses.slice() : [];
-            const remainingExpenseQueue = hasExpenseFailures
-                ? expenseQueueBeforeClear.filter(exp => !exp.operationId || failedExpenseOperationIds.has(exp.operationId))
-                : [];
+    }
+    // Persist upgraded string queues and their operation IDs before any network call.
+    saveOfflineData();
+    if (!offlineData.syncOperationId) offlineData.syncOperationId = makeOperationId('batch');
+    const syncId = offlineData.syncOperationId;
+    const snapshots = {};
+    for (const name of queueNames) snapshots[name] = offlineData[name].slice();
+    const totalItems = queueNames.reduce((n, name) => n + snapshots[name].length, 0);
+    if (!totalItems) return;
+    const syncLockOwner = 'PAGE_' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36));
+    try { if (!(await stpClaimOutboxSyncLock(syncLockOwner))) return; } catch(lockError) { console.warn('Could not claim shared sync lock; keeping queue for retry:', lockError); return; }
 
-            // Persist the queue state BEFORE refreshing any page. This avoids
-            // a brief double-count where the server has accepted a queued
-            // record but the old local pending copy is still present during refresh.
-            // Reconcile ONLY the records that belonged to this request.
-            // Anything created/deleted while the request was in-flight is a
-            // NEW local operation and must remain queued for the next sync.
-            const successfulSaleOperationIds = new Set(
-                (result.operations || [])
-                    .filter(op => op && op.type === 'sale' && op.status === 'success' && op.operationId)
-                    .map(op => String(op.operationId))
-            );
-            const sentSaleObjectsWithoutIds = new Set(
-                salesToSync.filter(s => !s || !s.operationId)
-            );
-            const failedSaleOperationIds = new Set(
-                (result.operations || [])
-                    .filter(op => op && op.type === 'sale' && op.status !== 'success' && op.operationId)
-                    .map(op => String(op.operationId))
-            );
+    offlineData.salesSyncInFlightOperationIds = snapshots.sales.map(x => String(x?.operationId || '')).filter(Boolean);
+    offlineData.deletesSyncInFlightOperationIds = snapshots.deletes.map(x => String(x?.operationId || '')).filter(Boolean);
+    offlineData.isSyncing = true;
+    saveOfflineData();
+    updateSyncIndicator();
+    showNotification(`Syncing ${totalItems} offline items...`, 'info');
 
-            offlineData.sales = (offlineData.sales || []).filter(s => {
-                if (!s) return false;
-                if (s.operationId) {
-                    const key = String(s.operationId);
-                    // Only a server-confirmed operation from THIS request is removed.
-                    return !successfulSaleOperationIds.has(key);
-                }
-                // Legacy queue items without operationId are removed only when the
-                // exact object was part of this request. Concurrent new objects stay.
-                return !sentSaleObjectsWithoutIds.has(s);
-            });
+    const successfulByQueue = Object.fromEntries(queueNames.map(name => [name, new Set()]));
+    const failedByQueue = Object.fromEntries(queueNames.map(name => [name, new Set()]));
+    const markResult = (queue, operationId, success) => {
+        if (!operationId) return;
+        (success ? successfulByQueue : failedByQueue)[queue].add(String(operationId));
+    };
+    try {
+        // Units and categories are sent in the same batch request as the
+        // other queues. The Worker already supports both arrays in SYNC.
+        // This avoids one network round-trip per unit/category and keeps their
+        // per-item operation IDs in the same acknowledgement/reconciliation flow.
 
-            // A sale can have been deleted while the sync request was in-flight.
-            // That delete was NOT in deletesToSync, so it must never be cleared here.
-            const sentDeleteObjects = new Set(deletesToSync);
-            const successfulDeleteOperationIds = new Set(
-                (result.operations || [])
-                    .filter(op => op && op.type === 'sale_delete' && op.status === 'success' && op.operationId)
-                    .map(op => String(op.operationId))
-            );
-            const failedDeleteOperationIds = new Set(
-                (result.operations || [])
-                    .filter(op => op && op.type === 'sale_delete' && op.status !== 'success' && op.operationId)
-                    .map(op => String(op.operationId))
-            );
+        const payload = {
+            databaseId: currentUser.databaseId,
+            operationId: syncId,
+            stock: snapshots.stock,
+            sales: snapshots.sales,
+            purchases: snapshots.purchases,
+            expenses: snapshots.expenses,
+            units: snapshots.units,
+            categories: snapshots.categories,
+            customers: snapshots.customers,
+            suppliers: snapshots.suppliers,
+            purchaseRequestActions: snapshots.purchaseRequestActions,
+            stockEdits: snapshots.stockEdits,
+            saleEdits: snapshots.saleEdits,
+            purchaseEdits: snapshots.purchaseEdits,
+            deletes: snapshots.deletes,
+            debts: snapshots.debts
+        };
+        const result = await apiCall('syncOfflineData', payload);
+        const operations = Array.isArray(result?.operations) ? result.operations : [];
+        const operationIdToQueue = new Map();
+        for (const name of queueNames) {
+            for (const item of snapshots[name]) {
+                if (!item?.operationId) continue;
+                const serverId = name === 'deletes' && item.type === 'sale'
+                    ? 'delete:' + String(item.operationId)
+                    : String(item.operationId);
+                operationIdToQueue.set(serverId, {queue:name, localId:String(item.operationId)});
+            }
+        }
+        for (const op of operations) {
+            if (!op?.operationId) continue;
+            const match = operationIdToQueue.get(String(op.operationId));
+            if (match) markResult(match.queue, match.localId, op.success === true);
+        }
 
-            offlineData.deletes = (offlineData.deletes || []).filter(d => {
-                if (!d) return false;
-                if (d.type === 'sale' && d.operationId) {
-                    const key = String(d.operationId);
-                    // Keep failed deletes for retry; remove only server-confirmed deletes.
-                    return !successfulDeleteOperationIds.has(key);
-                }
-                if (sentDeleteObjects.has(d)) {
-                    // For legacy non-sale deletes without operationId, remove the exact
-                    // object that was sent, but never remove a concurrently-added object.
-                    const op = (result.operations || []).find(x =>
-                        x && x.type === (d.type + '_delete') &&
-                        x.status === 'failed' &&
-                        (!x.operationId || x.operationId === d.operationId)
-                    );
-                    return !!op;
-                }
-                return true;
-            });
+        // Reconcile by durable operation ID, not by clearing whole arrays.
+        // Items appended while the request was in flight have new IDs and stay queued.
+        for (const name of queueNames) {
+            const succeeded = successfulByQueue[name];
+            offlineData[name] = (offlineData[name] || []).filter(item => !item || !succeeded.has(String(item.operationId || '')));
+        }
+        offlineData.salesSyncInFlightOperationIds = [];
+        offlineData.deletesSyncInFlightOperationIds = [];
+        offlineData.syncOperationId = null;
+        offlineData.lastSync = new Date().toISOString();
+        offlineData.isSyncing = false;
+        saveOfflineData();
+        await stpAcknowledgeDurableOutbox();
+        await stpReleaseOutboxSyncLock(syncLockOwner);
+        try { const ackIds=Array.from(new Set(Object.values(successfulByQueue).flatMap(set=>Array.from(set)))); if(ackIds.length) { await apiCall('acknowledgeOfflineCheckpoint',{operationIds:ackIds}); ackIds.forEach(id=>{stpCheckpointedOperationIds.delete(String(id));stpPendingCheckpointItems.delete(String(id));}); } } catch(e) { console.warn('Server backup acknowledgement deferred:',e); }
+        updateSyncIndicator();
 
-            // Clear optimistic delete markers ONLY for deletes confirmed by this request.
-            successfulDeleteOperationIds.forEach(id => removePendingSaleDelete_(id));
-
-            offlineData.stock = [];
-            offlineData.purchases = [];
-            offlineData.expenses = remainingExpenseQueue;
-            offlineData.customers = [];
-            offlineData.suppliers = [];
-            offlineData.units = [];
-            offlineData.categories = [];
-            offlineData.purchaseRequestActions = [];
-            offlineData.stockEdits = [];
-            offlineData.saleEdits = [];
-            offlineData.purchaseEdits = [];
-            offlineData.salesSyncInFlightOperationIds = [];
-            offlineData.deletesSyncInFlightOperationIds = [];
-            offlineData.syncOperationId = null;
-            offlineData.lastSync = new Date().toISOString();
-            offlineData.isSyncing = false;
-            
-            saveOfflineData();
-            updateSyncIndicator();
+        const remaining = queueNames.reduce((n, name) => n + (offlineData[name]?.length || 0), 0);
+        if (remaining === 0) {
             await refreshAllData();
             await loadUnits();
             refreshCurrentPage();
-            
-            showNotification(
-                remainingExpenseQueue.length > 0
-                    ? 'Offline data synced. Some records remain pending and will retry automatically.'
-                    : 'Offline data synced successfully',
-                remainingExpenseQueue.length > 0 ? 'info' : 'success'
-            );
+            showNotification('Offline data synced successfully', 'success');
         } else {
-            offlineData.isSyncing = false;
-            updateSyncIndicator();
-
-            // A server-side PROCESSING response means the same offline batch
-            // may still be finishing (for example after a lost response).
-            // Do not show a scary failure toast and do not create another
-            // operation ID; keep the durable ID and retry shortly. Debt is
-            // never part of this sync batch.
-            if (result?.operationInProgress) {
-                // The server is already processing this non-Debt offline batch.
-                // Do NOT show a repeating toast and do NOT start another retry
-                // timer here. The regular background sync check will retry
-                // silently later using the same operationId.
-                console.log('Offline sync is already being processed by the server; waiting for the next scheduled check.');
-            } else {
-                showNotification('Offline sync failed: ' + (result?.error || 'Unknown error'), 'error');
-            }
+            // Successful records are committed; failed and concurrent records remain
+            // durable for retry. Do not claim the batch fully succeeded.
+            showNotification(`${totalItems - remaining} records saved. ${remaining} records remain pending and will retry.`, 'info');
         }
     } catch (error) {
         offlineData.isSyncing = false;
+        offlineData.salesSyncInFlightOperationIds = [];
+        offlineData.deletesSyncInFlightOperationIds = [];
+        // Keep every queued item and its operation ID for a safe idempotent retry.
+        saveOfflineData();
+        try { await stpReleaseOutboxSyncLock(syncLockOwner); } catch (_) {}
         updateSyncIndicator();
-        console.error('Sync error:', error);
-        showNotification('Offline sync failed: ' + error.message, 'error');
+        console.error('Offline sync error:', error);
+        showNotification('Sync could not be completed. Your pending records are saved on this device and will retry when connection is available.', 'error');
     }
 }
-        
-        
-       
-        
-        function loadCachedLogo() {
+
+
+                function loadCachedLogo() {
             const cached = localStorage.getItem('smartTradeLogoBase64');
             if (cached) {
                 try {
@@ -10357,6 +10226,7 @@ let editDebtPhotoBase64 = null;
         // MUHIMU: Save subscription status
         subscriptionValid: response.subscriptionValid !== false,
         isExpired: response.isExpired || false,
+        backendMode: response.authProvider || "cloudflare-d1",
         adminBusiness: response.adminBusiness || null
     };
     
@@ -10379,6 +10249,9 @@ let editDebtPhotoBase64 = null;
     localStorage.setItem('smartTradeSubscriptionValid', currentUser.subscriptionValid);
     localStorage.setItem('smartTradeIsExpired', currentUser.isExpired);
     localStorage.setItem('smartTradeAdminBusiness', currentUser.adminBusiness || '');
+    stpOutboxPut('auth',{token:response.token,databaseId:response.databaseId,clientTimeZone:getBusinessTimeZone()}).catch(e=>console.warn('Background Sync auth context deferred:',e));
+    stpRegisterBackgroundSync();
+    stpRestoreDurableOutbox().then(() => { if(navigator.onLine) checkAndSync().catch(console.error); });
     
     // One account can own several independent businesses - keep the list
     // (returned at login) so the business-switcher menu can show it.
@@ -10591,7 +10464,7 @@ function checkSession() {
             // proceeds normally, so being offline never blocks logging out.
             if (currentUser.token) {
                 try {
-                    fetch(API_URL, {
+                    smartTradeFetch(API_URL, {
                         method: 'POST',
                         body: JSON.stringify({ action: 'logout', token: currentUser.token })
                     }).catch(() => {});
@@ -10906,7 +10779,10 @@ function checkSession() {
     if (!wasOnline && isOnline) {
         showNotification('Back online. Syncing data...', 'info');
         
-        setTimeout(checkAndSync, 1000);
+        // Start as soon as the browser reports connectivity. If the network
+        // is not yet usable, the failed batch remains queued with the same IDs.
+        stpFlushPendingCheckpoints().catch(console.error);
+        Promise.resolve().then(() => checkAndSync()).catch(console.error);
         
         // Refresh logo preview if on settings page
         if (currentUser.currentPage === 'settings' && logoElements.preview) {
@@ -10969,7 +10845,7 @@ async function login() {
             showApp();
             
             // Check subscription after login (for non-developers)
-            if (email !== 'daxsystems.tz.co@gmail.com') {
+            if (email !== 'daxsystems.tz.co@gmail.com' && result.authProvider !== 'cloudflare-d1') {
                 const hasAccess = await checkAndEnforceSubscription();
                 if (!hasAccess) {
                     // User has expired subscription - stay on login page
@@ -10985,14 +10861,11 @@ async function login() {
                 refreshAllData(false).catch(console.error);
             }, 100);
             
-            // Sync offline data kama ipo
-            if (offlineData.stock.length > 0 || offlineData.sales.length > 0 || 
-                offlineData.purchases.length > 0 || offlineData.customers.length > 0 || 
-                offlineData.suppliers.length > 0 || false) {
-                setTimeout(() => {
-                    syncOfflineData().catch(console.error);
-                }, 500);
-            }
+            // Check every supported offline queue after login. This also
+            // covers expenses, units/categories, edits and deletes.
+            setTimeout(() => {
+                checkAndSync().catch(console.error);
+            }, 0);
             
             showNotification('Login successful!', 'success');
         } else {
@@ -12514,6 +12387,22 @@ async function forceRefreshLogoFromServer() {
                 if (logoElements.avatar) setLogoFromData(logoElements.avatar, result.logoUrl);
                 return result.logoUrl;
             }
+            // Cloudflare R2 assets are served by this Worker, not Google Drive.
+            // Resolve /asset/<id> against the configured D1 API origin and render
+            // it directly while retaining the same offline logo cache behavior.
+            if (result.logoUrl.indexOf('/asset/') === 0 || /^https?:\/\//i.test(result.logoUrl)) {
+                const assetUrl = result.logoUrl.indexOf('/asset/') === 0
+                    ? new URL(result.logoUrl, API_URL).href
+                    : result.logoUrl;
+                currentUser.logoUrl = assetUrl;
+                currentUser.altLogoUrl = assetUrl;
+                currentUser.directLogoUrl = assetUrl;
+                localStorage.setItem('smartTradeLogoUrl', assetUrl);
+                if (logoElements.preview) setLogoFromData(logoElements.preview, assetUrl);
+                if (logoElements.sidebar) setLogoFromData(logoElements.sidebar, assetUrl);
+                if (logoElements.avatar) setLogoFromData(logoElements.avatar, assetUrl);
+                return assetUrl;
+            }
             
             const fileId = result.logoId;
             const directUrl = 'https://drive.google.com/uc?export=view&id=' + fileId;
@@ -12543,8 +12432,10 @@ async function loadLogoFromUrl(logoUrl) {
     
     // A base64 data URI is already a complete, ready-to-use image source -
     // no Drive file ID to extract, so render it directly.
-    if (logoUrl && logoUrl.indexOf('data:') === 0) {
+    if (logoUrl && (logoUrl.indexOf('data:') === 0 || /^https?:\/\//i.test(logoUrl))) {
         setLogoFromData(logoElements.preview, logoUrl);
+        if (logoElements.sidebar) setLogoFromData(logoElements.sidebar, logoUrl);
+        if (logoElements.avatar) setLogoFromData(logoElements.avatar, logoUrl);
         return true;
     }
     
@@ -13482,17 +13373,20 @@ function hideAccessDeniedModal() {
         if (uploadArea) uploadArea.style.display = 'block';
         
         if (result.success) {
-            currentUser.logoUrl = result.logoUrl;
-            currentUser.altLogoUrl = result.logoUrl;
-            currentUser.directLogoUrl = result.logoUrl;
+            const finalLogoUrl = result.logoUrl && result.logoUrl.indexOf('/asset/') === 0
+                ? new URL(result.logoUrl, API_URL).href
+                : result.logoUrl;
+            currentUser.logoUrl = finalLogoUrl;
+            currentUser.altLogoUrl = finalLogoUrl;
+            currentUser.directLogoUrl = finalLogoUrl;
             
-            localStorage.setItem('smartTradeLogoUrl', result.logoUrl);
-            localStorage.setItem('smartTradeAltLogoUrl', result.logoUrl);
-            localStorage.setItem('smartTradeDirectLogoUrl', result.logoUrl);
+            localStorage.setItem('smartTradeLogoUrl', finalLogoUrl);
+            localStorage.setItem('smartTradeAltLogoUrl', finalLogoUrl);
+            localStorage.setItem('smartTradeDirectLogoUrl', finalLogoUrl);
             
             // Update cache with final URL
             if (logoBase64Cache && logoBase64Cache.data) {
-                logoBase64Cache.url = result.logoUrl;
+                logoBase64Cache.url = finalLogoUrl;
                 localStorage.setItem('smartTradeLogoBase64', JSON.stringify(logoBase64Cache));
             }
             
@@ -13514,97 +13408,118 @@ function hideAccessDeniedModal() {
         // API FUNCTIONS
         // ============================================
         
+        // Keep an operation ID across timeout/network retries for the same logical
+        // mutation. Remove it only after a definitive response, so a retry can safely
+        // retrieve the original D1 result instead of applying the mutation twice.
+        function stpStableJson(value) {
+            if (Array.isArray(value)) return '[' + value.map(stpStableJson).join(',') + ']';
+            if (value && typeof value === 'object') return '{' + Object.keys(value).sort().map(k => JSON.stringify(k) + ':' + stpStableJson(value[k])).join(',') + '}';
+            return JSON.stringify(value);
+        }
+        function stpHash(value) {
+            const str = stpStableJson(value); let h1 = 0x811c9dc5;
+            for (let i = 0; i < str.length; i++) { h1 ^= str.charCodeAt(i); h1 = Math.imul(h1, 0x01000193); }
+            return (h1 >>> 0).toString(16).padStart(8, '0');
+        }
+        function stpPendingOperationKey(action, data) {
+            const business = String(currentUser?.databaseId || 'account');
+            return 'stpPendingOperation:' + business + ':' + action + ':' + stpHash(data);
+        }
+
+        function sanitizeUserFacingApiText(value, fallback = 'The request could not be completed. Please try again.') {
+            const text = String(value ?? '').trim();
+            if (!text) return fallback;
+            // Infrastructure details are for diagnostics only; never expose them in customer-facing UI.
+            if (/\b(D1|R2|SQLite|sqlite_master|SQLITE|SQL error|database binding|database schema|Cloudflare|Worker\/API|migration table|no such table|no such column|constraint failed|foreign key constraint|internal server error)\b/i.test(text)) {
+                return 'The service is temporarily unavailable. Please try again. If the problem continues, contact support.';
+            }
+            return text.slice(0, 240);
+        }
+        function sanitizeApiResponseForUser(value) {
+            if (Array.isArray(value)) return value.map(sanitizeApiResponseForUser);
+            if (!value || typeof value !== 'object') return value;
+            const clean = {};
+            for (const [key, item] of Object.entries(value)) {
+                if (['error', 'message', 'details'].includes(key) && typeof item === 'string') {
+                    clean[key] = sanitizeUserFacingApiText(item);
+                } else {
+                    clean[key] = sanitizeApiResponseForUser(item);
+                }
+            }
+            return clean;
+        }
+
         async function apiCall(action, data = {}, timeoutMs = 30000) {
-            // Every write gets ONE durable idempotency key. The same payload object
-            // is mutated so an offline fallback/Retry keeps exactly the same key.
+            // D1-only request contract. The same pending operation ID is reused after
+            // a timeout or lost response; a successful/definitive rejection clears it.
             const writeActions = [
-                'addSale','updateSale','deleteSaleRow',
-                'addStock','bulkAddStock','updateStock','deleteStockRow',
-                'addPurchase','updatePurchase','deletePurchaseRow',
-                'addDebt','updateDebt','deleteDebt','returnDebt','denyDebt',
-                'addExpense','addUnit','addCategory','addNonStockProduct',
-                'saveDraftPurchaseRequest','submitPurchaseRequest','submitAdminPurchaseList',
-                'approvePurchaseRequest','rejectPurchaseRequest','saveReviewDraft',
-                'deletePurchaseRequest','completePurchaseRequestItem',
-                'updateSettings','updateProfile','changePassword','syncOfflineData'
+                'addSale','updateSale','deleteSaleRow','addStock','bulkAddStock','updateStock','deleteStockRow',
+                'addPurchase','updatePurchase','deletePurchaseRow','addDebt','updateDebt','deleteDebt','returnDebt','denyDebt',
+                'addExpense','addUnit','addCategory','addNonStockProduct','addCustomer','updateCustomer','deleteCustomer',
+                'addSupplier','updateSupplier','deleteSupplier','addSeller','updateSeller','deleteSeller',
+                'addBranch','updateBranch','deleteBranch','saveDraftPurchaseRequest','submitPurchaseRequest',
+                'submitAdminPurchaseList','approvePurchaseRequest','rejectPurchaseRequest','saveReviewDraft',
+                'deletePurchaseRequest','completePurchaseRequestItem','updateSettings','updateProfile',
+                'setModalRestrictions','closeAccountingPeriod','syncOfflineData','addBusiness','saveDraft','completeItem','submit','approve','reject'
             ];
+            let pendingOperationKey = '';
             if (writeActions.includes(action) && !data.operationId) {
-                const randomPart = (typeof crypto !== 'undefined' && crypto.randomUUID)
-                    ? crypto.randomUUID()
-                    : (Date.now().toString(36) + '-' + Math.random().toString(36).slice(2) + '-' + Math.random().toString(36).slice(2));
-                data.operationId = action.toUpperCase() + '_' + randomPart;
+                pendingOperationKey = stpPendingOperationKey(action, data);
+                try {
+                    let operationId = localStorage.getItem(pendingOperationKey);
+                    if (!operationId) {
+                        const randomPart = (typeof crypto !== 'undefined' && crypto.randomUUID)
+                            ? crypto.randomUUID()
+                            : (Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
+                        operationId = action.toUpperCase() + '_' + randomPart;
+                        localStorage.setItem(pendingOperationKey, operationId);
+                    }
+                    data = { ...data, operationId };
+                } catch (_) {
+                    const randomPart = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36);
+                    data = { ...data, operationId: action.toUpperCase() + '_' + randomPart };
+                }
             }
 
-            const payload = {
-                action: action,
-                ...data,
-                clientTimeZone: getBusinessTimeZone()
-            };
-            
             const noAuthActions = ['login', 'register', 'forgot'];
-            
-            if (currentUser.databaseId && !noAuthActions.includes(action)) {
-                payload.databaseId = currentUser.databaseId;
-            }
-            // Every authenticated call must carry the session token so the
-            // server can verify who's actually asking - this was previously
-            // never sent, which is exactly what let the old email-only check
-            // be spoofed.
-            if (currentUser.token && !noAuthActions.includes(action)) {
-                payload.token = currentUser.token;
-            }
-            
-            // Fail fast when we already know we're offline - there's no
-            // point waiting on a fetch() that's only going to time out
-            // eventually (which can take a long while on a flaky/slow
-            // connection). Every offline-aware caller already has a catch
-            // block that queues the action locally instead - this is what
-            // makes editing/deleting something while offline feel instant
-            // rather than hanging until a slow network request gives up.
-            if (!isOnline) {
-                throw new Error('Offline - request not sent.');
-            }
-            
+            const payload = { ...data, action: action, clientTimeZone: getBusinessTimeZone() };
+            if (currentUser.databaseId && !noAuthActions.includes(action)) payload.databaseId = currentUser.databaseId;
+            if (currentUser.token && !noAuthActions.includes(action)) payload.token = currentUser.token;
+
+            if (!isOnline) throw new Error('Offline - request not sent.');
+
+            const controller = new AbortController();
+            let timeoutId = null;
             try {
-                // A request with no timeout at all can hang for minutes on
-                // a slow-but-not-quite-offline connection, silently
-                // blocking whatever was waiting on it (like the once-a-
-                // second Connect Device poll, which would otherwise just
-                // stall instead of moving on to try again). The default of
-                // 30 seconds is generous enough for the largest request
-                // this app makes (a borrower photo upload); time-sensitive
-                // callers like the poll itself pass a much shorter
-                // timeoutMs instead, so a slow response there is detected
-                // and retried in a few seconds rather than up to 30.
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-                
-                const response = await fetch(API_URL, {
+                timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+                const response = await smartTradeFetch(API_URL, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                     signal: controller.signal
                 });
-                clearTimeout(timeoutId);
-                
-                const result = await response.json();
-                
-                // Session expired/invalid server-side (e.g. logged out elsewhere,
-                // or the 60-day token finally lapsed). This only ever fires when
-                // we actually reached the server, so it never interferes with
-                // offline use - cached business data (stock/sales/etc.) and any
-                // queued offline writes are left completely untouched; we just
-                // ask the person to log back in before their next online sync.
-                if (result && result.sessionExpired && !noAuthActions.includes(action)) {
-                    handleSessionExpired();
-                }
-                
+                let result;
+                try { result = await response.json(); }
+                catch (_) { throw new Error('The service returned an unreadable response. Please try again.'); }
+                if (!result || typeof result !== 'object') throw new Error('Server returned an invalid response.');
+                result = sanitizeApiResponseForUser(result);
+
+                if (result.sessionExpired && !noAuthActions.includes(action)) handleSessionExpired();
+                // Preserve the backend's structured validation message for the UI,
+                // but never treat a non-2xx response as a successful operation.
+                if (!response.ok && result.success !== false) result.success = false;
+                if (!response.ok && !result.error) result.error = `Server request failed (${response.status}).`;
+                // A definitive API response means this attempt is complete. On a
+                // timeout/network failure the key remains so the same ID is retried.
+                if (pendingOperationKey && response.status < 500) { try { localStorage.removeItem(pendingOperationKey); } catch (_) {} }
                 return result;
             } catch (error) {
-                console.error('API Error:', error);
-                if (error.name === 'AbortError') {
-                    throw new Error('Request timed out. Please check your connection and try again.');
-                }
+                console.error('API Error:', action, error);
+                if (error.name === 'AbortError') throw new Error('Request timed out. The operation may have reached the server; retry using the same queued operation ID.');
+                if (error.message && !/Failed to fetch|NetworkError|Load failed/i.test(error.message)) throw error;
                 throw new Error('Network error. Please check your connection.');
+            } finally {
+                if (timeoutId !== null) clearTimeout(timeoutId);
             }
         }
         
@@ -13993,13 +13908,22 @@ function saveModalRestrictionsToStorage() {
 
 // Pulled from the "settings" object that already rides along with every
 // syncAllUserData response - no separate fetch needed.
-function applyModalRestrictionsFromSettings(settings) {
-    try {
-        const raw = settings && settings.MODAL_RESTRICTIONS && settings.MODAL_RESTRICTIONS.restricted_list && settings.MODAL_RESTRICTIONS.restricted_list.value;
-        restrictedModalsCache = raw ? JSON.parse(raw) : [];
-    } catch (e) {
-        restrictedModalsCache = [];
+function normalizeModalRestrictionsForClient(settings) {
+    let raw = settings?.restrictedModals;
+    if (raw === undefined || raw === null) raw = settings?.MODAL_RESTRICTIONS?.restricted_list?.value;
+    if (typeof raw === 'string') {
+        try { raw = JSON.parse(raw); } catch (_) { raw = []; }
     }
+    if (!Array.isArray(raw)) raw = [];
+    const allowed = new Set(RESTRICTABLE_MODALS.map(item => item.id));
+    return [...new Set(raw.map(value => String(value)).filter(value => allowed.has(value)))];
+}
+
+function applyModalRestrictionsFromSettings(settings) {
+    // D1 currently stores both the legacy flat array and the canonical
+    // SETTINGS.MODAL_RESTRICTIONS.restricted_list.value. Accept either so
+    // old records and newly saved settings behave identically after refresh.
+    restrictedModalsCache = normalizeModalRestrictionsForClient(settings || {});
     saveModalRestrictionsToStorage();
 }
 
@@ -14274,23 +14198,33 @@ async function saveModalRestrictions() {
         showNotification('You need internet connection to save this setting.', 'error');
         return;
     }
-    
+    const requested = normalizeModalRestrictionsForClient({ restrictedModals: pendingModalRestrictions });
     setSettingsButtonLoading('saveModalRestrictionsBtn', 'saveModalRestrictionsSpinner', 'saveModalRestrictionsText', true, 'Saving Changes...');
-    
     try {
-        const result = await apiCall('setModalRestrictions', { restrictedModals: pendingModalRestrictions });
-        if (result.success) {
-            restrictedModalsCache = [...pendingModalRestrictions];
-            saveModalRestrictionsToStorage();
-            showNotification('Restrictions saved', 'success');
-        } else {
-            showNotification(result.error || 'Failed to save restrictions', 'error');
+        const result = await apiCall('setModalRestrictions', { restrictedModals: requested });
+        if (!result.success) throw new Error(result.error || 'Failed to save restrictions');
+        // Verify from a fresh D1 read before changing the active local guard list.
+        const check = await apiCall('getModalRestrictions', {});
+        if (!check.success) throw new Error(check.error || 'Saved, but could not verify restrictions from the server');
+        const confirmed = normalizeModalRestrictionsForClient({ restrictedModals: check.restrictedModals ?? check.data });
+        if (JSON.stringify(confirmed) !== JSON.stringify(requested)) {
+            throw new Error('Server returned a different restriction list. Changes were not applied locally.');
         }
+        restrictedModalsCache = confirmed;
+        pendingModalRestrictions = [...confirmed];
+        saveModalRestrictionsToStorage();
+        if (result.settings) {
+            settingsCache = result.settings;
+            currentUser.settings = result.settings;
+            localStorage.setItem('smartTradeSettings', JSON.stringify(result.settings));
+        }
+        showNotification('Restrictions saved and verified on server', 'success');
     } catch (error) {
-        showNotification('Network error. Please try again.', 'error');
+        console.error('Modal restrictions save/verify failed:', error);
+        showNotification(error?.message || 'Could not verify saved restrictions. Please retry.', 'error');
+    } finally {
+        setSettingsButtonLoading('saveModalRestrictionsBtn', 'saveModalRestrictionsSpinner', 'saveModalRestrictionsText', false);
     }
-    
-    setSettingsButtonLoading('saveModalRestrictionsBtn', 'saveModalRestrictionsSpinner', 'saveModalRestrictionsText', false);
 }
 
 // Polls the (tiny, dedicated) restrictions endpoint every few seconds while
@@ -14298,11 +14232,13 @@ async function saveModalRestrictions() {
 // Admin's change reaches Seller devices almost instantly instead of
 // waiting for the next full sync.
 async function pollModalRestrictions() {
-    if (!isOnline || !currentUser.databaseId) return;
+    if (!isOnline || !currentUser.databaseId || document.visibilityState === 'hidden') return;
     try {
         const result = await apiCall('getModalRestrictions', {});
         if (result.success) {
-            const newList = result.restrictedModals || [];
+            const source = result.restrictedModals !== undefined ? result.restrictedModals : result.data;
+            if (!Array.isArray(source)) return;
+            const newList = normalizeModalRestrictionsForClient({ restrictedModals: source });
             if (JSON.stringify(newList) !== JSON.stringify(restrictedModalsCache)) {
                 restrictedModalsCache = newList;
                 saveModalRestrictionsToStorage();
@@ -14743,6 +14679,7 @@ function toggleSaleModalLock() {
                 saleEdits: Array.isArray(parsed.saleEdits) ? parsed.saleEdits : [],
                 purchaseEdits: Array.isArray(parsed.purchaseEdits) ? parsed.purchaseEdits : [],
                 deletes: Array.isArray(parsed.deletes) ? parsed.deletes : [],
+                debts: Array.isArray(parsed.debts) ? parsed.debts : [],
                 salesSyncInFlightOperationIds: [],
                 deletesSyncInFlightOperationIds: [],
                 syncOperationId: parsed.syncOperationId || null,
@@ -14756,12 +14693,8 @@ function toggleSaleModalLock() {
     } else {
         resetOfflineData();
     }
-    // Remove legacy Debt queues from older SmartTrade versions. Debt is ONLINE-ONLY.
-    if (offlineData.debts || offlineData.debtEdits) {
-        delete offlineData.debts;
-        delete offlineData.debtEdits;
-        saveOfflineData();
-    }
+    // Preserve Debt outbox across upgrades; do not discard pending transactions.
+    if (!Array.isArray(offlineData.debts)) offlineData.debts = [];
     updateSyncIndicator();
 }
 
@@ -14780,6 +14713,7 @@ function resetOfflineData() {
         saleEdits: [],
         purchaseEdits: [],
         deletes: [],
+        debts: [],
         salesSyncInFlightOperationIds: [],
         deletesSyncInFlightOperationIds: [],
         lastSync: null,
@@ -15530,15 +15464,179 @@ function showEditSupplierProductsSuggestions() {
         
         
         
-        function saveOfflineData() {
-            // Debt is ONLINE-ONLY. Never persist legacy Debt queues.
-            if (offlineData && (offlineData.debts || offlineData.debtEdits)) {
-                delete offlineData.debts;
-                delete offlineData.debtEdits;
+        // Durable browser outbox: IndexedDB mirror plus Background Sync.
+        const STP_OUTBOX_DB = 'smarttrade-durable-outbox-v1';
+        const STP_OUTBOX_STORE = 'state';
+        function stpOpenOutboxDb() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open(STP_OUTBOX_DB, 1);
+                req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains(STP_OUTBOX_STORE)) req.result.createObjectStore(STP_OUTBOX_STORE, { keyPath: 'key' }); };
+                req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error);
+            });
+        }
+        async function stpOutboxPut(key, value) {
+            const db = await stpOpenOutboxDb();
+            try { await new Promise((resolve, reject) => { const tx=db.transaction(STP_OUTBOX_STORE,'readwrite'); tx.objectStore(STP_OUTBOX_STORE).put({key,value,updatedAt:new Date().toISOString()}); tx.oncomplete=resolve; tx.onerror=()=>reject(tx.error); tx.onabort=()=>reject(tx.error); }); } finally { db.close(); }
+        }
+        async function stpOutboxGet(key) {
+            const db=await stpOpenOutboxDb(); try { return await new Promise((resolve,reject)=>{ const tx=db.transaction(STP_OUTBOX_STORE,'readonly'); const r=tx.objectStore(STP_OUTBOX_STORE).get(key); r.onsuccess=()=>resolve(r.result?.value??null); r.onerror=()=>reject(r.error); }); } finally { db.close(); }
+        }
+        async function stpClaimOutboxSyncLock(owner) {
+            const db=await stpOpenOutboxDb();try{return await new Promise((resolve,reject)=>{const tx=db.transaction(STP_OUTBOX_STORE,'readwrite');const store=tx.objectStore(STP_OUTBOX_STORE);const req=store.get('syncLock');let claimed=false;req.onsuccess=()=>{const old=req.result?.value;if(!old||!old.expiresAt||old.expiresAt<Date.now()){store.put({key:'syncLock',value:{owner,expiresAt:Date.now()+300000},updatedAt:new Date().toISOString()});claimed=true;}};tx.oncomplete=()=>resolve(claimed);tx.onerror=()=>reject(tx.error);});}finally{db.close();}
+        }
+        async function stpReleaseOutboxSyncLock(owner) {
+            const db=await stpOpenOutboxDb();try{await new Promise((resolve,reject)=>{const tx=db.transaction(STP_OUTBOX_STORE,'readwrite');const store=tx.objectStore(STP_OUTBOX_STORE);const req=store.get('syncLock');req.onsuccess=()=>{if(req.result?.value?.owner===owner)store.delete('syncLock');};tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}finally{db.close();}
+        }
+        let stpBackgroundSyncRegistrationPromise = null;
+        async function stpRegisterBackgroundSync() {
+            if (stpBackgroundSyncRegistrationPromise) return stpBackgroundSyncRegistrationPromise;
+            stpBackgroundSyncRegistrationPromise = (async () => {
+                try {
+                    if (!('serviceWorker' in navigator)) return false;
+                    const reg = await navigator.serviceWorker.register('/service-worker.js', { scope: '/' });
+                    if (reg.sync?.register) await reg.sync.register('smarttrade-offline-outbox');
+                    return true;
+                } catch (e) {
+                    console.warn('Background Sync registration deferred:', e);
+                    stpBackgroundSyncRegistrationPromise = null;
+                    return false;
+                }
+            })();
+            return stpBackgroundSyncRegistrationPromise;
+        }
+
+        let stpOutboxMirrorPromise = Promise.resolve();
+        let stpLatestOutboxSnapshot = null;
+        let stpOutboxMirrorRunning = false;
+        const stpCheckpointedOperationIds = new Set();
+        const stpPendingCheckpointItems = new Map();
+        let stpCheckpointTimer = null;
+        let stpCheckpointFlushPromise = Promise.resolve();
+
+        async function stpFlushPendingCheckpoints() {
+            if (!navigator.onLine || !currentUser?.token || !currentUser?.databaseId) return;
+            stpCheckpointFlushPromise = stpCheckpointFlushPromise.then(async () => {
+                while (stpPendingCheckpointItems.size && navigator.onLine) {
+                    const batch = Array.from(stpPendingCheckpointItems.values()).slice(0, 500);
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'syncOfflineCheckpoint',
+                            token: currentUser.token,
+                            databaseId: currentUser.databaseId,
+                            clientTimeZone: getBusinessTimeZone(),
+                            items: batch
+                        })
+                    });
+                    let result;
+                    try { result = await response.json(); } catch (_) { throw new Error('Unreadable offline checkpoint response'); }
+                    if (!response.ok || result?.success !== true) throw new Error(result?.error || 'Server backup was not confirmed');
+                    for (const item of batch) {
+                        const id = String(item.operationId);
+                        stpPendingCheckpointItems.delete(id);
+                        stpCheckpointedOperationIds.add(id);
+                    }
+                }
+            }).catch(error => {
+                console.warn('Incremental offline checkpoint deferred:', error);
+                // Keep every unconfirmed item in the pending map for the next
+                // online event or next save. Do not block the actual sync queue.
+            });
+            return stpCheckpointFlushPromise;
+        }
+
+        function stpScheduleCheckpointFlush(delay = 250) {
+            if (stpCheckpointTimer) clearTimeout(stpCheckpointTimer);
+            stpCheckpointTimer = setTimeout(() => {
+                stpCheckpointTimer = null;
+                stpFlushPendingCheckpoints();
+            }, delay);
+        }
+
+        function stpMirrorOutboxAndSchedule() {
+            const names = ['stock','sales','purchases','expenses','customers','suppliers','units','categories','purchaseRequestActions','stockEdits','saleEdits','purchaseEdits','deletes','debts'];
+            for (const name of names) {
+                if (!Array.isArray(offlineData[name])) offlineData[name] = [];
+                offlineData[name] = offlineData[name].map(item => typeof item === 'string' ? (name === 'units' ? {unit:item} : {category:item}) : item);
+                for (const item of offlineData[name]) {
+                    if (item && typeof item === 'object' && !item.operationId) {
+                        item.operationId = 'OFF_' + name + '_' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '_' + Math.random().toString(36).slice(2));
+                    }
+                    if (item?.operationId) {
+                        const id = String(item.operationId);
+                        if (!stpCheckpointedOperationIds.has(id) && !stpPendingCheckpointItems.has(id)) {
+                            stpPendingCheckpointItems.set(id, {operationId:id, queueName:name, payload:item});
+                        }
+                    }
+                }
             }
-            // Remove the legacy Debt payment queue as well. Debt never uses queues.
-            localStorage.removeItem('smartTradePendingDebtPayments');
-            localStorage.setItem('smartTradeOfflineData', JSON.stringify(offlineData));
+            try { localStorage.setItem('smartTradeOfflineData', JSON.stringify(offlineData)); }
+            catch (e) { console.error('Could not persist operation IDs to localStorage:', e); }
+
+            // Keep the full latest queue in IndexedDB for crash/reload recovery,
+            // but avoid a full server checkpoint upload on every keystroke/save.
+            const snapshot = JSON.parse(JSON.stringify(offlineData || {}));
+            stpLatestOutboxSnapshot = snapshot;
+            if (!stpOutboxMirrorRunning) {
+                stpOutboxMirrorRunning = true;
+                stpOutboxMirrorPromise = stpOutboxMirrorPromise.then(async () => {
+                    try {
+                        // Coalesce rapid consecutive saves: every update is already
+                        // synchronously written to localStorage, while IndexedDB
+                        // receives the newest complete snapshot without replaying
+                        // a long queue of obsolete intermediate snapshots.
+                        while (stpLatestOutboxSnapshot) {
+                            const latest = stpLatestOutboxSnapshot;
+                            stpLatestOutboxSnapshot = null;
+                            await stpOutboxPut('queue', latest);
+                            const auth = {
+                                token: currentUser?.token || localStorage.getItem('smartTradeToken') || '',
+                                databaseId: currentUser?.databaseId || localStorage.getItem('smartTradeDatabaseId') || '',
+                                clientTimeZone: getBusinessTimeZone()
+                            };
+                            if (auth.token && auth.databaseId) await stpOutboxPut('auth', auth);
+                        }
+                        await stpRegisterBackgroundSync();
+                    } finally {
+                        stpOutboxMirrorRunning = false;
+                    }
+                }).catch(e => {
+                    stpOutboxMirrorRunning = false;
+                    console.error('IndexedDB outbox mirror failed:', e);
+                });
+            }
+
+            if (navigator.onLine && (currentUser?.token || localStorage.getItem('smartTradeToken'))) {
+                stpScheduleCheckpointFlush(250);
+            }
+            return stpOutboxMirrorPromise;
+        }
+        async function stpRestoreDurableOutbox() {
+            const names=['stock','sales','purchases','expenses','customers','suppliers','units','categories','purchaseRequestActions','stockEdits','saleEdits','purchaseEdits','deletes','debts'];let changed=false;
+            const merge=(name,item)=>{if(!names.includes(name)||!item||typeof item!=='object')return;const q=offlineData[name]||(offlineData[name]=[]);const id=String(item.operationId||'');if(id&&!q.some(x=>String(x?.operationId||'')===id)){q.push(item);changed=true;}};
+            try { const completed=await stpOutboxGet('completedIds'); if(Array.isArray(completed)&&completed.length){const done=new Set(completed.map(String));for(const name of names){const before=offlineData[name]||[];const after=before.filter(item=>!done.has(String(item?.operationId||'')));if(after.length!==before.length){offlineData[name]=after;changed=true;}}await stpOutboxPut('completedIds',[]);} } catch(e){console.warn('Background acknowledgement reconciliation deferred:',e);}
+            try{const durable=await stpOutboxGet('queue');if(durable)for(const name of names)for(const item of(Array.isArray(durable[name])?durable[name]:[]))merge(name,item);}catch(e){console.warn('IndexedDB outbox restore deferred:',e);}
+            if(navigator.onLine&&currentUser?.token&&currentUser?.databaseId){try{const r=await apiCall('restoreOfflineCheckpoint');if(r.success&&Array.isArray(r.items))for(const row of r.items)merge(row.queueName,row.payload);}catch(e){console.warn('Server outbox restore deferred:',e);}}
+            if(changed){saveOfflineData();await stpOutboxPut('queue',offlineData);}
+        }
+        async function stpAcknowledgeDurableOutbox(){ try{await stpOutboxMirrorPromise;await stpOutboxPut('queue',offlineData);}catch(e){console.error('Could not update durable outbox:',e);} }
+
+        function saveOfflineData() {
+            // Debt queue is retained as durable, per-item operations. Never clear it here.
+            try {
+                const serialized = JSON.stringify(offlineData);
+                localStorage.setItem('smartTradeOfflineData', serialized);
+                stpMirrorOutboxAndSchedule();
+                return true;
+            } catch (error) {
+                console.error('Offline queue could not be persisted on this device:', error);
+                if (typeof showNotification === 'function') {
+                    showNotification('This device cannot save more pending records. Free up device storage and try again.', 'error');
+                }
+                // Do not let the caller continue as if the offline write succeeded.
+                throw new Error('Pending records could not be saved on this device. Free up storage and retry.');
+            }
         }
         
         async function checkAndSync() {
@@ -15552,6 +15650,7 @@ function showEditSupplierProductsSuggestions() {
     if (!offlineData.saleEdits) offlineData.saleEdits = [];
     if (!offlineData.purchaseEdits) offlineData.purchaseEdits = [];
     if (!offlineData.deletes) offlineData.deletes = [];
+    if (!offlineData.debts) offlineData.debts = [];
     
     const hasOfflineData = (offlineData.stock && offlineData.stock.length > 0) || 
                            (offlineData.sales && offlineData.sales.length > 0) || 
@@ -15566,7 +15665,8 @@ function showEditSupplierProductsSuggestions() {
                            (offlineData.stockEdits && offlineData.stockEdits.length > 0) ||
                            (offlineData.saleEdits && offlineData.saleEdits.length > 0) ||
                            (offlineData.purchaseEdits && offlineData.purchaseEdits.length > 0) ||
-                           (offlineData.deletes && offlineData.deletes.length > 0);
+                           (offlineData.deletes && offlineData.deletes.length > 0) ||
+                           (offlineData.debts && offlineData.debts.length > 0);
                            
     if (hasOfflineData && currentUser.databaseId) {
         await syncOfflineData();
@@ -15591,6 +15691,7 @@ function showEditSupplierProductsSuggestions() {
     if (!offlineData.saleEdits) offlineData.saleEdits = [];
     if (!offlineData.purchaseEdits) offlineData.purchaseEdits = [];
     if (!offlineData.deletes) offlineData.deletes = [];
+    if (!offlineData.debts) offlineData.debts = [];
     
     const hasOfflineData = (offlineData.stock && offlineData.stock.length > 0) || 
                            (offlineData.sales && offlineData.sales.length > 0) || 
@@ -15605,7 +15706,8 @@ function showEditSupplierProductsSuggestions() {
                            (offlineData.stockEdits && offlineData.stockEdits.length > 0) ||
                            (offlineData.saleEdits && offlineData.saleEdits.length > 0) ||
                            (offlineData.purchaseEdits && offlineData.purchaseEdits.length > 0) ||
-                           (offlineData.deletes && offlineData.deletes.length > 0);
+                           (offlineData.deletes && offlineData.deletes.length > 0) ||
+                           (offlineData.debts && offlineData.debts.length > 0);
                                    
     if (!hasOfflineData) {
         showNotification('No offline data to sync', 'info');
@@ -15618,6 +15720,31 @@ function showEditSupplierProductsSuggestions() {
         
         
         async function refreshAllData(showLoading = false) {
+    if (currentUser && currentUser.token && currentUser.databaseId) {
+        // Independent read-only requests can run together. This removes the
+        // serial dashboard -> stock network wait without changing calculations.
+        const [dashboardOutcome, stockOutcome] = await Promise.allSettled([
+            apiCall('getDashboard', {}),
+            apiCall('getStock', {})
+        ]);
+        const dashboardResult = dashboardOutcome.status === 'fulfilled' ? dashboardOutcome.value : null;
+        const stockResult = stockOutcome.status === 'fulfilled' ? stockOutcome.value : null;
+        if (dashboardResult?.success && dashboardResult.dashboard) {
+            dashboardCache = dashboardResult.dashboard;
+            saveDashboardCache();
+            if (currentUser.currentPage === 'dashboard') updateDashboardUI(dashboardResult.dashboard);
+        } else if (dashboardOutcome.status === 'rejected') {
+            console.warn('D1 dashboard refresh deferred:', dashboardOutcome.reason);
+        }
+        if (stockResult?.success) {
+            stockCache = stockResult;
+            saveStockCache();
+            updateProductsFromStock();
+        } else if (stockOutcome.status === 'rejected') {
+            console.warn('D1 stock refresh deferred:', stockOutcome.reason);
+        }
+        return;
+    }
     if (showLoading) {
         // Show loading indicators if needed
     }
@@ -16274,7 +16401,10 @@ function updateAllCaches(result) {
                 oldProduct: oldData.product,
                 oldQuantity: oldData.quantity,
                 oldBranchId: oldData.branchId,
-                oldUnit: oldData.unit
+                oldUnit: oldData.unit,
+                // Immutable old snapshot lets D1 locate the correct sale even
+                // when product/quantity are changed in the edit form.
+                sale: { ...oldData }
             };
             
             try {
@@ -17185,26 +17315,29 @@ function calculateTotalPurchasesFromCache() {
         // latest known Closed At. Server responses are already filtered;
         // this client-side guard is only a second line of defence for
         // offline/local-cache data.
+        function getOperationalRecordTimestamp_(record) {
+            const candidates = [record?.recordedAt, record?.datetime, record?.timestamp, record?.createdAt, record?.date, record?.updatedAt];
+            for (const value of candidates) {
+                if (value === undefined || value === null || value === '') continue;
+                const t = typeof value === 'number' ? (value < 1e12 ? value * 1000 : value) : new Date(value).getTime();
+                if (Number.isFinite(t)) return t;
+            }
+            return NaN;
+        }
+
         function filterLiveOperationalRecords(records, branchField) {
             if (!Array.isArray(records)) return [];
             return records.filter(record => {
                 const branch = record?.[branchField] || 'MAIN';
                 const closedAt = getLatestLocalClosedAtForBranch(branch);
                 if (closedAt === null) return true;
-                const recordTime = new Date(record.date).getTime();
-                return !isNaN(recordTime) && recordTime > closedAt;
+                const recordTime = getOperationalRecordTimestamp_(record);
+                return Number.isFinite(recordTime) && recordTime > closedAt;
             });
         }
 
         function filterOperationalRecordsByClose(records, branchField) {
-            if (!Array.isArray(records)) return [];
-            return records.filter(record => {
-                const branch = record?.[branchField] || 'MAIN';
-                const closedAt = getLatestLocalClosedAtForBranch(branch);
-                if (closedAt === null) return true;
-                const recordTime = new Date(record.date).getTime();
-                return !isNaN(recordTime) && recordTime > closedAt;
-            });
+            return filterLiveOperationalRecords(records, branchField);
         }
 
         // ============================================================
@@ -18434,6 +18567,42 @@ async function updateStock() {
         // field at the top of this form), so nothing about the existing
         // manual flow changes at all.
         let remoteSaleCartSessions = {};
+
+        // Durable scanner-cart storage and stable sale identifiers allow safe
+        // recovery after refresh or an interrupted completion.
+        const REMOTE_SALE_CART_STORAGE_KEY = 'smartTradeRemoteSaleCartSessions';
+        function saveRemoteSaleCartSessionsToStorage_() {
+            try {
+                localStorage.setItem(REMOTE_SALE_CART_STORAGE_KEY, JSON.stringify(remoteSaleCartSessions));
+                return true;
+            } catch (error) {
+                console.error('Unable to persist scanned sale carts:', error);
+                showNotification('Scanned sale cart could not be safely saved on this device. Do not close this page; check device storage.', 'error');
+                return false;
+            }
+        }
+        function loadRemoteSaleCartSessionsFromStorage_() {
+            try {
+                const raw = localStorage.getItem(REMOTE_SALE_CART_STORAGE_KEY);
+                if (!raw) return {};
+                const parsed = JSON.parse(raw);
+                if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+                const restored = {};
+                Object.entries(parsed).forEach(([id, session]) => {
+                    if (session && typeof session === 'object' && Array.isArray(session.items)) {
+                        restored[id] = { ...session, customerName: String(session.customerName || ''),
+                            paymentMethod: session.paymentMethod || 'Cash',
+                            items: session.items.filter(item => item && typeof item === 'object') };
+                    }
+                });
+                return restored;
+            } catch (error) {
+                console.error('Unable to restore scanned sale carts:', error);
+                showNotification('Saved scanned sale cart could not be read. Do not clear browser storage; contact support.', 'error');
+                return {};
+            }
+        }
+        remoteSaleCartSessions = loadRemoteSaleCartSessionsFromStorage_();
         
         // Persists the in-progress sale (items + customer + payment
         // method) so it's never lost - not by closing/reopening this
@@ -18601,8 +18770,10 @@ async function updateStock() {
                 // add). Undefined/omitted for every other way an item
                 // gets added to this cart - there's nothing to reconcile
                 // for those.
-                sourceScanId: sourceScanId || null
+                sourceScanId: sourceScanId || null,
+                operationId: generateSaleOperationId()
             });
+            if (targetSessionId) saveRemoteSaleCartSessionsToStorage_();
             
             // Clear only the item-specific fields - Customer/Payment Method
             // stay filled in since they apply to the whole sale.
@@ -18730,6 +18901,7 @@ async function updateStock() {
             if (session.items.length === 0) {
                 delete remoteSaleCartSessions[sessionId];
             }
+            saveRemoteSaleCartSessionsToStorage_();
             renderRemoteSaleCartSessions();
         }
         
@@ -18791,8 +18963,16 @@ async function updateStock() {
             }
             
             const itemsToProcess = mergeCartItemsForSubmission(session.items);
-            const receiptNo = generateClientReceiptNo();
-            const saleBatchId = generateSaleBatchId_();
+            // Persist stable identifiers before the first network request.
+            session.receiptNo = session.receiptNo || generateClientReceiptNo();
+            session.saleBatchId = session.saleBatchId || generateSaleBatchId_();
+            itemsToProcess.forEach(item => {
+                if (!item.operationId) item.operationId = generateSaleOperationId();
+            });
+            session.items = itemsToProcess;
+            saveRemoteSaleCartSessionsToStorage_();
+            const receiptNo = session.receiptNo;
+            const saleBatchId = session.saleBatchId;
             let successCount = 0;
             let offlineCount = 0;
             
@@ -18822,7 +19002,7 @@ async function updateStock() {
                 showNotification(`Sale completed for ${customer || 'customer'} - ${successCount} recorded, ${offlineCount} saved offline`, 'info');
             }
             
-            if (issueReceiptSelected && (successCount > 0 || offlineCount > 0)) {
+            if (issueReceipt !== false && (successCount > 0 || offlineCount > 0)) {
                 const receiptGrandTotal = itemsToProcess.reduce((sum, it) => sum + it.subtotal, 0);
                 generateSaleReceipt(itemsToProcess, customer, paymentMethod, receiptGrandTotal);
             }
@@ -18830,6 +19010,7 @@ async function updateStock() {
             // Only THIS session is cleared - every other cart (manual or
             // any other remote customer's) is left exactly as it was.
             delete remoteSaleCartSessions[sessionId];
+            saveRemoteSaleCartSessionsToStorage_();
             renderRemoteSaleCartSessions();
             
             loadSales();
@@ -19453,7 +19634,7 @@ async function updateStock() {
             const allGroups = [];
             const daySections = Object.keys(dayBuckets).sort((a,b) => new Date(b) - new Date(a)).map(dayKey => {
                 const dayRows = dayBuckets[dayKey].slice().sort((a,b) => new Date(a.date) - new Date(b.date));
-                const dayTotal = dayRows.reduce((sum,s) => sum + (Number(s.total)||0), 0);
+                const dayTotal = dayRows.reduce((sum,s) => sum + getSaleLineAmount_(s), 0);
                 const groups = [];
 
                 dayRows.forEach(sale => {
@@ -19505,12 +19686,12 @@ async function updateStock() {
                 const receiptHtml = groups.map((g, localIndex) => {
                     const gi = startIndex + localIndex;
                     const first=g.items[0];
-                    const subtotal=g.items.reduce((sum,x)=>sum+(Number(x.total)||0),0);
+                    const subtotal=g.items.reduce((sum,x)=>sum+getSaleLineAmount_(x),0);
                     const customerName=g.customer || 'Walk-in Customer';
-                    const sellerName=first.sellerName || sellerMap[g.sellerId] || (g.sellerId ? 'Unknown Seller' : 'Admin');
+                    const sellerName=getSellerDisplayName(g.sellerId, first.sellerName || sellerMap[g.sellerId]);
                     const branchName=branchMap[g.branchId] || g.branchId || 'Main Branch';
                     const receiptNo=first.receiptNo || first.receipt || `SALE-${String(gi+1).padStart(4,'0')}`;
-                    const items=g.items.map(x=>`<div class="sales-receipt-item"><div><div class="sales-receipt-item-name">${escapeHtml(x.product||x.service||'Item')}</div><div class="sales-receipt-item-sub">${formatQuantity(x.quantity)}${x.unit?' '+pluralizeUnit(x.unit,x.quantity):''} × ${formatCurrency(x.unitPrice||0)}</div></div><div class="sales-receipt-item-price">${formatCurrency(x.total||0)}</div></div>`).join('');
+                    const items=g.items.map(x=>`<div class="sales-receipt-item"><div><div class="sales-receipt-item-name">${escapeHtml(x.product||x.service||'Item')}</div><div class="sales-receipt-item-sub">${formatQuantity(x.quantity)}${x.unit?' '+pluralizeUnit(x.unit,x.quantity):''} × ${formatCurrency(x.unitPrice||0)}</div></div><div class="sales-receipt-item-price">${formatCurrency(getSaleLineAmount_(x))}</div></div>`).join('');
                     return `<div class="sales-receipt-card">
                         <div class="sales-receipt-head">
                             <div class="sales-receipt-head-left"><div class="sales-receipt-brand">SMARTTRADE</div><div class="sales-receipt-no">Receipt • ${escapeHtml(receiptNo)}</div></div>
@@ -19533,10 +19714,23 @@ async function updateStock() {
             }).join('');
 
             window.currentSalesReceiptGroups = allGroups;
-            const totalAmount = rows.reduce((sum,s) => sum + (Number(s.total)||0), 0);
+            const totalAmount = rows.reduce((sum,s) => sum + getSaleLineAmount_(s), 0);
             if (summaryDiv) summaryDiv.innerHTML = `<div class="summary-item"><span class="summary-label">Total Sales</span><span class="summary-value">${formatCurrency(totalAmount)}</span></div>`;
             container.innerHTML = daySections;
             if (tableBody) tableBody.innerHTML = '';
+        }
+
+        // Legacy receipts may contain quantity and unitPrice while total/amount
+        // was stored as zero or omitted. Derive the line amount without changing
+        // the underlying record; explicit positive totals always take priority.
+        function getSaleLineAmount_(sale) {
+            const raw = sale?.total ?? sale?.amount ?? sale?.grandTotal;
+            const stored = Number(String(raw ?? '').replace(/,/g, ''));
+            if (Number.isFinite(stored) && stored > 0) return stored;
+            const qty = Number(String(sale?.quantity ?? sale?.qty ?? 0).replace(/,/g, ''));
+            const price = Number(String(sale?.unitPrice ?? sale?.price ?? sale?.sellPrice ?? 0).replace(/,/g, ''));
+            const calculated = qty * price;
+            return Number.isFinite(calculated) && calculated > 0 ? calculated : (Number.isFinite(stored) ? stored : 0);
         }
 
         function formatSalesAsOfDate(dayKey) {
@@ -19851,7 +20045,9 @@ function editSale(rowIndex, product, quantity, unitPrice, total, customer, payme
                 product: product,
                 quantity: quantity,
                 branchId: branchId,
-                unit: unit || ''
+                unit: unit || '',
+                timestamp: date || '',
+                date: date || ''
             };
 
             document.getElementById('editSaleRowIndex').value = rowIndex;
@@ -22222,7 +22418,7 @@ function showEditCustomerSuggestions() {
         
         purchasesCache.filtered.forEach((purchase, index) => {
             const dateDisplay = formatDate(purchase.date, true);
-            const sellerName = purchase.sellerName || sellerMap[purchase.sellerId] || (purchase.sellerId ? 'Unknown Seller' : 'Admin');
+            const sellerName = getSellerDisplayName(purchase.sellerId, purchase.sellerName || sellerMap[purchase.sellerId]);
             const branchName = branchMap[purchase.branchId] || purchase.branchId || 'Main Branch';
             // IMPORTANT: use the row index that came from the server (which
             // matches the ACTUAL row in the PURCHASES sheet), never the
@@ -23669,6 +23865,7 @@ function removeCartItemBySourceScanId(scanId, target) {
         if (index !== -1) {
             session.items.splice(index, 1);
             if (session.items.length === 0) delete remoteSaleCartSessions[sessionId];
+            saveRemoteSaleCartSessionsToStorage_();
             renderRemoteSaleCartSessions();
             return true;
         }
@@ -24184,6 +24381,7 @@ function processRemoteScannedItem(item) {
                 remoteDebtCartSessions[sessionId].customerName = item.customerName;
             }
             addDebtItemToCart(item.id, sessionId);
+            saveRemoteDebtCartSessionsToStorage();
         } else {
             if (item.customerName) {
                 const borrowerField = document.getElementById('debtBorrowerName');
@@ -24300,7 +24498,7 @@ async function initRemoteScannerMode(code) {
     statusEl.style.color = '#94a3b8';
     
     try {
-        const response = await fetch(API_URL, {
+        const response = await smartTradeFetch(API_URL, {
             method: 'POST',
             body: JSON.stringify({ action: 'linkDeviceToSession', code: code, deviceName: guessDeviceName() })
         });
@@ -24542,7 +24740,7 @@ function sendScannedItemWithRetry(product, unit, target, customerName, customerS
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     
-    fetch(API_URL, {
+    smartTradeFetch(API_URL, {
         method: 'POST',
         body: JSON.stringify({ action: 'pushScannedItemToSession', code: remoteScannerCode, product: product, unit: unit, target: target || 'sale', customerName: customerName || '', customerSessionId: customerSessionId || '' }),
         signal: controller.signal
@@ -24662,7 +24860,7 @@ function confirmRemoteScannerSync() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     
-    fetch(API_URL, {
+    smartTradeFetch(API_URL, {
         method: 'POST',
         body: JSON.stringify({ action: 'getConfirmedScanIds', code: remoteScannerCode }),
         signal: controller.signal
@@ -24800,7 +24998,7 @@ function removeRemoteScannerHistoryItem(itemId) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
     
-    fetch(API_URL, {
+    smartTradeFetch(API_URL, {
         method: 'POST',
         body: JSON.stringify({ action: 'removeScannedItemFromSession', code: remoteScannerCode, id: item.id }),
         signal: controller.signal
@@ -26811,7 +27009,7 @@ function showEditPurchaseUnitSuggestions() {
             if (!isAdmin && sale.sellerId !== sellerId) return;
             if (!isAdmin && branchId && sale.branchId !== branchId) return;
             
-            const sellerName = sale.sellerName || sellerMap[sale.sellerId] || (sale.sellerId ? 'Seller' : 'Admin');
+            const sellerName = getSellerDisplayName(sale.sellerId, sale.sellerName || sellerMap[sale.sellerId]);
             const branchName = branchMap[sale.branchId] || sale.branchId || 'Main Branch';
             const customer = sale.customer || 'Walk-in';
             
@@ -26843,7 +27041,7 @@ function showEditPurchaseUnitSuggestions() {
             if (!isAdmin && purchase.sellerId !== sellerId) return;
             if (!isAdmin && branchId && purchase.branchId !== branchId) return;
             
-            const sellerName = purchase.sellerName || (purchase.sellerId ? 'Seller' : 'Admin');
+            const sellerName = getSellerDisplayName(purchase.sellerId, purchase.sellerName);
             const branchName = branchMap[purchase.branchId] || purchase.branchId || 'Main Branch';
             const supplierPhrase = purchase.supplier ? ` from ${purchase.supplier}` : '';
             
@@ -27239,39 +27437,48 @@ function showEditPurchaseUnitSuggestions() {
 
 let accountingCurrentTab = 'close';
 let accountingClosingReportsCache = null;
+let accountingPreviewRequestId = 0;
+let accountingPeriodsVerified = false;
+let accountingReportsLoadRequestId = 0;
+let accountingStatsHasRenderedInMemory = false;
 
 async function initAccountingPage() {
+    // Keep the last successful figures in the live page memory while the
+    // server refreshes in the background. This is not an offline cache: every
+    // entry still re-reads D1, and Close remains disabled until D1 history and
+    // a fresh Preview have both been verified.
+    accountingPreviewRequestId++;
+    accountingReportsLoadRequestId++;
+    accountingPeriodsVerified = false;
+    if (!accountingStatsHasRenderedInMemory) clearAccountingStatsDisplay();
+    const closeBtnAtLoad = document.getElementById('accountingCloseBtn');
+    if (closeBtnAtLoad) closeBtnAtLoad.disabled = true;
     populateAccountingBranchDropdown();
-    
-    // Cache-first, same pattern the rest of this app already uses for
-    // its Dashboard: show whatever closing reports were cached from a
-    // previous load INSTANTLY (synchronously, no network wait) so the
-    // date defaults and first preview can start right away - the real
-    // fetch below then quietly confirms/updates this in the background,
-    // instead of making every single thing on this page wait on it
-    // first.
-    if (!accountingClosingReportsCache) {
-        const cached = localStorage.getItem('smartTradeClosingReports');
-        if (cached) {
-            try { accountingClosingReportsCache = JSON.parse(cached); } catch (e) { /* ignore */ }
-        }
-    }
-    
+
+    // Retain only the in-memory report list for a quiet redraw while D1 is
+    // contacted; it is never used to authorize a close or to skip a fetch.
     setDefaultAccountingPeriodDates();
-    switchAccountingTab(accountingCurrentTab);
-    previewAccountingPeriod();
-    
-    // Refreshes the real closing reports list in the background - if it
-    // turns out to differ from what was cached (a close happened on
-    // another device, for instance), the date defaults and the Closing
-    // Reports table (if that's the tab currently showing) are quietly
-    // brought up to date.
-    loadClosingReports().then(() => {
+    switchAccountingTab(accountingCurrentTab, { skipLoad: true });
+
+    const statsTask = previewAccountingPeriod({ allowUnverifiedHistory: true, silent: true });
+    const historyTask = loadClosingReports({ render: accountingCurrentTab === 'reports', silent: true });
+    const authoritative = await historyTask;
+    if (authoritative) {
+        accountingPeriodsVerified = true;
         setDefaultAccountingPeriodDates();
-        if (accountingCurrentTab === 'reports') {
-            renderClosingReportsTable();
-        }
-    });
+        // This final silent Preview is the only result allowed to authorize
+        // Close Accounts after the authoritative D1 period list is known.
+        await previewAccountingPeriod({ silent: true });
+    } else {
+        accountingPeriodsVerified = false;
+        // Invalidate a provisional stats request that may still be in flight;
+        // without authoritative D1 period history it must not repaint the cards.
+        accountingPreviewRequestId++;
+        clearAccountingStatsDisplay();
+        const closeBtn = document.getElementById('accountingCloseBtn');
+        if (closeBtn) closeBtn.disabled = true;
+    }
+    await statsTask;
 }
 
 function populateAccountingBranchDropdown() {
@@ -27348,17 +27555,23 @@ function setDefaultAccountingPeriodDates() {
     const todayStr = getLocalDateString(today);
     
     if (reports.length > 0) {
-        // Sorted by the ACTUAL closing moment (Closed At), not Period
-        // End's calendar date - matching the exact same boundary the
-        // server now uses (see getLatestClosedPeriodEnd). Period Start
-        // defaults to the calendar day right after that real moment, so
-        // if accounts were closed mid-day, the very next day is offered
-        // as the new period's start, exactly as expected.
-        const sorted = reports.slice().sort((a, b) => new Date(b.closedAt) - new Date(a.closedAt));
-        const lastClosedAt = new Date(sorted[0].closedAt);
-        const nextStart = new Date(lastClosedAt);
-        nextStart.setDate(nextStart.getDate() + 1);
-        const nextStartStr = getLocalDateString(nextStart);
+        // New timestamp-aware closes may be followed by another close on
+        // the SAME calendar day. Legacy date-only closes still advance to
+        // the next day because their exact cutoff cannot be reconstructed.
+        const sorted = reports.slice().sort((a, b) => String(b.periodEndAt || b.closedAt || b.periodEnd || '').localeCompare(String(a.periodEndAt || a.closedAt || a.periodEnd || '')));
+        const latest = sorted[0];
+        const lastPeriodEnd = String(latest.periodEnd || latest.endDate || '').slice(0,10);
+        const endDate = /^\d{4}-\d{2}-\d{2}$/.test(lastPeriodEnd) ? lastPeriodEnd : getBusinessDateString(new Date(latest.closedAt));
+        const latestCutoff = latest.periodEndAt || latest.closedAt || '';
+        const closeBusinessDay = latestCutoff ? getBusinessDateString(new Date(latestCutoff)) : '';
+        let nextStartStr;
+        if (endDate === todayStr && closeBusinessDay === todayStr) {
+            nextStartStr = todayStr;
+        } else {
+            const nextStartDate = new Date(`${endDate}T12:00:00Z`);
+            nextStartDate.setUTCDate(nextStartDate.getUTCDate() + 1);
+            nextStartStr = nextStartDate.toISOString().slice(0,10);
+        }
         
         // Guards against an older closed record whose timestamp somehow
         // ended up in the future (shouldn't happen going forward - the
@@ -27390,7 +27603,17 @@ function handleAccountingPeriodInputChange() {
     previewAccountingPeriod();
 }
 
-async function previewAccountingPeriod() {
+async function previewAccountingPeriod(options = {}) {
+    const requestId = ++accountingPreviewRequestId;
+    const allowUnverifiedHistory = options.allowUnverifiedHistory === true;
+    if (!accountingPeriodsVerified && !allowUnverifiedHistory) {
+        clearAccountingStatsDisplay();
+        const closeBtn = document.getElementById('accountingCloseBtn');
+        if (closeBtn) closeBtn.disabled = true;
+        return;
+    }
+    const closeBtnWhileLoading = document.getElementById('accountingCloseBtn');
+    if (closeBtnWhileLoading) closeBtnWhileLoading.disabled = true;
     const periodStart = document.getElementById('accountingPeriodStart').value;
     const periodEnd = document.getElementById('accountingPeriodEnd').value;
     const branchId = document.getElementById('accountingBranchSelect').value;
@@ -27414,30 +27637,38 @@ async function previewAccountingPeriod() {
     }
     
     if (!isOnline) {
-        showNotification('Accounting figures need an internet connection to calculate accurately from every record.', 'error');
+        if (!options.silent) showNotification('Accounting figures need an internet connection to calculate accurately from every record.', 'error');
         return;
     }
     
-    setButtonLoading('accountingPreviewBtn', 'accountingPreviewSpinner', 'accountingPreviewText', true, 'Reviewing...');
+    if (!options.silent) setButtonLoading('accountingPreviewBtn', 'accountingPreviewSpinner', 'accountingPreviewText', true, 'Reviewing...');
     
     try {
         const result = await apiCall('previewAccountingPeriod', { periodStart, periodEnd, branchId });
+        if (requestId !== accountingPreviewRequestId) return;
         if (result.success) {
             if (result.overlapsClosedPeriod) {
                 clearAccountingStatsDisplay();
                 showOverlapWarning(result.overlap);
             } else {
                 renderAccountingStats(result.period, result.alreadyClosed);
+                const closeBtn = document.getElementById('accountingCloseBtn');
+                if (closeBtn) { closeBtn.dataset.previewReady = 'true'; if (!accountingPeriodsVerified) closeBtn.disabled = true; }
             }
         } else {
             clearAccountingStatsDisplay();
-            showNotification(result.error || 'Failed to calculate accounting figures', 'error');
+            if (!options.silent) showNotification(result.error || 'Failed to calculate accounting figures', 'error');
         }
     } catch (error) {
-        showNotification('Network error calculating accounting figures', 'error');
+        if (requestId === accountingPreviewRequestId) {
+            clearAccountingStatsDisplay();
+            const closeBtn = document.getElementById('accountingCloseBtn');
+            if (closeBtn) closeBtn.disabled = true;
+            if (!options.silent) showNotification('Network error calculating accounting figures', 'error');
+        }
     }
     
-    setButtonLoading('accountingPreviewBtn', 'accountingPreviewSpinner', 'accountingPreviewText', false);
+    if (requestId === accountingPreviewRequestId && !options.silent) setButtonLoading('accountingPreviewBtn', 'accountingPreviewSpinner', 'accountingPreviewText', false);
 }
 
 // Resets the stat cards to "—" and hides any warning banner - used
@@ -27445,6 +27676,9 @@ async function previewAccountingPeriod() {
 // stale banner or stale figures from a PREVIOUS valid selection never
 // linger on screen looking like they still apply to what's showing now.
 function clearAccountingStatsDisplay() {
+    accountingStatsHasRenderedInMemory = false;
+    const previewStateButton = document.getElementById('accountingCloseBtn');
+    if (previewStateButton) previewStateButton.dataset.previewReady = 'false';
     ['acctStatTotalSales', 'acctStatTotalPurchases', 'acctStatCogs', 'acctStatGrossProfit',
      'acctStatOperatingExpenses', 'acctStatNetProfit', 'acctStatClosingStock', 'acctStatOutstandingDebts'
     ].forEach(id => {
@@ -27454,7 +27688,7 @@ function clearAccountingStatsDisplay() {
     const banner = document.getElementById('accountingAlreadyClosedBanner');
     if (banner) banner.classList.add('hidden');
     const closeBtn = document.getElementById('accountingCloseBtn');
-    if (closeBtn) closeBtn.disabled = false;
+    if (closeBtn) closeBtn.disabled = true;
 }
 
 // Reuses the same banner as "already closed" for a related but distinct
@@ -27476,6 +27710,7 @@ function showOverlapWarning(overlap) {
 }
 
 function renderAccountingStats(period, alreadyClosed) {
+    accountingStatsHasRenderedInMemory = true;
     document.getElementById('acctStatTotalSales').textContent = formatCurrency(period.totalSales);
     document.getElementById('acctStatTotalPurchases').textContent = formatCurrency(period.totalPurchases);
     document.getElementById('acctStatCogs').textContent = formatCurrency(period.cogs);
@@ -27497,13 +27732,19 @@ function renderAccountingStats(period, alreadyClosed) {
         const idEl = document.getElementById('accountingAlreadyClosedId');
         if (idEl) idEl.textContent = period.closeId;
         if (closeBtn) closeBtn.disabled = true;
+    } else if (period.noNewActivity) {
+        if (banner) banner.classList.remove('hidden');
+        if (titleEl) titleEl.textContent = 'No new transactions have been recorded since the last close.';
+        const idEl = document.getElementById('accountingAlreadyClosedId');
+        if (idEl) idEl.textContent = 'Add a new sale, purchase or expense to start the next accounting period.';
+        if (closeBtn) closeBtn.disabled = true;
     } else {
         if (banner) banner.classList.add('hidden');
         if (closeBtn) closeBtn.disabled = false;
     }
 }
 
-function switchAccountingTab(tab) {
+function switchAccountingTab(tab, options = {}) {
     accountingCurrentTab = tab;
     const closeTab = document.getElementById('accountingCloseTab');
     const reportsTab = document.getElementById('accountingReportsTab');
@@ -27519,7 +27760,9 @@ function switchAccountingTab(tab) {
     if (tab === 'reports') {
         reportsTab.classList.remove('hidden');
         reportsBtn.className = 'confirmation-btn confirm';
-        renderClosingReportsTable();
+        // Always refresh the report list when the user opens this tab.
+        // This avoids showing an empty/stale table after a successful close.
+        if (!options.skipLoad) loadClosingReports({ render: true, silent: true });
     } else {
         closeTab.classList.remove('hidden');
         closeBtn.className = 'confirmation-btn confirm';
@@ -27653,9 +27896,11 @@ async function saveExpense() {
         try {
             const result = await apiCall('addExpense', expenseData);
             if (result.success) {
-                showNotification('Expense saved successfully', 'success');
+                // Refresh authoritative D1 records before closing the form.
+                lastExpensesResult = null;
                 await loadExpensesData();
-                loadDashboard();
+                await loadDashboard();
+                showNotification('Expense saved successfully. All previous expenses have been retained.', 'success');
                 closeAddExpenseModal();
             } else {
                 showNotification(result.error || 'Failed to save expense', 'error');
@@ -27785,12 +28030,16 @@ async function loadExpensesData() {
             showNotification(result.error || 'Failed to load expenses', 'error');
         }
     } catch (error) {
-        // If the connection disappeared during the fetch, the locally queued
-        // expenses remain visible instead of disappearing from the screen.
-        if (offlineData.expenses?.length) {
-            renderExpensesResult(getExpensesResultWithPendingLocal_(lastExpensesResult || {todayExpenses:0,periodExpenses:0,totalExpenses:0,categories:[],recent:[]}, filters));
+        console.error('Expenses D1 load failed:', error);
+        const tbody = document.getElementById('recentExpensesTableBody');
+        if (tbody && !lastExpensesResult) tbody.innerHTML = '';
+        const emptyState = document.getElementById('expensesEmptyState');
+        if (emptyState && !lastExpensesResult) {
+            emptyState.classList.remove('hidden');
+            emptyState.textContent = 'Unable to load expenses from the server. Check your connection and try again.';
         }
-        showNotification('Network error loading expenses', 'error');
+        const detail = String(error?.message || error || '').trim();
+        showNotification(detail ? `Failed to load expenses: ${detail}` : 'Failed to load expenses from server. Please retry.', 'error');
     }
 }
 
@@ -27800,8 +28049,8 @@ function renderExpensesResult(result) {
     document.getElementById('expStatTotal').textContent = formatCurrency(result.totalExpenses);
     lastKnownExpenseCategories = result.categories || [];
     renderExpenseCategoryFilterOptions(result.categories);
-    renderExpenseCategories(result.categories);
-    renderRecentExpenses(result.recent);
+    renderExpenseCategories(Array.isArray(result.categories) ? result.categories : []);
+    renderRecentExpenses(Array.isArray(result.recent) ? result.recent : (Array.isArray(result.data) ? result.data : []));
 }
 
 function renderExpenseCategories(categories) {
@@ -27848,68 +28097,122 @@ function renderRecentExpenses(expenses) {
             <td>${formatDate(e.date, false)}</td>
             <td>${escapeHtml(e.description || '-')}</td>
             <td>${escapeHtml(e.category || 'Uncategorized')}</td>
-            <td>${escapeHtml(getOfflineBranchName(e.branchId))}</td>
-            <td>${formatCurrency(e.total)}${e._offlinePending ? ' <span class="badge info">Pending Sync</span>' : ''}</td>
+            <td>${escapeHtml(getBranchDisplayName(e.branchId))}</td>
+            <td>${formatCurrency(e.amount ?? e.total ?? e.value ?? 0)}${e._offlinePending ? ' <span class="badge info">Pending Sync</span>' : ''}</td>
         </tr>
     `).join('');
 }
 
-// Cached to localStorage on every successful fetch so the closing
-// history remains visible offline too (see section 17 of the spec -
-// "closing information should not disappear").
-async function loadClosingReports() {
-    if (!isOnline) {
-        const cached = localStorage.getItem('smartTradeClosingReports');
-        if (cached) {
-            try { accountingClosingReportsCache = JSON.parse(cached); } catch (e) { /* ignore */ }
+// Closing history is loaded from D1 on demand; Accounting is not an offline feature.
+async function loadClosingReports(options = {}) {
+    const requestId = ++accountingReportsLoadRequestId;
+    const tbody = document.getElementById('accountingReportsTableBody');
+    const emptyState = document.getElementById('accountingReportsEmptyState');
+
+    // Accounting history is always read from D1. Do not silently fall back to
+    // localStorage/offline records: stale history can corrupt period decisions.
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        if (options.render !== false && tbody) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center" role="status" style="padding:24px 12px;color:#b45309;font-weight:600;">Internet connection required to load Closing Reports. Reconnect and tap Closing Reports again.</td></tr>';
+            if (emptyState) { emptyState.classList.add('hidden'); emptyState.style.display = 'none'; }
         }
-        return;
+        accountingPeriodsVerified = false;
+        const closeBtn = document.getElementById('accountingCloseBtn');
+        if (closeBtn) closeBtn.disabled = true;
+        return false;
     }
+
+    if (options.render !== false && tbody && (!options.silent || !Array.isArray(accountingClosingReportsCache))) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center" style="padding:18px;color:#64748b;">Loading closing reports from server...</td></tr>';
+        if (emptyState) emptyState.classList.add('hidden');
+    }
+
+    let rows;
     try {
         const result = await apiCall('getClosingReports', {});
-        if (result.success) {
-            accountingClosingReportsCache = result.reports;
-            localStorage.setItem('smartTradeClosingReports', JSON.stringify(result.reports));
+        if (requestId !== accountingReportsLoadRequestId) return false;
+        rows = Array.isArray(result?.reports) ? result.reports
+            : Array.isArray(result?.periods) ? result.periods
+            : Array.isArray(result?.data) ? result.data : null;
+        if (!result || result.success !== true || !rows) {
+            throw new Error(result?.error || result?.message || 'Server did not return a valid closing reports list.');
         }
     } catch (error) {
-        const cached = localStorage.getItem('smartTradeClosingReports');
-        if (cached) {
-            try { accountingClosingReportsCache = JSON.parse(cached); } catch (e) { /* ignore */ }
+        console.error('Closing Reports request failed:', error);
+        if (requestId === accountingReportsLoadRequestId && options.render !== false && tbody) {
+            tbody.innerHTML = `<tr><td colspan="9" class="text-center" role="alert" style="padding:24px 12px;color:#b45309;font-weight:600;">Closing Reports could not be loaded. Please check your connection and try again.</td></tr>`;
+            if (emptyState) { emptyState.classList.add('hidden'); emptyState.style.display = 'none'; }
+        }
+        accountingPeriodsVerified = false;
+        const closeBtn = document.getElementById('accountingCloseBtn');
+        if (closeBtn) closeBtn.disabled = true;
+        return false;
+    }
+
+    if (requestId !== accountingReportsLoadRequestId) return false;
+    accountingClosingReportsCache = rows.filter(r => r && typeof r === 'object');
+    // Render failures are UI/code errors, not network failures. Keep them
+    // separately labelled so the actual cause is never misdiagnosed.
+    if (options.render !== false) {
+        try {
+            renderClosingReportsTable();
+        } catch (renderError) {
+            console.error('Closing Reports render failed:', renderError);
+            if (tbody) tbody.innerHTML = `<tr><td colspan="9" class="text-center" role="alert" style="padding:24px 12px;color:#b45309;font-weight:600;">Closing Reports could not be displayed. Please refresh and try again.</td></tr>`;
         }
     }
+    return true;
+}
+
+function getAccountingClosingBranchName(branchId) {
+    if (!branchId || String(branchId).toUpperCase() === 'ALL') return 'All Branches';
+    if (String(branchId).toUpperCase() === 'MAIN') return 'Main Branch';
+    const list = Array.isArray(branchesCache?.data) ? branchesCache.data : [];
+    const found = list.find(branch => String(branch?.id) === String(branchId));
+    if (found?.name) return String(found.name);
+    // Avoid calling legacy/offline-only helpers that may not exist in this
+    // Frontend build. If the branch cache is not ready yet, show a neutral
+    // label and the ID rather than throwing and blanking the entire report.
+    return `Branch (${String(branchId)})`;
 }
 
 function renderClosingReportsTable() {
     const tbody = document.getElementById('accountingReportsTableBody');
     const emptyState = document.getElementById('accountingReportsEmptyState');
-    if (!tbody || !emptyState) return;
-    
+    if (!tbody) return;
+    // Render empty/loading/error states inside the table itself. This avoids
+    // a separate hidden paragraph becoming invisible after mobile tab changes.
+    if (emptyState) { emptyState.classList.add('hidden'); emptyState.style.display = 'none'; }
     const branchFilter = document.getElementById('accountingBranchSelect')?.value || 'ALL';
-    const reports = (accountingClosingReportsCache || []).filter(r => branchFilter === 'ALL' || (r.branchId || 'ALL') === branchFilter);
-    
+    const allReports = Array.isArray(accountingClosingReportsCache) ? accountingClosingReportsCache : [];
+    const reports = allReports.filter(r => branchFilter === 'ALL' || String(r.branchId || 'ALL') === String(branchFilter));
     if (reports.length === 0) {
-        tbody.innerHTML = '';
-        emptyState.classList.remove('hidden');
+        const message = allReports.length && branchFilter !== 'ALL'
+            ? 'No closed periods found for this branch.'
+            : 'No closed periods yet.';
+        tbody.innerHTML = `<tr class="accounting-empty-row"><td colspan="9" class="text-center" role="status" style="padding:24px 12px;color:#64748b;font-weight:600;">${message}</td></tr>`;
         return;
     }
-    emptyState.classList.add('hidden');
-    
     tbody.innerHTML = reports.map(r => `
         <tr>
-            <td>${formatDate(r.periodStart, false)} &rarr; ${formatDate(r.periodEnd, false)}</td>
-            <td>${formatDate(r.closedAt, true)}</td>
-            <td>${(!r.branchId || r.branchId === 'ALL') ? 'All Branches' : escapeHtml(getOfflineBranchName(r.branchId))}</td>
-            <td>${formatCurrency(r.totalSales)}</td>
-            <td>${formatCurrency(r.totalPurchases)}</td>
-            <td>${formatCurrency(r.operatingExpenses)}</td>
-            <td>${formatCurrency(r.netProfit)}</td>
-            <td>${formatCurrency(r.closingStockValue)}</td>
-            <td>${formatCurrency(r.outstandingDebts)}</td>
+            <td>${formatDate(r.periodStart || r.startDate, false)} &rarr; ${formatDate(r.periodEnd || r.endDate, false)}</td>
+            <td>${formatDate(r.closedAt || r.dateClosed, true)}</td>
+            <td>${(!r.branchId || r.branchId === 'ALL') ? 'All Branches' : escapeHtml(getAccountingClosingBranchName(r.branchId))}</td>
+            <td>${formatCurrency(r.totalSales ?? 0)}</td>
+            <td>${formatCurrency(r.totalPurchases ?? 0)}</td>
+            <td>${formatCurrency(r.operatingExpenses ?? r.expenses ?? 0)}</td>
+            <td>${formatCurrency(r.netProfit ?? 0)}</td>
+            <td>${formatCurrency(r.closingStockValue ?? r.stockValue ?? 0)}</td>
+            <td>${formatCurrency(r.outstandingDebts ?? r.debtOutstanding ?? 0)}</td>
         </tr>
     `).join('');
 }
 
 function confirmCloseAccounts() {
+    if (!accountingPeriodsVerified || !isOnline) {
+        showNotification('Please connect and verify the latest accounting period history before closing accounts.', 'error');
+        return;
+    }
     const periodStart = document.getElementById('accountingPeriodStart').value;
     const periodEnd = document.getElementById('accountingPeriodEnd').value;
     
@@ -27945,6 +28248,8 @@ function confirmCloseAccounts() {
 }
 
 async function closeAccountsConfirmed() {
+    let keepCloseDisabled = false;
+    let refreshNextPeriodPreview = false;
     const periodStart = document.getElementById('accountingPeriodStart').value;
     const periodEnd = document.getElementById('accountingPeriodEnd').value;
     const branchId = document.getElementById('accountingBranchSelect').value;
@@ -28034,19 +28339,35 @@ async function closeAccountsConfirmed() {
                 }
 
                 // Expenses are also a live-period list. Clear the in-page
-                // result immediately after a successful close so an older
-                // result cannot flash back into the Expenses table before the
-                // next authoritative server fetch.
+                // result immediately after a successful close, then reload
+                // authoritative open-period figures from D1. Historical
+                // records remain available to backend reports.
                 lastExpensesResult = null;
+                await loadExpensesData();
+                // Refresh dashboard totals from D1 so closed-period Sales,
+                // Purchases and Expenses cannot remain visible from cache.
+                await loadDashboard();
             }
             if (result.alreadyClosed) {
+                keepCloseDisabled = true;
                 showNotification('This exact period was already closed.', 'info');
             } else {
                 showNotification('Accounting period closed successfully.', 'success');
-                await loadClosingReports();
+                // Optimistically insert the exact period returned by the close
+                // transaction so the report is visible immediately, even if
+                // the follow-up list request is delayed. D1 then reconciles it.
+                if (result.period) {
+                    const closeKey = String(result.period.closeId || result.period.id || '');
+                    const current = Array.isArray(accountingClosingReportsCache) ? accountingClosingReportsCache : [];
+                    accountingClosingReportsCache = [result.period, ...current.filter(r => String(r.closeId || r.id || '') !== closeKey)];
+                    renderClosingReportsTable();
+                }
+                await loadClosingReports({ render: true });
                 setDefaultAccountingPeriodDates();
+                refreshNextPeriodPreview = true;
             }
         } else if (result.overlapsClosedPeriod) {
+            keepCloseDisabled = true;
             // The server is the authoritative check for this - it's
             // possible for the page to reach here without Preview having
             // already caught it (e.g. dates changed and Close tapped
@@ -28055,13 +28376,31 @@ async function closeAccountsConfirmed() {
             showOverlapWarning(result.overlap);
             showNotification(result.error || 'This period overlaps an already-closed period.', 'error');
         } else {
+            if (result.noNewActivity) {
+                keepCloseDisabled = true;
+                const banner = document.getElementById('accountingAlreadyClosedBanner');
+                const titleEl = document.getElementById('accountingBannerTitle');
+                const idEl = document.getElementById('accountingAlreadyClosedId');
+                if (banner) banner.classList.remove('hidden');
+                if (titleEl) titleEl.textContent = 'No new transactions have been recorded since the last close.';
+                if (idEl) idEl.textContent = 'Add a new sale, purchase or expense before closing accounts again.';
+                const closeBtn = document.getElementById('accountingCloseBtn');
+                if (closeBtn) closeBtn.disabled = true;
+            }
             showNotification(result.error || 'Failed to close accounting period', 'error');
         }
     } catch (error) {
+        keepCloseDisabled = true;
         showNotification('Network error closing accounting period', 'error');
     }
     
     setButtonLoading('accountingCloseBtn', 'accountingCloseSpinner', 'accountingCloseText', false);
+    if (refreshNextPeriodPreview) {
+        await previewAccountingPeriod();
+    } else if (keepCloseDisabled) {
+        const closeBtn = document.getElementById('accountingCloseBtn');
+        if (closeBtn) closeBtn.disabled = true;
+    }
 }
 
 
@@ -28239,6 +28578,7 @@ function updateReportStatsFromCache() {
                         localStorage.setItem('smartTradeSettings', JSON.stringify(result.settings));
                         
                         updateSettingsUI(result.settings);
+                        applyModalRestrictionsFromSettings(result.settings);
                     }
                 } catch (error) {
                     console.error('Error loading settings:', error);
@@ -28338,8 +28678,13 @@ function updateReportStatsFromCache() {
                 });
                 
                 if (result.success) {
-                    currentUser.business = business;
-                    localStorage.setItem('smartTradeBusiness', business);
+                    if (result.settings) {
+                        settingsCache = result.settings;
+                        currentUser.settings = result.settings;
+                        localStorage.setItem('smartTradeSettings', JSON.stringify(result.settings));
+                    }
+                    currentUser.business = result.business || business;
+                    localStorage.setItem('smartTradeBusiness', currentUser.business);
                     
                     // Keep the business-switcher list in sync too, so the
                     // renamed business shows its new name immediately there
@@ -28480,47 +28825,35 @@ function updateReportStatsFromCache() {
             const language = document.getElementById('settingLanguage').value;
             const currency = document.getElementById('settingCurrency').value;
             const dateFormat = document.getElementById('settingDateFormat').value;
-            
             setSettingsButtonLoading('saveDisplayBtn', 'displaySpinner', 'saveDisplayText', true, 'Saving Changes...');
-            
-            const updates = [
-                { section: 'DISPLAY', key: 'language', value: language },
-                { section: 'DISPLAY', key: 'currency', value: currency },
-                { section: 'DISPLAY', key: 'date_format', value: dateFormat }
-            ];
-            
-            let allSuccess = true;
-            
-            for (const update of updates) {
-                try {
-                    const result = await apiCall('updateSettings', update);
-                    if (!result.success) {
-                        allSuccess = false;
-                        showNotification(`Failed to save ${update.key}: ${result.error}`, 'error');
-                    }
-                } catch (error) {
-                    allSuccess = false;
-                    showNotification(`Network error saving ${update.key}`, 'error');
+            try {
+                // Save the complete DISPLAY section in one D1 write so a
+                // partial network failure cannot leave only one or two fields changed.
+                const result = await apiCall('updateSettings', { settings: { DISPLAY: {
+                    language: { value: language },
+                    currency: { value: currency },
+                    date_format: { value: dateFormat }
+                }}});
+                if (!result.success) throw new Error(result.error || 'Server did not save display settings');
+                const saved = result.settings?.DISPLAY;
+                if (!saved || saved.language?.value !== language || saved.currency?.value !== currency || saved.date_format?.value !== dateFormat) {
+                    throw new Error('Server did not confirm all three display settings. Please reload Settings and verify before retrying.');
                 }
-            }
-            
-            if (allSuccess) {
+                settingsCache = result.settings;
+                currentUser.settings = result.settings;
+                localStorage.setItem('smartTradeSettings', JSON.stringify(result.settings));
                 currentUser.currency = currency;
                 currentUser.language = language;
-                // Both persisted here (not just held in memory) - this is
-                // exactly what was missing before: the setting reached the
-                // database fine, but nothing saved it locally too, so a
-                // page reload had no way to know the saved currency/language
-                // until the settings fetch from the server completed a
-                // moment later (and even then, nothing was reading it back
-                // into currentUser - see updateSettingsUI() for that fix).
                 localStorage.setItem('smartTradeCurrency', currency);
                 localStorage.setItem('smartTradeLanguage', language);
                 applyLanguage(language);
-                showNotification('Display settings saved successfully!', 'success');
+                showNotification('Display settings saved and verified on server!', 'success');
+            } catch (error) {
+                console.error('Display settings save failed:', error);
+                showNotification(error?.message || 'Could not save display settings. Please retry.', 'error');
+            } finally {
+                setSettingsButtonLoading('saveDisplayBtn', 'displaySpinner', 'saveDisplayText', false);
             }
-            
-            setSettingsButtonLoading('saveDisplayBtn', 'displaySpinner', 'saveDisplayText', false);
         }
         
         async function exportData() {
@@ -28847,8 +29180,13 @@ function showSettingsSection(section) {
                 'error': 'exclamation-circle',
                 'info': 'info-circle'
             };
-            
-            notification.innerHTML = `<i class="fas fa-${icons[type] || 'info-circle'}"></i> ${message}`;
+            const safeMessage = (message === undefined || message === null || String(message).trim() === '')
+                ? (type === 'success' ? 'Operation completed successfully' : type === 'error' ? 'Something went wrong. Please try again.' : 'Information')
+                : String(message);
+            const icon = document.createElement('i');
+            icon.className = `fas fa-${icons[type] || 'info-circle'}`;
+            notification.appendChild(icon);
+            notification.appendChild(document.createTextNode(` ${safeMessage}`));
             document.body.appendChild(notification);
             
             setTimeout(() => {
@@ -29418,7 +29756,7 @@ function displayDebtsTable() {
     }
 
     function actionButton(action, debt, label, icon, cls, extra) {
-        return '<button type="button" class="' + (cls || '') + '" data-debt-action="' + action + '" data-debt-id="' + escapeHtml(String(debt.id || '')) + '"' + (extra || '') + '><i class="fas ' + icon + '"></i> ' + label + '</button>';
+        return '<button type="button" class="' + (cls || '') + '" data-debt-action="' + action + '" data-debt-id="' + escapeHtml(getDebtIdentityValue(debt)) + '"' + (extra || '') + '><i class="fas ' + icon + '"></i> ' + label + '</button>';
     }
 
     var html = groups.map(function(group, cardIndex) {
@@ -29877,7 +30215,7 @@ async function denyDebt() {
         
         if (result.success) {
             // Update local cache immediately
-            const index = debtsCache.data.findIndex(d => d.id === debtId);
+            const index = findDebtCacheIndex(debtId);
             if (index !== -1) {
                 debtsCache.data[index].status = 'denied';
                 if (reason) {
@@ -30180,14 +30518,45 @@ let currentDebtTransactionId = null;
 // { customerName, items: [] } cart with its own Complete Debt button,
 // never merged into the manual currentDebtCart above.
 let remoteDebtCartSessions = {};
+function saveRemoteDebtCartSessionsToStorage() {
+    try {
+        localStorage.setItem('smartTradeRemoteDebtCartSessions', JSON.stringify(remoteDebtCartSessions));
+    } catch (e) {
+        console.error('Could not persist scanned Debt carts:', e);
+        showNotification('Scanned Debt cart could not be saved on this device. Do not close this page until storage is available.', 'error');
+        throw e;
+    }
+}
+function loadRemoteDebtCartSessionsFromStorage() {
+    try {
+        const raw = localStorage.getItem('smartTradeRemoteDebtCartSessions');
+        const parsed = raw ? JSON.parse(raw) : {};
+        remoteDebtCartSessions = parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+        Object.keys(remoteDebtCartSessions).forEach(id => {
+            const session = remoteDebtCartSessions[id];
+            if (!session || !Array.isArray(session.items)) delete remoteDebtCartSessions[id];
+        });
+    } catch (e) {
+        console.error('Could not restore scanned Debt carts:', e);
+        showNotification('Some scanned Debt cart data could not be read. Do not overwrite or clear browser storage.', 'error');
+        remoteDebtCartSessions = {};
+    }
+}
 
 function saveDebtCartToStorage() {
-    localStorage.setItem('smartTradeDebtCart', JSON.stringify({
-        items: currentDebtCart,
-        borrowerName: document.getElementById('debtBorrowerName')?.value || '',
-        borrowerPhone: document.getElementById('debtBorrowerPhone')?.value || '',
-        borrowerNIDA: document.getElementById('debtBorrowerNIDA')?.value || ''
-    }));
+    try {
+        localStorage.setItem('smartTradeDebtCart', JSON.stringify({
+            items: currentDebtCart,
+            transactionId: currentDebtTransactionId,
+            borrowerName: document.getElementById('debtBorrowerName')?.value || '',
+            borrowerPhone: document.getElementById('debtBorrowerPhone')?.value || '',
+            borrowerNIDA: document.getElementById('debtBorrowerNIDA')?.value || ''
+        }));
+    } catch (e) {
+        console.error('Debt cart persistence failed:', e);
+        showNotification('Debt cart could not be saved on this device. Free storage before continuing.', 'error');
+        throw e;
+    }
 }
 
 function loadDebtCartFromStorage() {
@@ -30199,6 +30568,7 @@ function loadDebtCartFromStorage() {
     try {
         const parsed = JSON.parse(saved);
         currentDebtCart = Array.isArray(parsed.items) ? parsed.items : [];
+        currentDebtTransactionId = parsed.transactionId || null;
         return {
             borrowerName: parsed.borrowerName || '',
             borrowerPhone: parsed.borrowerPhone || '',
@@ -30323,9 +30693,12 @@ function addDebtItemToCart(sourceScanId, targetSessionId) {
     document.getElementById('debtStockInfo').style.display = 'none';
     
     if (targetSessionId) {
+        if (!remoteDebtCartSessions[targetSessionId].transactionId) remoteDebtCartSessions[targetSessionId].transactionId = 'DEBT_TX_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
+        saveRemoteDebtCartSessionsToStorage();
         renderRemoteDebtCartSessions();
         showNotification(`${product} added to ${remoteDebtCartSessions[targetSessionId].customerName || 'borrower'}'s debt`, 'success');
     } else {
+        if (!currentDebtTransactionId) currentDebtTransactionId = 'DEBT_TX_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
         renderDebtCartSummary();
         showNotification(`${product} added to this debt`, 'success');
     }
@@ -30427,6 +30800,7 @@ function removeItemFromRemoteDebtSession(sessionId, index) {
     if (session.items.length === 0) {
         delete remoteDebtCartSessions[sessionId];
     }
+    saveRemoteDebtCartSessionsToStorage();
     renderRemoteDebtCartSessions();
 }
 
@@ -30462,7 +30836,17 @@ async function completeDebtForSessionConfirmed(sessionId, issueAgreement = true)
     const session = remoteDebtCartSessions[sessionId];
     if (!session || !session.items.length) return;
     if (!navigator.onLine) {
-        showNotification('Cannot complete Debt while offline. Please connect to the internet and try again.', 'error');
+        await queueDebtTransactionOffline({
+            borrowerName: session.customerName || '',
+            borrowerPhone: '',
+            borrowerNIDA: '',
+            notes: 'Recorded via Connect Device scanner',
+            items: session.items,
+            transactionId: session.transactionId || null
+        }, issueAgreement, false);
+        delete remoteDebtCartSessions[sessionId];
+        saveRemoteDebtCartSessionsToStorage();
+        renderRemoteDebtCartSessions();
         return;
     }
 
@@ -30474,7 +30858,9 @@ async function completeDebtForSessionConfirmed(sessionId, issueAgreement = true)
         notes: 'Recorded via Connect Device scanner'
     };
     const itemsToProcess = mergeDebtCartItemsForSubmission(session.items);
-    const transactionId = 'DEBT_TX_' + Date.now() + '_' + Math.random().toString(36).slice(2,10);
+    const transactionId = session.transactionId || ('DEBT_TX_' + Date.now() + '_' + Math.random().toString(36).slice(2,10));
+    session.transactionId = transactionId;
+    saveRemoteDebtCartSessionsToStorage();
     itemsToProcess.forEach(function(item, index) {
         item.clientDebtId = 'DEBT_' + transactionId + '_' + index;
         item.operationId = transactionId + '_ITEM_' + index;
@@ -30530,10 +30916,11 @@ async function completeDebtForSessionConfirmed(sessionId, issueAgreement = true)
             generateDebtAgreement(itemsToProcess, borrowerInfo.borrowerName, '', agreementGrandTotal);
         }
         delete remoteDebtCartSessions[sessionId];
+        saveRemoteDebtCartSessionsToStorage();
         renderRemoteDebtCartSessions();
         hideDebtSavingOverlay();
-        await loadDebts();
-        await loadDashboard();
+        try { await loadDebts(); } catch (refreshDebtError) { console.warn('Debt list refresh deferred after confirmed save:', refreshDebtError); }
+        try { await loadDashboard(); } catch (refreshDashboardError) { console.warn('Dashboard refresh deferred after confirmed Debt save:', refreshDashboardError); }
     } catch (error) {
         hideDebtSavingOverlay();
         console.error('Remote Complete Debt bulk save failed:', error);
@@ -30616,12 +31003,75 @@ function hideDebtSavingOverlay() {
     document.body.classList.remove('smart-trade-debt-saving-active');
 }
 
+
+async function queueDebtTransactionOffline(transaction, issueAgreement = true, clearManualCart = true) {
+    const items = mergeDebtCartItemsForSubmission(transaction.items || []);
+    if (!items.length) throw new Error('Hakuna bidhaa za Debt za kuhifadhi.');
+    let queuedPhotoBase64 = transaction.photoBase64 || debtPhotoBase64 || '';
+    if (clearManualCart && selectedDebtPhotoFile && !queuedPhotoBase64) {
+        const compressedPhoto = await compressImageFileForSheet(selectedDebtPhotoFile, MAX_DEBT_PHOTO_BASE64_LENGTH);
+        queuedPhotoBase64 = compressedPhoto.dataUrl || '';
+    }
+    const transactionId = transaction.transactionId || ('DEBT_TX_' + Date.now() + '_' + Math.random().toString(36).slice(2,10));
+    const timestamp = new Date().toISOString();
+    const queueItems = items.map((item, index) => {
+        const debtId = item.clientDebtId || ('DEBT_' + transactionId + '_' + index);
+        const operationId = item.operationId || (transactionId + '_ITEM_' + index);
+        return {
+            id: debtId, debtId, operationId, transactionId, timestamp,
+            borrowerName: transaction.borrowerName || '',
+            borrowerPhone: transaction.borrowerPhone || '',
+            borrowerNIDA: transaction.borrowerNIDA || '',
+            photoId: '', photoUrl: '', photoBase64: queuedPhotoBase64,
+            photoMimeType: 'image/jpeg',
+            product: item.product,
+            quantity: Number(item.qty) || Number(item.quantity) || 0,
+            unitPrice: Number(item.unitPrice) || 0,
+            total: Number(item.subtotal) || (Number(item.qty) * Number(item.unitPrice)),
+            unit: item.unit || '',
+            isStockProduct: item.isStockProduct === true,
+            branchId: item.branchId || currentUser.branchId || 'MAIN',
+            sellerId: currentUser.sellerId,
+            notes: transaction.notes || '',
+            status: 'pending', paidAmount: 0, checkStock: true,
+            _queuedAt: timestamp, _issueAgreement: issueAgreement !== false
+        };
+    });
+    // Persist the whole batch with stable item operation IDs before clearing any UI state.
+    offlineData.debts = Array.isArray(offlineData.debts) ? offlineData.debts : [];
+    const existing = new Set(offlineData.debts.map(x => String(x.operationId || '')));
+    for (const item of queueItems) {
+        if (!item.product || !(item.quantity > 0) || !(item.unitPrice > 0) || !item.operationId) {
+            throw new Error('Debt item ina taarifa zisizokamilika; hakuna data iliyofutwa.');
+        }
+        if (!existing.has(String(item.operationId))) offlineData.debts.push(item);
+    }
+    saveOfflineData();
+    // Require an explicit IndexedDB transaction commit before clearing the user's cart.
+    await stpOutboxPut('queue', JSON.parse(JSON.stringify(offlineData)));
+    await stpOutboxMirrorPromise;
+    if (clearManualCart) {
+        currentDebtTransactionId = null;
+        currentDebtCart = [];
+        clearDebtCartStorage();
+        resetDebtFormAfterSubmit();
+        renderDebtCartSummary();
+    }
+    showNotification('Debt imehifadhiwa kwenye foleni salama ya offline. Itasawazishwa mtandao utakaporudi.', 'success');
+    if (navigator.onLine) syncOfflineData();
+}
+
 async function completeDebtConfirmed(issueAgreement = true) {
-    // ZINGATIA: Debt is ONLINE-ONLY. Complete Debt never writes to the
-    // offline queue and never calls syncOfflineData.
     if (!navigator.onLine) {
         isOnline = false;
-        showNotification('Cannot complete Debt while offline. Please connect to the internet and try again.', 'error');
+        await queueDebtTransactionOffline({
+            borrowerName: document.getElementById('debtBorrowerName').value.trim(),
+            borrowerPhone: document.getElementById('debtBorrowerPhone').value.trim(),
+            borrowerNIDA: document.getElementById('debtBorrowerNIDA').value.trim(),
+            notes: document.getElementById('debtNotes').value.trim(),
+            items: currentDebtCart,
+            transactionId: currentDebtTransactionId
+        }, issueAgreement);
         return;
     }
 
@@ -30646,6 +31096,8 @@ async function completeDebtConfirmed(issueAgreement = true) {
         item.clientDebtId = item.clientDebtId || ('DEBT_' + currentDebtTransactionId + '_' + index);
         item.operationId = item.operationId || (currentDebtTransactionId + '_ITEM_' + index);
     });
+    // Preserve the transaction and its item IDs before the first network request.
+    saveDebtCartToStorage();
 
     try {
         if (capturedPhotoFile && !photoBase64) {
@@ -31142,14 +31594,32 @@ function calculateDebtTotal() {
 // with the same offline queueing every other edit already has.
 // ============================================
 
+// Resolve Debt rows using every identifier exposed by D1/legacy imports.
+// Legacy rows may expose payload.id while the D1 external_id is different.
+function getDebtIdentityValue(debt) {
+    if (!debt) return '';
+    return String(debt.debtId || debt.id || debt._externalId || debt._recordId || debt.rowIndex || '');
+}
+function findDebtCacheIndex(debtId) {
+    const key = String(debtId == null ? '' : debtId);
+    return (debtsCache.data || []).findIndex(function(d) {
+        return [d && d.id, d && d.debtId, d && d._externalId, d && d._recordId, d && d.rowIndex, d && d._legacyRowNumber]
+            .some(function(v) { return v !== undefined && v !== null && String(v) === key; });
+    });
+}
+function findDebtCacheRow(debtId) {
+    const index = findDebtCacheIndex(debtId);
+    return index >= 0 ? debtsCache.data[index] : null;
+}
+
 function editDebt(debtId) {
-    const debt = (debtsCache.data || []).find(d => d.id === debtId);
+    const debt = findDebtCacheRow(debtId);
     if (!debt) {
         showNotification('Debt not found', 'error');
         return;
     }
     
-    document.getElementById('editDebtId').value = debtId;
+    document.getElementById('editDebtId').value = getDebtIdentityValue(debt) || String(debtId);
     document.getElementById('editDebtOriginalProduct').value = debt.product || '';
     document.getElementById('editDebtOriginalQuantity').value = debt.quantity || 0;
     document.getElementById('editDebtOriginalUnit').value = debt.unit || '';
@@ -31299,7 +31769,7 @@ async function submitDebtEdit() {
     }
     
     const applyToCache = () => {
-        const index = (debtsCache.data || []).findIndex(d => d.id === debtId);
+        const index = findDebtCacheIndex(debtId);
         if (index !== -1) {
             debtsCache.data[index].borrowerName = borrowerName;
             debtsCache.data[index].borrowerPhone = borrowerPhone;
@@ -31729,6 +32199,7 @@ function openReturnDebtModal(debtId, borrower, product, quantity, totalAmount, p
     document.getElementById('returnDebtQuantity').textContent = formatQuantity(quantity);
     document.getElementById('returnDebtAmount').textContent = formatCurrency(totalAmount);
     document.getElementById('returnDebtPaid').textContent = formatCurrency(paidAmount);
+    document.getElementById('returnDebtPaid').dataset.amount = String(Number(paidAmount) || 0);
     document.getElementById('returnDebtTotal').value = totalAmount;
     document.getElementById('returnDebtPaidAmount').value = (totalAmount - paidAmount).toFixed(2);
     // Checkbox imeondolewa, hatuhitaji kuweka value
@@ -31751,14 +32222,16 @@ function hideReturnDebtModal() {
 function confirmReturnDebt() {
     const paidAmount = parseFloat(document.getElementById('returnDebtPaidAmount').value);
     const totalAmount = parseFloat(document.getElementById('returnDebtTotal').value);
+    const alreadyPaid = parseFloat(document.getElementById('returnDebtPaid').dataset.amount || '0') || 0;
+    const outstanding = Math.max(0, totalAmount - alreadyPaid);
     
     if (!paidAmount || paidAmount <= 0) {
         showNotification('Please enter a valid amount', 'error');
         return;
     }
     
-    if (paidAmount > totalAmount) {
-        showNotification('Amount paid cannot exceed total amount', 'error');
+    if (paidAmount > outstanding + 0.000001) {
+        showNotification('Amount paid cannot exceed the outstanding balance', 'error');
         return;
     }
     
@@ -31778,12 +32251,14 @@ async function returnDebt() {
     const debtId = document.getElementById('returnDebtId').value;
     const paidAmount = parseFloat(document.getElementById('returnDebtPaidAmount').value);
     const totalAmount = parseFloat(document.getElementById('returnDebtTotal').value);
+    const alreadyPaid = parseFloat(document.getElementById('returnDebtPaid').dataset.amount || '0') || 0;
+    const outstanding = Math.max(0, totalAmount - alreadyPaid);
     if (!paidAmount || paidAmount <= 0) { showNotification('Please enter a valid amount', 'error'); return; }
-    if (paidAmount > totalAmount) { showNotification('Amount paid cannot exceed total amount', 'error'); return; }
+    if (paidAmount > outstanding + 0.000001) { showNotification('Amount paid cannot exceed the outstanding balance', 'error'); return; }
 
     // One immutable id per payment attempt. Every retry reuses this exact ID.
     var operationId = 'DEBT_PAYMENT_' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '_' + Math.random().toString(36).slice(2));
-    var payment = { operationId: operationId, debtId: debtId, paidAmount: paidAmount, createdAt: new Date().toISOString() };
+    var payment = { operationId: operationId, debtId: debtId, id: debtId, paidAmount: paidAmount, createdAt: new Date().toISOString() };
     setButtonLoading('returnDebtBtn', 'returnDebtSpinner', 'returnDebtText', true);
     try {
         const result = await apiCall('returnDebt', payment);
@@ -31839,12 +32314,13 @@ function deleteDebt(debtId, returnStock, sourceButton) {
             try {
                 const result = await apiCall('deleteDebt', {
                     debtId,
+                    id: debtId,
                     returnStock
                 });
 
                 if (result.success) {
                     await refreshAllData();
-                    showNotification(result.message, 'success');
+                    showNotification(result.message || (result.stockReturned ? 'Debt deleted successfully and items returned to stock' : 'Debt deleted successfully'), 'success');
                     setDebtCardActionLoading(sourceButton, false);
                     loadDebts();
                     loadDashboard();
@@ -32059,6 +32535,24 @@ function hidePhotoModal() {
 // nothing. Falls back to the Drive link only if no file bytes came back
 // (older server response, or something odd about the file).
 function triggerFileDownload(result) {
+    // The Cloudflare Worker creates the complete report document and layout.
+    // Frontend only opens the server-generated document for printing/saving.
+    if (result.reportHtml) {
+        const reportBlob = new Blob([result.reportHtml], { type: 'text/html;charset=utf-8' });
+        const reportUrl = URL.createObjectURL(reportBlob);
+        const reportWindow = window.open(reportUrl, '_blank', 'noopener');
+        if (!reportWindow) {
+            const reportLink = document.createElement('a');
+            reportLink.href = reportUrl;
+            reportLink.target = '_blank';
+            reportLink.rel = 'noopener';
+            document.body.appendChild(reportLink);
+            reportLink.click();
+            document.body.removeChild(reportLink);
+        }
+        setTimeout(() => URL.revokeObjectURL(reportUrl), 60000);
+        return;
+    }
     if (result.fileData) {
         try {
             const byteChars = atob(result.fileData);
@@ -32091,308 +32585,8 @@ function triggerFileDownload(result) {
     document.body.removeChild(link);
 }
 
-// ============================================
-// OFFLINE REPORT GENERATION - when there's no internet, the server-side
-// PDF generator (Apps Script) is unreachable, so reports used to simply
-// fail with "Network error". This builds the SAME report content
-// straight from the locally-cached data (already saved for offline use
-// elsewhere in the app) as a clean, print-ready HTML page instead of a
-// PDF - the browser's own "Print > Save as PDF" then produces an
-// actual PDF file with zero extra libraries needed (adding a PDF-
-// generation library would itself require a network fetch the first
-// time, defeating the purpose). Nothing here reads from or writes to
-// any cache - it's purely a read-only view of data that's already
-// there, so there's no risk of altering or losing anything.
-// ============================================
+// Offline report generation and its cache-based builders have been removed.
 
-function getOfflineBranchName(branchId) {
-    const branch = (branchesCache.data || []).find(b => b.id === branchId);
-    return (branch && branch.name) || branchId || 'Main Branch';
-}
-
-function getOfflineSellerName(sale) {
-    if (sale.sellerName) return sale.sellerName;
-    if (!sale.sellerId) return 'Admin';
-    const seller = (sellersCache.data || []).find(s => s.id === sale.sellerId);
-    return (seller && seller.name) || 'Unknown Seller';
-}
-
-function withinOfflineDateRange(dateValue, dateFrom, dateTo) {
-    if (!dateFrom && !dateTo) return true;
-    const t = new Date(dateValue).getTime();
-    if (isNaN(t)) return true;
-    if (dateFrom && t < new Date(dateFrom).getTime()) return false;
-    if (dateTo && t > new Date(dateTo).getTime() + 86399999) return false; // include the whole "to" day
-    return true;
-}
-
-// Builds { title, columns, rows (array of arrays), summaryLines } for one
-// report section - shared by both the single-section reports (Stock,
-// Sales, Purchases, Debts) and the combined ones (Full, Profit), which
-// just call this multiple times and stitch the sections together.
-function buildOfflineReportSection(sectionType, filters) {
-    filters = filters || {};
-    
-    if (sectionType === 'stock') {
-        let items = (stockCache.data || []).slice();
-        if (filters.branch) items = items.filter(i => (i.branchId || 'MAIN') === filters.branch);
-        if (filters.category) items = items.filter(i => (i.category || '') === filters.category);
-        
-        const totalValue = items.reduce((sum, i) => sum + (Number(i.quantity) || 0) * (Number(i.sellPrice) || 0), 0);
-        
-        return {
-            title: 'Stock Report',
-            columns: ['Product', 'Branch', 'Quantity', 'Buy Price', 'Sell Price', 'Value', 'Category'],
-            rows: items.map(i => [
-                i.product || '',
-                getOfflineBranchName(i.branchId),
-                formatQuantity(i.quantity) + (i.unit ? ' ' + pluralizeUnit(i.unit, i.quantity) : ''),
-                formatCurrency(i.buyPrice || 0),
-                formatCurrency(i.sellPrice || 0),
-                formatCurrency((Number(i.quantity) || 0) * (Number(i.sellPrice) || 0)),
-                i.category || '-'
-            ]),
-            summaryLines: [`Total Items: ${items.length}`, `Total Stock Value: ${formatCurrency(totalValue)}`]
-        };
-    }
-    
-    if (sectionType === 'sales') {
-        let items = (salesCache.data || []).slice();
-        if (filters.branch) items = items.filter(s => (s.branchId || 'MAIN') === filters.branch);
-        if (filters.seller) items = items.filter(s => s.sellerId === filters.seller);
-        if (filters.product) items = items.filter(s => s.product === filters.product);
-        if (filters.payment) items = items.filter(s => (s.paymentMethod || '') === filters.payment);
-        if (filters.dateFrom || filters.dateTo) items = items.filter(s => withinOfflineDateRange(s.date, filters.dateFrom, filters.dateTo));
-        
-        const total = items.reduce((sum, s) => sum + (Number(s.total) || 0), 0);
-        
-        return {
-            title: 'Sales Report',
-            columns: ['Date', 'Seller', 'Branch', 'Product', 'Quantity', 'Unit Price', 'Total', 'Customer', 'Payment'],
-            rows: items.map(s => [
-                formatDate(s.date, true),
-                getOfflineSellerName(s),
-                getOfflineBranchName(s.branchId),
-                s.product || '',
-                formatQuantity(s.quantity) + (s.unit ? ' ' + pluralizeUnit(s.unit, s.quantity) : ''),
-                formatCurrency(s.unitPrice || 0),
-                formatCurrency(s.total || 0),
-                s.customer || '-',
-                s.paymentMethod || '-'
-            ]),
-            summaryLines: [`Transactions: ${items.length}`, `Total Sales: ${formatCurrency(total)}`, `Average per Sale: ${formatCurrency(items.length ? total / items.length : 0)}`]
-        };
-    }
-    
-    if (sectionType === 'purchases') {
-        let items = (purchasesCache.data || []).slice();
-        if (filters.branch) items = items.filter(p => (p.branchId || 'MAIN') === filters.branch);
-        if (filters.seller) items = items.filter(p => p.sellerId === filters.seller);
-        if (filters.supplier) items = items.filter(p => (p.supplier || '') === filters.supplier);
-        if (filters.product) items = items.filter(p => p.product === filters.product);
-        if (filters.payment) items = items.filter(p => (p.paymentMethod || '') === filters.payment);
-        if (filters.dateFrom || filters.dateTo) items = items.filter(p => withinOfflineDateRange(p.date, filters.dateFrom, filters.dateTo));
-        
-        const total = items.reduce((sum, p) => sum + (Number(p.total) || 0), 0);
-        
-        return {
-            title: 'Purchases Report',
-            columns: ['Date', 'Seller', 'Branch', 'Product', 'Quantity', 'Unit Cost', 'Total', 'Supplier', 'Payment'],
-            rows: items.map(p => [
-                formatDate(p.date, true),
-                getOfflineSellerName(p),
-                getOfflineBranchName(p.branchId),
-                p.product || '',
-                formatQuantity(p.quantity) + (p.unit ? ' ' + pluralizeUnit(p.unit, p.quantity) : ''),
-                formatCurrency(p.unitCost || 0),
-                formatCurrency(p.total || 0),
-                p.supplier || '-',
-                p.paymentMethod || '-'
-            ]),
-            summaryLines: [`Transactions: ${items.length}`, `Total Purchases: ${formatCurrency(total)}`, `Average per Purchase: ${formatCurrency(items.length ? total / items.length : 0)}`]
-        };
-    }
-    
-    if (sectionType === 'debts') {
-        let items = (debtsCache.data || []).slice();
-        if (filters.branch) items = items.filter(d => (d.branchId || 'MAIN') === filters.branch);
-        if (filters.seller) items = items.filter(d => d.sellerId === filters.seller);
-        if (filters.status) items = items.filter(d => (d.status || '') === filters.status);
-        if (filters.dateFrom || filters.dateTo) items = items.filter(d => withinOfflineDateRange(d.date, filters.dateFrom, filters.dateTo));
-        
-        let totalBalance = 0, totalPaid = 0, totalPending = 0;
-        items.forEach(d => {
-            const t = Number(d.totalAmount) || 0;
-            const p = Number(d.paidAmount) || 0;
-            totalBalance += t;
-            if (d.status === 'paid') totalPaid += p;
-            else if (d.status !== 'denied') totalPending += (t - p);
-        });
-        
-        return {
-            title: 'Debts Report',
-            columns: ['Date', 'Borrower', 'Branch', 'Product', 'Total', 'Paid', 'Balance', 'Status'],
-            rows: items.map(d => [
-                formatDate(d.date, true),
-                d.borrowerName || '-',
-                getOfflineBranchName(d.branchId),
-                d.product || '',
-                formatCurrency(d.totalAmount || 0),
-                formatCurrency(d.paidAmount || 0),
-                formatCurrency((Number(d.totalAmount) || 0) - (Number(d.paidAmount) || 0)),
-                (d.status || 'pending').charAt(0).toUpperCase() + (d.status || 'pending').slice(1)
-            ]),
-            summaryLines: [`Total Debts: ${formatCurrency(totalBalance)}`, `Paid: ${formatCurrency(totalPaid)}`, `Pending: ${formatCurrency(totalPending)}`, `Transactions: ${items.length}`]
-        };
-    }
-    
-    if (sectionType === 'profit') {
-        // A simplified estimate (Sales total minus Purchases total for the
-        // same period/branch) since true cost-of-goods-sold accounting
-        // needs server-side matching this offline view can't replicate -
-        // clearly labeled as such so it's never mistaken for the
-        // server-generated report's more precise figure.
-        const salesSection = buildOfflineReportSection('sales', filters);
-        const purchasesSection = buildOfflineReportSection('purchases', filters);
-        const salesTotal = salesSection.rows.reduce((sum, r) => sum + parseCurrencyToNumber(r[6]), 0);
-        const purchasesTotal = purchasesSection.rows.reduce((sum, r) => sum + parseCurrencyToNumber(r[6]), 0);
-        const estimatedProfit = salesTotal - purchasesTotal;
-        
-        return {
-            title: 'Profit & Loss Report (Estimate)',
-            columns: ['Metric', 'Amount'],
-            rows: [
-                ['Total Sales', formatCurrency(salesTotal)],
-                ['Total Purchases', formatCurrency(purchasesTotal)],
-                ['Estimated Profit', formatCurrency(estimatedProfit)]
-            ],
-            summaryLines: ['This offline estimate is Sales minus Purchases for the period - the full online report calculates exact cost-of-goods-sold per item.']
-        };
-    }
-    
-    return { title: '', columns: [], rows: [], summaryLines: [] };
-}
-
-// formatCurrency() returns a string like "TZS 12,345" - this reverses
-// that just well enough to re-total already-formatted section rows for
-// the Profit estimate above, without needing the raw numbers threaded
-// through separately.
-function parseCurrencyToNumber(formatted) {
-    const digits = String(formatted).replace(/[^0-9.-]/g, '');
-    return parseFloat(digits) || 0;
-}
-
-function buildOfflineReportHTML(reportType, filters) {
-    const sectionsToBuild = reportType === 'full'
-        ? ['stock', 'sales', 'purchases', 'debts']
-        : [reportType];
-    
-    const sections = sectionsToBuild.map(s => buildOfflineReportSection(s, filters));
-    
-    const now = new Date();
-    const generatedAt = formatDate(now.toISOString(), true) + ' ' + new Intl.DateTimeFormat(undefined, { timeZone:getBusinessTimeZone(), hour:'2-digit', minute:'2-digit', second:'2-digit' }).format(now);
-    
-    const reportTypeTitle = {
-        'full': 'Full Business Report',
-        'stock': 'Stock Report',
-        'sales': 'Sales Report',
-        'purchases': 'Purchases Report',
-        'debts': 'Debts Report',
-        'profit': 'Profit & Loss Report'
-    }[reportType] || 'Report';
-    
-    let sectionsHTML = '';
-    sections.forEach(section => {
-        const headerRow = '<tr>' + section.columns.map(c => `<th>${escapeHtml(c)}</th>`).join('') + '</tr>';
-        const bodyRows = section.rows.length > 0
-            ? section.rows.map(r => '<tr>' + r.map(c => `<td>${escapeHtml(String(c))}</td>`).join('') + '</tr>').join('')
-            : `<tr><td colspan="${section.columns.length}" style="text-align:center; color:#64748b; padding:20px;">No records found</td></tr>`;
-        
-        sectionsHTML += `
-            <div class="report-section">
-                <h2>${escapeHtml(section.title)}</h2>
-                <div class="report-summary">${section.summaryLines.map(l => `<span>${escapeHtml(l)}</span>`).join('')}</div>
-                <table>
-                    <thead>${headerRow}</thead>
-                    <tbody>${bodyRows}</tbody>
-                </table>
-            </div>
-        `;
-    });
-    
-    // The business's own logo, from the same offline-cached copy already
-    // used everywhere else in the app (sidebar, avatar, etc.) - never a
-    // network fetch, so this works exactly the same whether online or
-    // not. Left out entirely (rather than falling back to a generic
-    // icon) if no logo has ever been cached, so a business with no logo
-    // set just gets a clean text-only header, matching how the rest of
-    // the app already handles that case.
-    const hasCachedLogo = logoBase64Cache && logoBase64Cache.data && logoBase64Cache.url === currentUser.logoUrl;
-    const logoHTML = hasCachedLogo
-        ? `<img src="${logoBase64Cache.data}" class="report-logo" alt="${escapeHtml(currentUser.business || '')} logo">`
-        : '';
-    
-    return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>${escapeHtml(reportTypeTitle)} - ${escapeHtml(currentUser.business || '')}</title>
-<style>
-    body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; color: #1e293b; padding: 30px; max-width: 1000px; margin: 0 auto; }
-    .report-header { text-align: center; margin-bottom: 25px; border-bottom: 3px solid #2563eb; padding-bottom: 15px; }
-    .report-logo { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
-    .report-header h1 { color: #1e3a8a; margin: 0 0 5px; font-size: 1.6rem; }
-    .report-header p { color: #64748b; margin: 3px 0; font-size: 0.9rem; }
-    /* NOT page-break-inside:avoid on the whole section - that was the
-       actual cause of the near-empty first page: it told the browser a
-       section (header + its whole table) must never be split, so if the
-       table didn't fully fit in the space left under the report header,
-       the ENTIRE section got pushed to page 2, leaving page 1 with just
-       the header. Applying it to individual table rows instead still
-       prevents a single row being cut in half across a page break, while
-       letting content flow straight on from the header as it naturally
-       fits. */
-    .report-section { margin-bottom: 35px; }
-    .report-section h2 { color: #1e40af; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; font-size: 1.2rem; page-break-after: avoid; }
-    .report-summary { display: flex; flex-wrap: wrap; gap: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin: 12px 0; font-weight: 700; font-size: 0.9rem; page-break-after: avoid; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-    th { background: #eff6ff; color: #1e40af; text-align: left; padding: 8px 10px; border-bottom: 2px solid #cbd5e1; }
-    td { padding: 7px 10px; border-bottom: 1px solid #e2e8f0; }
-    tr { page-break-inside: avoid; }
-    tr:nth-child(even) td { background: #f8fafc; }
-    .print-btn { display: block; width: 220px; margin: 0 auto 25px; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; }
-    @media print { .print-btn { display: none; } body { padding: 0; } }
-</style>
-</head>
-<body>
-    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
-    <div class="report-header">
-        ${logoHTML}
-        <h1>${escapeHtml((currentUser.business || 'Business').toUpperCase())}</h1>
-        <p>${escapeHtml(reportTypeTitle)}</p>
-        <p>Generated: ${escapeHtml(generatedAt)}</p>
-    </div>
-    ${sectionsHTML}
-</body>
-</html>`;
-}
-
-// Opens the report in a new tab as a normal, readable web page with a
-// "Print / Save as PDF" button at the top - tapping it opens the
-// browser's own print dialog, where "Save as PDF" produces a real PDF
-// file without this app needing any PDF-generation library at all.
-function openOfflineReport(reportType, filters) {
-    const html = buildOfflineReportHTML(reportType, filters);
-    const reportWindow = window.open('', '_blank');
-    if (!reportWindow) {
-        showNotification('Please allow pop-ups to view the offline report.', 'error');
-        return;
-    }
-    reportWindow.document.open();
-    reportWindow.document.write(html);
-    reportWindow.document.close();
-    showNotification('Offline report generated from data saved on this device.', 'info');
-}
 
 // ============================================
 // SALE RECEIPT - a clean, standard retail-receipt layout (business
@@ -32601,11 +32795,10 @@ function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal, b
 }
 
 async function generatePDFReport() {
-    // No internet - the server-side PDF generator is unreachable, so
-    // build the same report from locally-cached data instead of just
-    // failing with a network error.
+    // Reports must be generated from authoritative D1 records, never from
+    // a potentially stale browser cache.
     if (!isOnline) {
-        openOfflineReport('full', {});
+        showNotification('Internet connection is required to generate a fresh report from the server.', 'error');
         return;
     }
     
@@ -32626,14 +32819,7 @@ async function generatePDFReport() {
         }
     } catch (error) {
         console.error('Error generating report:', error);
-        // The request may have failed because connectivity dropped
-        // between the isOnline check above and now - fall back to the
-        // offline report rather than a dead-end error.
-        if (!isOnline) {
-            openOfflineReport('full', {});
-        } else {
-            showNotification('Network error generating report', 'error');
-        }
+        showNotification('Could not generate the report from the server. Please retry when connected.', 'error');
     }
     
     setButtonLoading('generateReportBtn', 'reportSpinner', 'generateReportText', false);
@@ -32982,6 +33168,10 @@ function clearReportFilters() {
 
 // Generate Filtered Report - for dropdown selection
 async function generateFilteredReport() {
+    if (!navigator.onLine || !isOnline) {
+        showNotification('An internet connection is required to generate this report.', 'error');
+        return;
+    }
     const reportType = document.getElementById('reportTypeSelect').value;
     await generateFilteredReportDirect(reportType);
 }
@@ -32989,6 +33179,10 @@ async function generateFilteredReport() {
 
 // Quick Report function - generates specific report based on type
 function quickReport(type) {
+    if (!navigator.onLine || !isOnline) {
+        showNotification('Internet connection is required. Offline report generation is disabled.', 'error');
+        return;
+    }
     console.log('Quick report clicked:', type);
     
     // Set report type in dropdown
@@ -33060,10 +33254,14 @@ function quickReport(type) {
             break;
             
         case 'sales':
+            // IMPORTANT: Do not silently limit Sales Report to the current month.
+            // With no explicit date filter, it must include the same open-period
+            // sales records that appear in Full Report. clearReportFilters()
+            // above has already cleared any stale date values.
             const salesDateFrom = document.getElementById('salesReportDateFrom');
             const salesDateTo = document.getElementById('salesReportDateTo');
-            if (salesDateFrom) salesDateFrom.value = formatYMD(firstDayOfMonth);
-            if (salesDateTo) salesDateTo.value = formatYMD(lastDayOfMonth);
+            if (salesDateFrom) salesDateFrom.value = '';
+            if (salesDateTo) salesDateTo.value = '';
             // Show sales filter section
             document.getElementById('stockReportFilters').style.display = 'none';
             document.getElementById('salesReportFilters').style.display = 'flex';
@@ -33200,31 +33398,15 @@ async function generateFilteredReportDirect(reportType) {
         }
     }
     
-    // No internet - build the same report from what's already cached
-    // locally instead of failing outright.
-    if (!isOnline) {
-        openOfflineReport(reportType, filters);
+    // Backend-only reports: cached browser data is deliberately not used.
+    if (!navigator.onLine || !isOnline) {
+        showNotification('An internet connection is required to generate this report.', 'error');
         if (button) {
             button.disabled = false;
             spinner.style.display = 'none';
             buttonText.style.opacity = '1';
             buttonText.textContent = reportTypeText;
-            // This early-return path was skipping the icon reset below,
-            // leaving it stuck on "fa-spinner fa-pulse" (a continuously
-            // spinning animation) forever after an offline report was
-            // generated - the button itself was re-enabled, but its icon
-            // kept animating as if still loading.
-            if (buttonIcon) {
-                const iconMap = {
-                    'full': 'fa-file-alt',
-                    'stock': 'fa-boxes',
-                    'sales': 'fa-chart-line',
-                    'purchases': 'fa-truck',
-                    'debts': 'fa-hand-holding-usd',
-                    'profit': 'fa-money-bill-wave'
-                };
-                buttonIcon.className = 'fas ' + (iconMap[reportType] || 'fa-file-pdf');
-            }
+            if (buttonIcon) buttonIcon.className = 'fas fa-file-pdf';
         }
         return;
     }
@@ -33232,6 +33414,7 @@ async function generateFilteredReportDirect(reportType) {
     try {
         const result = await apiCall('generateFilteredReport', {
             email: currentUser.email,
+            reportType: reportType,
             filters: filters
         });
         
@@ -33244,11 +33427,7 @@ async function generateFilteredReportDirect(reportType) {
         }
     } catch (error) {
         console.error('Error generating report:', error);
-        if (!isOnline) {
-            openOfflineReport(reportType, filters);
-        } else {
-            showNotification('Network error generating report', 'error');
-        }
+        showNotification('Could not generate the report. Please try again when connected.', 'error');
     }
     
     // Reset button
@@ -33599,17 +33778,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     checkViewport();
     setupEventListeners();
+    stpRegisterBackgroundSync();
     checkSession();
     setupMenuNavigation();
     setupSettingsNavigation();
     setupOnlineStatus();
     loadOfflineData();
+    loadRemoteDebtCartSessionsFromStorage();
+    renderRemoteDebtCartSessions();
+    stpRestoreDurableOutbox().then(() => { if(navigator.onLine) checkAndSync().catch(console.error); });
     loadCachedData();
     installModalPinGuards();
     initFullscreenModalTracking();
     
     setInterval(checkAndSync, 30000);
-    setInterval(pollModalRestrictions, 3000);
+    setInterval(pollModalRestrictions, 15000);
 });
 
 
@@ -33649,7 +33832,7 @@ function displayUsersTable(users) {
                             <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn-sm btn-info" onclick="openUserDatabase('${escapeHtml(user.email)}')">
-                            <i class="fas fa-database"></i>
+                            <i class="fas fa-building"></i>
                         </button>
                         <button class="btn-sm btn-danger" onclick="deleteUserAccount('${escapeHtml(user.email)}', '${escapeHtml(user.business)}')">
                             <i class="fas fa-trash"></i>
@@ -34268,29 +34451,32 @@ async function saveUserChanges() {
 
 // Open User Database
 async function openUserDatabase(email) {
-    console.log('Opening database for:', email);
-    
-    // Show loading notification
-    showNotification('Opening database...', 'info');
-    
+    showNotification('Loading business details...', 'info');
     try {
         const result = await apiCall('getUserDatabaseAccess', {
             email: currentUser.email,
             targetEmail: email
         });
-        
-        console.log('Database access result:', result);
-        
-        if (result.success && result.webViewLink) {
-            window.open(result.webViewLink, '_blank');
-        } else if (result.success && result.databaseId) {
-            window.open('https://docs.google.com/spreadsheets/d/' + result.databaseId + '/edit', '_blank');
-        } else {
-            showNotification(result.error || 'Cannot access user database', 'error');
+        if (!result || !result.success) {
+            showNotification(result?.error || 'Cannot load business details', 'error');
+            return;
         }
+        const businesses = Array.isArray(result.businesses) ? result.businesses : [];
+        const rows = businesses.length ? businesses.map((b, i) => `
+            <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">${i + 1}</td>
+            <td style="padding:8px;border-bottom:1px solid #e2e8f0;">${escapeHtml(b.business || '')}</td>
+            <td style="padding:8px;border-bottom:1px solid #e2e8f0;">${escapeHtml(b.currency || 'TZS')}</td></tr>`).join('') : '<tr><td colspan="3" style="padding:12px;text-align:center;">No active businesses found.</td></tr>';
+        const html = `<div style="text-align:left;">
+            <p><strong>Account:</strong> ${escapeHtml(result.targetEmail || email)}</p>
+            <p><strong>Businesses:</strong> ${businesses.length}</p>
+            <div style="overflow-x:auto;margin-top:12px;"><table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead><tr><th style="text-align:left;padding:8px;">#</th><th style="text-align:left;padding:8px;">Business</th><th style="text-align:left;padding:8px;">Currency</th></tr></thead>
+                <tbody>${rows}</tbody></table></div>
+        </div>`;
+        showConfirmationModal('BUSINESS DETAILS', html, () => true, true);
     } catch (error) {
-        console.error('Error opening database:', error);
-        showNotification('Network error: ' + error.message, 'error');
+        console.error('Error loading business details:', error);
+        showNotification(sanitizeUserFacingApiText(error?.message, 'Unable to load business details'), 'error');
     }
 }
 
@@ -34381,6 +34567,19 @@ function escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+}
+
+// Resolve display names without exposing internal Seller IDs in any table or activity view.
+function getSellerDisplayName(sellerId, storedName) {
+    const id = String(sellerId || '').trim();
+    const name = String(storedName || '').trim();
+    const looksLikeId = value => /^SELL[_-]/i.test(String(value || '').trim());
+    if (name && !looksLikeId(name) && name !== id) return name;
+    if (!id || id.toUpperCase() === 'ADMIN') return 'Admin';
+    const list = (typeof sellersCache !== 'undefined' && Array.isArray(sellersCache?.data)) ? sellersCache.data : [];
+    const seller = list.find(item => String(item.id || item.sellerId || item._externalId || '') === id);
+    const resolved = String(seller?.name || seller?.sellerName || '').trim();
+    return resolved && !looksLikeId(resolved) ? resolved : 'Unknown Seller';
 }
 
 
