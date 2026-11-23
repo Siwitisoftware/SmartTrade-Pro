@@ -12,7 +12,7 @@
  * must be forcibly discarded.
  */
 
-const CACHE_VERSION = 'v13';
+const CACHE_VERSION = 'v23';
 const CACHE_NAME = `smarttrade-cache-${CACHE_VERSION}`;
 
 const APP_SHELL = [

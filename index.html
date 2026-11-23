@@ -26,6 +26,10 @@
          work fully offline once the browser has cached these scripts. -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<style id="smartTradeDebtDateGroups">
+.st-debt-day-section{margin:18px 0 22px}.st-debt-day-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-radius:14px;background:linear-gradient(135deg,#e0f2fe,#dbeafe);color:#0f172a;border:1px solid #bfdbfe;box-shadow:0 5px 16px rgba(15,118,110,.16)}.st-debt-day-title{font-size:.92rem;font-weight:900;letter-spacing:.03em;color:#0f172a}.st-debt-day-total{font-size:.9rem;font-weight:900;white-space:nowrap;color:#1e3a8a}.st-debt-day-cards{display:grid;grid-template-columns:minmax(0,980px);justify-content:center;gap:16px;margin-top:12px}.st-debt-pending-sync{display:inline-flex;align-items:center;margin-left:6px;padding:3px 7px;border-radius:999px;background:#fef3c7;color:#92400e;font-size:10px;font-weight:800}
+@media(max-width:600px){.st-debt-day-header{align-items:flex-start;flex-direction:column}}
+</style>
 </head>
     <style>
         :root {
@@ -5502,6 +5506,19 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 
    
 
+<style id="stDebtBorrowerAutocompleteStyles">
+.st-borrower-autocomplete{position:relative;width:100%}
+.st-borrower-autocomplete input{width:100%}
+.st-borrower-suggestions{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:10050;max-height:260px;overflow:auto;background:var(--card-bg,#fff);border:1px solid var(--border-color,#cbd5e1);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.22);padding:5px}
+.st-borrower-suggestions.hidden{display:none}
+.st-borrower-suggestion{display:flex;align-items:center;gap:10px;width:100%;padding:9px;border:0;border-radius:8px;background:transparent;color:var(--text-primary,inherit);text-align:left;cursor:pointer}
+.st-borrower-suggestion:hover,.st-borrower-suggestion:focus{background:rgba(59,130,246,.12);outline:none}
+.st-borrower-suggestion img,.st-borrower-avatar{width:38px;height:38px;flex:0 0 38px;border-radius:50%;object-fit:cover;background:rgba(148,163,184,.2);display:flex;align-items:center;justify-content:center}
+.st-borrower-suggestion-meta{min-width:0;display:flex;flex-direction:column;gap:2px}
+.st-borrower-suggestion-name{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.st-borrower-suggestion-detail{font-size:11px;opacity:.72;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+</style>
+
 <!-- AUTHENTICATION CONTAINER -->
 <div id="authContainer" class="auth-container">
     <!-- Login Page -->
@@ -7359,11 +7376,7 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
     </div>
 </div>
 
-<!-- Sync Indicator -->
-<div class="sync-indicator hidden" id="syncIndicator" onclick="forceSync()" title="Click to sync now">
-<i class="fas fa-sync">
-</i>
-</div>
+<!-- Manual Sync button removed; automatic/background sync remains enabled. -->
 
 <!-- PWA Install prompt -->
 <button class="pwa-install-btn hidden" id="pwaInstallBtn" onclick="triggerPwaInstall()">
@@ -8515,7 +8528,7 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
 </div>
 <div>
 <label>NIDA Number</label>
-<input type="text" id="editDebtBorrowerNIDA" placeholder="National ID number">
+<input type="text" id="editDebtBorrowerNIDA" placeholder="12345678-12345-12345-12" maxlength="23" inputmode="numeric" oninput="formatNidaInput(this)">
 </div>
 </div>
 <div class="form-group" style="margin-top:15px;">
@@ -9049,7 +9062,10 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
 <h3 style="color: var(--accent); margin-bottom: 15px;">Borrower Information</h3>
 <div class="form-group">
 <label>Full Name *</label>
-<input type="text" id="debtBorrowerName" placeholder="Borrower's full name" required>
+<div class="st-borrower-autocomplete">
+<input type="text" id="debtBorrowerName" placeholder="Borrower's full name" required autocomplete="off" oninput="handleDebtBorrowerNameInput(this)" onfocus="handleDebtBorrowerNameInput(this)" onkeydown="handleDebtBorrowerNameKeydown(event)">
+<div id="debtBorrowerSuggestions" class="st-borrower-suggestions hidden" role="listbox" aria-label="Saved borrowers"></div>
+</div>
 </div>
 <div class="input-group">
 <div>
@@ -9058,7 +9074,7 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
 </div>
 <div>
 <label>NIDA Number</label>
-<input type="text" id="debtBorrowerNIDA" placeholder="National ID number">
+<input type="text" id="debtBorrowerNIDA" placeholder="12345678-12345-12345-12" maxlength="23" inputmode="numeric" autocomplete="off" oninput="formatNidaInput(this); handleDebtBorrowerNidaInput(this)" onfocus="handleDebtBorrowerNidaInput(this)" onkeydown="handleDebtBorrowerNameKeydown(event)">
 </div>
 </div>
 <div class="form-group">
@@ -9933,6 +9949,51 @@ let editDebtPhotoBase64 = null;
         };
         const result = await apiCall('syncOfflineData', payload);
         const operations = Array.isArray(result?.operations) ? result.operations : [];
+        // Promote locally visible Debt receipts only after the Worker confirms
+        // the matching operation ID. This prevents flicker during sync and
+        // avoids creating a second card when the server list refreshes.
+        const debtSnapshotById = new Map((snapshots.debts || []).map(item => [String(item?.operationId || ''), item]));
+        for (const op of operations) {
+            if (!op || op.success !== true || !op.operationId) continue;
+            const queuedDebt = debtSnapshotById.get(String(op.operationId));
+            if (!queuedDebt) continue;
+            const serverDebt = op.data || op.debt || {};
+            const id = String(op.debtId || serverDebt.id || serverDebt.debtId || queuedDebt.debtId || queuedDebt.id || 'OFFLINE_' + op.operationId);
+            const confirmed = Object.assign({}, queuedDebt, serverDebt, {
+                id, debtId: String(op.debtId || serverDebt.debtId || queuedDebt.debtId || id),
+                operationId: String(op.operationId), _optimistic:false, _pendingLocal:false, offline:false
+            });
+            if (!Array.isArray(debtsCache.data)) debtsCache.data = [];
+            const cacheIndex = debtsCache.data.findIndex(d => String(d?.operationId || '') === String(op.operationId));
+            if (cacheIndex >= 0) debtsCache.data[cacheIndex] = Object.assign({}, debtsCache.data[cacheIndex], confirmed);
+            else debtsCache.data.push(confirmed);
+        }
+        // Once an offline debt is confirmed by D1, publish its borrower profile
+        // to the shared business directory so other signed-in devices can find it.
+        const publishedBorrowerTransactions = new Set();
+        for (const op of operations) {
+            if (!op || op.success !== true || !op.operationId) continue;
+            const queuedDebt = debtSnapshotById.get(String(op.operationId));
+            if (!queuedDebt) continue;
+            const txKey = String(queuedDebt.transactionId || queuedDebt.borrowerName || op.operationId);
+            if (publishedBorrowerTransactions.has(txKey)) continue;
+            publishedBorrowerTransactions.add(txKey);
+            try {
+                await apiCall('saveBorrowerProfile', {
+                    name: queuedDebt.borrowerName || '',
+                    phone: queuedDebt.borrowerPhone || '',
+                    nida: queuedDebt.borrowerNIDA || '',
+                    photoId: queuedDebt.photoId || '',
+                    photoUrl: queuedDebt.photoUrl || '',
+                    photoBase64: queuedDebt.photoBase64 || '',
+                    photoMimeType: queuedDebt.photoMimeType || 'image/jpeg'
+                }, 30000);
+            } catch (profileSyncError) {
+                console.warn('Synced Debt borrower profile will be retried on next save:', profileSyncError);
+            }
+        }
+        debtsCache.filtered = getDebtDisplayRowsForCurrentUser(debtsCache.data || []);
+        saveDebtsCache();
         const operationIdToQueue = new Map();
         for (const name of queueNames) {
             for (const item of snapshots[name]) {
@@ -10624,9 +10685,10 @@ function checkSession() {
                         </div>
                     `;
                 } else {
-                    let sellerFullName = currentUser.sellerName || 'Seller';
+                    let sellerFullName = currentUser.sellerName || currentUser.email || 'Seller';
                     let firstName = sellerFullName;
-                    let branchName = currentUser.branchName || currentUser.branchId || 'Main Branch';
+                    let branchName = String(currentUser.branchName || getBranchDisplayName(currentUser.branchId || 'MAIN'));
+            if (!branchName || branchName === currentUser.branchId || /^BR[_-]/i.test(branchName)) branchName = 'Branch name unavailable';
                     
                     if (sellerFullName.includes(' ')) {
                         firstName = sellerFullName.split(' ')[0];
@@ -10634,7 +10696,7 @@ function checkSession() {
                     
                     statsContainer.innerHTML = `
                         <div class="stat-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--accent), #0ea5e9);">
-                            <h3 style="color: white; font-size: 1.2rem;">👋 ${t('welcome')}, ${firstName}!</h3>
+                            <h3 style="color: white; font-size: 1.2rem;">👋 ${t('welcome')}, ${escapeHtml(firstName)}!</h3>
                             <div style="color: white; font-size: 1rem; margin-top: 10px;">
                                 <i class="fas fa-code-branch"></i> ${t('branch')}: ${branchName}
                             </div>
@@ -11905,15 +11967,17 @@ async function loadDashboardFast() {
             `;
         }
     } else {
-        var sellerFullName = currentUser.sellerName || 'Seller';
+        await ensureSellerDashboardBranchName();
+        var sellerFullName = currentUser.sellerName || currentUser.email || 'Seller';
         var firstName = sellerFullName.includes(' ') ? sellerFullName.split(' ')[0] : sellerFullName;
-        var branchName = currentUser.branchName || currentUser.branchId || 'Main Branch';
+        var branchName = String(currentUser.branchName || getBranchDisplayName(currentUser.branchId || 'MAIN'));
+        if (!branchName || branchName === currentUser.branchId || /^BR[_-]/i.test(branchName)) branchName = 'Branch name unavailable';
         
         if (statsContainer) {
             statsContainer.innerHTML = `
                 <div class="stat-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--accent), #0ea5e9);">
-                    <h3 style="color: white; font-size: 1.2rem;">👋 Welcome, ${firstName}!</h3>
-                    <div style="color: white; font-size: 1rem; margin-top: 10px;"><i class="fas fa-code-branch"></i> Branch: ${branchName}</div>
+                    <h3 style="color: white; font-size: 1.2rem;">👋 Welcome, ${escapeHtml(firstName)}!</h3>
+                    <div style="color: white; font-size: 1rem; margin-top: 10px;"><i class="fas fa-code-branch"></i> Branch: ${escapeHtml(branchName)}</div>
                     <div style="color: white; font-size: 1rem; margin-top: 5px;"><i class="fas fa-calendar-day"></i> ${formatDate(new Date().toISOString(), false)}</div>
                 </div>
                 <div class="stat-card"><h3>Today's Sales</h3><div class="value">${formatCurrency(todaySales)}</div></div>
@@ -12101,7 +12165,26 @@ async function refreshDebtsBackground() {
             branchId: currentUser.userType !== 'admin' ? currentUser.branchId : null
         });
         if (result.success) {
-            debtsCache.data = result.data || [];
+            const serverRows = Array.isArray(result.data) ? result.data : [];
+            debtsCache.data = mergePendingDebtRows(serverRows);
+            (Array.isArray(offlineData.debts) ? offlineData.debts : []).forEach(q => {
+                if (!q || !q.operationId) return;
+                const opId = String(q.operationId);
+                if (debtsCache.data.some(d => String(d && d.operationId || '') === opId)) return;
+                debtsCache.data.push({
+                    id:q.id || q.debtId || ('OFFLINE_' + opId), debtId:q.debtId || q.id,
+                    operationId:opId, date:q.timestamp || q._queuedAt || new Date().toISOString(),
+                    timestamp:q.timestamp || q._queuedAt || new Date().toISOString(),
+                    borrowerName:q.borrowerName || '', borrowerPhone:q.borrowerPhone || '',
+                    borrowerNIDA:q.borrowerNIDA || '', product:q.product || '',
+                    quantity:Number(q.quantity)||0, unitPrice:Number(q.unitPrice)||0,
+                    totalAmount:Number(q.totalAmount ?? q.total)||((Number(q.quantity)||0)*(Number(q.unitPrice)||0)),
+                    paidAmount:Number(q.paidAmount)||0, unit:q.unit||'', status:q.status||'pending',
+                    branchId:q.branchId||'MAIN', branchName:q.branchName||getOfflineBranchName_(q.branchId),
+                    sellerId:q.sellerId||'', sellerName:q.sellerName||getOfflineSellerName_(),
+                    _optimistic:true, _pendingLocal:true, offline:true
+                });
+            });
             if (currentUser.userType === 'seller') {
                 debtsCache.filtered = debtsCache.data.filter(d => d.sellerId === currentUser.sellerId);
             } else {
@@ -13455,7 +13538,7 @@ function hideAccessDeniedModal() {
             const writeActions = [
                 'addSale','updateSale','deleteSaleRow','addStock','bulkAddStock','updateStock','deleteStockRow',
                 'addPurchase','updatePurchase','deletePurchaseRow','addDebt','updateDebt','deleteDebt','returnDebt','denyDebt',
-                'addExpense','addUnit','addCategory','addNonStockProduct','addCustomer','updateCustomer','deleteCustomer',
+                'saveBorrowerProfile','addExpense','addUnit','addCategory','addNonStockProduct','addCustomer','updateCustomer','deleteCustomer',
                 'addSupplier','updateSupplier','deleteSupplier','addSeller','updateSeller','deleteSeller',
                 'addBranch','updateBranch','deleteBranch','saveDraftPurchaseRequest','submitPurchaseRequest',
                 'submitAdminPurchaseList','approvePurchaseRequest','rejectPurchaseRequest','saveReviewDraft',
@@ -13560,6 +13643,15 @@ function hideAccessDeniedModal() {
     } else {
         stockCache = { data: [], summary: {} };
     }
+    // Restore the atomic offline stock snapshot (stock rows + applied operation
+    // ledger). This prevents a refresh from losing local quantity movements.
+    try {
+        const offlineStockState = JSON.parse(localStorage.getItem('smartTradeOfflineStockState') || 'null');
+        if (offlineStockState && offlineStockState.stockCache && Array.isArray(offlineStockState.stockCache.data)) {
+            stockCache = offlineStockState.stockCache;
+            if (Array.isArray(offlineStockState.appliedOperations)) localStorage.setItem('smartTradeOfflineStockApplied', JSON.stringify(offlineStockState.appliedOperations));
+        }
+    } catch (e) { console.warn('Offline stock snapshot could not be restored:', e); }
     
     const savedSales = localStorage.getItem('smartTradeSales');
     if (savedSales) {
@@ -14342,8 +14434,8 @@ async function saveSellerPin() {
         showNotification('Please enter your account password to confirm', 'error');
         return;
     }
-    if (!pin || pin.length < 4) {
-        showNotification('PIN must be at least 4 digits', 'error');
+    if (!/^\d{4,8}$/.test(pin)) {
+        showNotification('PIN must contain 4 to 8 digits', 'error');
         return;
     }
     if (pin !== confirmPin) {
@@ -14624,6 +14716,143 @@ function toggleSaleModalLock() {
     localStorage.setItem('smartTradeStock', JSON.stringify(stockCache));
     updateCategoriesCache(); // Update categories when stock changes
 }
+
+// Offline identity helpers: Seller/Branch names are copied into each queued
+// operation so receipts and records do not depend on a live lookup.
+function getOfflineSellerName_() {
+    const direct = String(currentUser?.sellerName || localStorage.getItem('smartTradeSellerName') || '').trim();
+    if (direct && !/^SELL[_-]/i.test(direct)) return direct;
+    const sellerId = String(currentUser?.sellerId || localStorage.getItem('smartTradeSellerId') || '').trim();
+    const rows = Array.isArray(sellersCache?.data) ? sellersCache.data : [];
+    const cached = rows.find(x => [x.id,x.sellerId,x._externalId,x._recordId].some(v => v != null && String(v) === sellerId));
+    const cachedName = String(cached?.name || cached?.sellerName || '').trim();
+    return cachedName || String(currentUser?.email || localStorage.getItem('smartTradeEmail') || 'Seller').trim();
+}
+function getOfflineBranchName_(branchId) {
+    const id = String(branchId || currentUser?.branchId || 'MAIN').trim();
+    if (!id || id.toUpperCase() === 'MAIN') return 'Main Branch';
+    const currentId = String(currentUser?.branchId || localStorage.getItem('smartTradeBranchId') || '').trim();
+    const ownName = String(currentUser?.branchName || localStorage.getItem('smartTradeBranchName') || '').trim();
+    if (currentId && currentId === id && ownName && ownName !== currentId && !/^BR[_-]/i.test(ownName)) return ownName;
+    const rows = Array.isArray(branchesCache?.data) ? branchesCache.data : [];
+    const found = rows.find(b => [b.id,b.branchId,b.branchID,b._externalId,b.externalId,b._recordId,b.recordId,b.code,b.branchCode,b.branch_id].some(v => v != null && String(v).trim() === id));
+    const name = String(found?.name || found?.branchName || '').trim();
+    return name && name !== id ? name : id;
+}
+
+function getLocalStockAvailable_(product, branchId, unit) {
+    if (!Array.isArray(stockCache?.data)) return 0;
+    const branch = String(branchId || 'MAIN');
+    const unitKey = String(unit || '');
+    return stockCache.data.reduce((sum, row) => {
+        if (String(row?.product || '').trim().toLowerCase() !== String(product || '').trim().toLowerCase()) return sum;
+        if (String(row?.branchId || 'MAIN') !== branch) return sum;
+        if (String(row?.unit || '') !== unitKey) return sum;
+        return sum + Math.max(0, Number(row?.quantity) || 0);
+    }, 0);
+}
+
+// Applies one or more local Stock movements exactly once per operationId.
+// Uses branch + product + unit as the stock identity and oldest stock lots
+// first. A single persisted snapshot contains both new quantities and the
+// idempotency ledger so refresh/reopen cannot apply the same offline sale/debt twice.
+function validateOfflineStockMovements_(movements) {
+    const list = (Array.isArray(movements) ? movements : [movements]).filter(m => m && m.isStockProduct === true);
+    const applied = new Set();
+    try { JSON.parse(localStorage.getItem('smartTradeOfflineStockApplied') || '[]').forEach(x => applied.add(String(x))); } catch (_) {}
+    const totals = new Map();
+    const seen = new Set();
+    list.forEach(m => {
+        if (m.operationId && (applied.has(String(m.operationId)) || seen.has(String(m.operationId)))) return;
+        if (m.operationId) seen.add(String(m.operationId));
+        const key = [String(m.product || '').trim().toLowerCase(), String(m.branchId || 'MAIN'), String(m.unit || '')].join('|||');
+        totals.set(key, (totals.get(key) || 0) + Math.max(0, Number(m.quantity ?? m.qty) || 0));
+    });
+    for (const [key, required] of totals.entries()) {
+        const [product, branch, unit] = key.split('|||');
+        const available = getLocalStockAvailable_(product, branch, unit);
+        if (available + 1e-9 < required) return {success:false,error:`Insufficient cached stock for ${product} at ${branch}. Available: ${available}, required: ${required}.`};
+    }
+    return {success:true};
+}
+
+function applyOfflineStockMovements_(movements) {
+    const list = (Array.isArray(movements) ? movements : [movements]).filter(Boolean);
+    if (!list.length) return { success:true, applied:0 };
+    const ledgerKey = 'smartTradeOfflineStockApplied';
+    let applied = [];
+    try { applied = JSON.parse(localStorage.getItem(ledgerKey) || '[]'); } catch (_) { applied = []; }
+    if (!Array.isArray(applied)) applied = [];
+    const appliedSet = new Set(applied.map(String));
+    const seenOperations = new Set();
+    const pending = list.filter(m => {
+        const id = String(m?.operationId || '');
+        if (m?.isStockProduct !== true || !id || appliedSet.has(id) || seenOperations.has(id)) return false;
+        seenOperations.add(id); return true;
+    });
+    if (!pending.length) return { success:true, applied:0, alreadyApplied:true };
+
+    // Validate the whole batch before changing any row (no partial stock deduction).
+    const totals = new Map();
+    pending.forEach(m => {
+        const key = [String(m.product || '').trim().toLowerCase(), String(m.branchId || 'MAIN'), String(m.unit || '')].join('|||');
+        totals.set(key, (totals.get(key) || 0) + Math.max(0, Number(m.quantity ?? m.qty) || 0));
+    });
+    for (const [key, required] of totals.entries()) {
+        const [product, branch, unit] = key.split('|||');
+        const available = getLocalStockAvailable_(product, branch, unit);
+        if (available + 1e-9 < required) {
+            return { success:false, error:`Insufficient cached stock for ${product} at ${branch}. Available: ${available}, required: ${required}.` };
+        }
+    }
+
+    const nextData = (stockCache.data || []).map(row => ({ ...row }));
+    for (const movement of pending) {
+        let remaining = Math.max(0, Number(movement.quantity ?? movement.qty) || 0);
+        const product = String(movement.product || '').trim().toLowerCase();
+        const branch = String(movement.branchId || 'MAIN');
+        const unit = String(movement.unit || '');
+        const indexes = nextData.map((row, index) => ({row,index}))
+            .filter(x => String(x.row.product || '').trim().toLowerCase() === product && String(x.row.branchId || 'MAIN') === branch && String(x.row.unit || '') === unit && Number(x.row.quantity) > 0)
+            .sort((a,b) => new Date(a.row.date || 0) - new Date(b.row.date || 0));
+        for (const entry of indexes) {
+            if (remaining <= 1e-9) break;
+            const row = nextData[entry.index];
+            const take = Math.min(Math.max(0, Number(row.quantity) || 0), remaining);
+            row.quantity = Math.max(0, (Number(row.quantity) || 0) - take);
+            row.value = row.quantity * (Number(row.buyPrice) || 0);
+            remaining -= take;
+        }
+        if (remaining > 1e-7) return { success:false, error:'Stock changed while applying the offline transaction. Refresh cached Stock before retrying.' };
+        appliedSet.add(String(movement.operationId));
+    }
+
+    const nextCache = { ...stockCache, data:nextData, summary:calculateStockSummary(nextData) };
+    const nextLedger = Array.from(appliedSet).slice(-3000);
+    try {
+        // This single key is the commit point: quantity rows and operation IDs
+        // are written together before any legacy cache mirrors are updated.
+        localStorage.setItem('smartTradeOfflineStockState', JSON.stringify({stockCache:nextCache, appliedOperations:nextLedger, updatedAt:new Date().toISOString()}));
+        stockCache = nextCache;
+    } catch (error) {
+        return { success:false, error:'Could not persist offline Stock changes on this device. Free up storage and retry.' };
+    }
+    try { localStorage.setItem(ledgerKey, JSON.stringify(nextLedger)); saveStockCache(); }
+    catch (mirrorError) { console.warn('Legacy Stock cache mirror deferred; atomic offline Stock snapshot is safe:', mirrorError); }
+
+    // Keep the legacy product summary in step with the local Stock total.
+    pending.forEach(m => {
+        const name = m.product;
+        if (productsCache && productsCache[name]) {
+            productsCache[name].quantity = (stockCache.data || []).filter(row => String(row.product || '').toLowerCase() === String(name || '').toLowerCase()).reduce((sum,row) => sum + (Number(row.quantity) || 0), 0);
+        }
+    });
+    if (typeof saveProductsCache === 'function') saveProductsCache();
+    if (typeof updateProductDropdowns === 'function') updateProductDropdowns();
+    if (typeof updateSaleProductDropdownForBranch === 'function') updateSaleProductDropdownForBranch(currentUser?.userType === 'seller' ? (currentUser.branchId || 'MAIN') : (document.getElementById('saleBranchSelect')?.value || 'MAIN'));
+    if (typeof updateDebtProductsCache === 'function') updateDebtProductsCache();
+    return { success:true, applied:pending.length };
+}
         
         function saveSalesCache() {
             localStorage.setItem('smartTradeSales', JSON.stringify(salesCache));
@@ -14721,6 +14950,36 @@ function resetOfflineData() {
     };
 }
         
+
+
+// Rebuild local Stock effects from the durable outbox after both caches load.
+// Existing Sale queue rows predate the idempotency ledger and already had
+// their Stock deducted by the old offline handler, so mark them as applied
+// once during migration. Old Debt queue rows did not deduct Stock and are
+// therefore replayed locally here.
+function reconcileOfflineStockMovementsFromQueue_() {
+    let ledger = [];
+    try { ledger = JSON.parse(localStorage.getItem('smartTradeOfflineStockApplied') || '[]'); } catch (_) { ledger = []; }
+    if (!Array.isArray(ledger)) ledger = [];
+    if (localStorage.getItem('smartTradeOfflineStockLedgerMigratedV42') !== 'true') {
+        (offlineData.sales || []).forEach(s => { if (s?.operationId && s.isStockProduct) ledger.push(String(s.operationId)); });
+        ledger = Array.from(new Set(ledger));
+        localStorage.setItem('smartTradeOfflineStockApplied', JSON.stringify(ledger));
+        localStorage.setItem('smartTradeOfflineStockLedgerMigratedV42', 'true');
+        try {
+            const state = JSON.parse(localStorage.getItem('smartTradeOfflineStockState') || 'null');
+            if (state) { state.appliedOperations = ledger; localStorage.setItem('smartTradeOfflineStockState', JSON.stringify(state)); }
+        } catch (_) {}
+    }
+    const movements = [];
+    (offlineData.sales || []).forEach(s => { if (s?.isStockProduct && s.operationId) movements.push({operationId:s.operationId,product:s.product,quantity:s.qty,unit:s.unit,branchId:s.branchId,isStockProduct:true}); });
+    (offlineData.debts || []).forEach(d => { if (d?.isStockProduct && d.operationId) movements.push({operationId:d.operationId,product:d.product,quantity:d.quantity,unit:d.unit,branchId:d.branchId,isStockProduct:true}); });
+    if (movements.length) {
+        // Only pending operations absent from the ledger are applied.
+        const result = applyOfflineStockMovements_(movements);
+        if (!result.success) console.warn('Offline Stock queue reconciliation deferred:', result.error);
+    }
+}
 
         // ============================================
 // CATEGORY AUTOCOMPLETE
@@ -15874,7 +16133,7 @@ function updateAllCaches(result) {
         updateBranchDropdowns();
     }
     if (result.data && result.data.debts) {
-        debtsCache.data = result.data.debts;
+        debtsCache.data = mergePendingDebtRows(result.data.debts);
         if (currentUser.userType === 'seller' && currentUser.sellerId) {
             debtsCache.filtered = debtsCache.data.filter(d => d.sellerId === currentUser.sellerId);
         } else {
@@ -16348,6 +16607,90 @@ function updateAllCaches(result) {
         }
         
         
+        function saleIdentitySnapshot_(sale) {
+            const s = sale || {};
+            return {
+                id: s._externalId || s._recordId || s.id || '',
+                recordId: s._recordId || s.recordId || s._externalId || s.id || '',
+                externalId: s._externalId || s.externalId || '',
+                operationId: s.operationId || '',
+                receiptNo: s.receiptNo || s.receipt || '',
+                saleBatchId: s.saleBatchId || '',
+                rowIndex: s.rowIndex || s._legacyRowNumber || '',
+                product: s.product || s.service || '',
+                quantity: s.quantity ?? s.qty,
+                qty: s.qty ?? s.quantity,
+                branchId: s.branchId || 'MAIN',
+                unit: s.unit || '',
+                date: s.date || s.timestamp || '',
+                timestamp: s.timestamp || s.date || '',
+                customer: s.customer || '',
+                sellerId: s.sellerId || ''
+            };
+        }
+
+        function findSaleCacheIndexByIdentity_(snapshot) {
+            if (!Array.isArray(salesCache.data) || !snapshot) return -1;
+            const same = (a,b) => String(a ?? '') === String(b ?? '');
+            let index = -1;
+            if (snapshot.recordId) index = salesCache.data.findIndex(s => same(s._recordId, snapshot.recordId));
+            if (index < 0 && snapshot.externalId) index = salesCache.data.findIndex(s => same(s._externalId || s.id, snapshot.externalId));
+            if (index < 0 && snapshot.id) index = salesCache.data.findIndex(s => same(s.id, snapshot.id));
+            if (index < 0 && snapshot.operationId) index = salesCache.data.findIndex(s => same(s.operationId, snapshot.operationId));
+            if (index < 0 && snapshot.receiptNo) index = salesCache.data.findIndex(s => same(s.receiptNo || s.receipt, snapshot.receiptNo) && (!snapshot.saleBatchId || same(s.saleBatchId, snapshot.saleBatchId)) && same(s.product || s.service, snapshot.product));
+            if (index < 0 && snapshot.rowIndex) index = salesCache.data.findIndex(s => Number(s.rowIndex || s._legacyRowNumber) === Number(snapshot.rowIndex) && same(s.product || s.service, snapshot.product) && same(s.branchId || 'MAIN', snapshot.branchId || 'MAIN'));
+            if (index < 0) {
+                const targetDate = String(snapshot.timestamp || snapshot.date || '');
+                index = salesCache.data.findIndex(s => same(s.product || s.service, snapshot.product)
+                    && same(s.quantity ?? s.qty, snapshot.quantity ?? snapshot.qty)
+                    && same(s.branchId || 'MAIN', snapshot.branchId || 'MAIN')
+                    && same(s.unit || '', snapshot.unit || '')
+                    && same(s.date || s.timestamp || '', targetDate)
+                    && (!snapshot.sellerId || same(s.sellerId, snapshot.sellerId)));
+            }
+            return index;
+        }
+
+        function applySaleEditToLocalCache_(payload, snapshot, values) {
+            if (!Array.isArray(salesCache.data)) return false;
+            const index = findSaleCacheIndexByIdentity_(snapshot);
+            if (index < 0) return false;
+            const sale = salesCache.data[index];
+            Object.assign(sale, {
+                product: values.product, unit: values.unit, branchId: values.newBranch,
+                quantity: values.quantity, qty: values.quantity, unitPrice: values.unitPrice,
+                total: values.total, amount: values.total, customer: values.customer,
+                paymentMethod: values.paymentMethod
+            });
+            salesCache.filtered = currentUser.userType === 'seller'
+                ? salesCache.data.filter(s => s.sellerId === currentUser.sellerId)
+                : salesCache.data;
+            saveSalesCache();
+            if (Array.isArray(stockCache.data)) {
+                const oldProduct = snapshot.product || '';
+                const oldBranch = snapshot.branchId || 'MAIN';
+                const oldUnit = snapshot.unit || '';
+                const oldQty = Number(snapshot.quantity ?? snapshot.qty) || 0;
+                const restore = stockCache.data.find(s => String(s.product || '').toLowerCase() === String(oldProduct).toLowerCase()
+                    && (s.branchId || 'MAIN') === oldBranch && (s.unit || '') === oldUnit);
+                if (restore) {
+                    restore.quantity = (Number(restore.quantity) || 0) + oldQty;
+                    restore.qty = restore.quantity;
+                    restore.value = restore.quantity * (Number(restore.buyPrice) || 0);
+                }
+                const deduct = stockCache.data.find(s => String(s.product || '').toLowerCase() === String(values.product).toLowerCase()
+                    && (s.branchId || 'MAIN') === values.newBranch && (s.unit || '') === values.unit);
+                if (deduct) {
+                    deduct.quantity = Math.max(0, (Number(deduct.quantity) || 0) - values.quantity);
+                    deduct.qty = deduct.quantity;
+                    deduct.value = deduct.quantity * (Number(deduct.buyPrice) || 0);
+                }
+                stockCache.summary = calculateStockSummary(stockCache.data);
+                saveStockCache();
+            }
+            return true;
+        }
+
         async function updateSale() {
             const rowIndex = document.getElementById('editSaleRowIndex').value;
             const product = document.getElementById('editSaleProduct').value.trim();
@@ -16360,169 +16703,62 @@ function updateAllCaches(result) {
             const branchSelect = document.getElementById('editSaleBranchSelect');
             const originalBranch = document.getElementById('editSaleOriginalBranch').value;
             const newBranch = (branchSelect && branchSelect.closest('.form-group').style.display !== 'none') ? branchSelect.value : originalBranch;
-
-            // Retrieve the old data we stored earlier
             const oldData = window.oldSaleData || {};
 
-            if (!product || !quantity || !unitPrice) {
-                showNotification('Please fill all required fields', 'error');
+            if (!product || !Number.isFinite(quantity) || quantity <= 0 || !Number.isFinite(unitPrice) || unitPrice < 0) {
+                showNotification('Please enter a valid product, quantity and unit price.', 'error');
                 return;
             }
-            
-            if (!unit) {
-                showNotification('Please select a Unit', 'error');
-                return;
-            }
-            
-            if (quantity < 0) {
-                showNotification('Quantity cannot be negative', 'error');
-                return;
-            }
-            
-            if (unitPrice < 0) {
-                showNotification('Unit price cannot be negative', 'error');
-                return;
-            }
-            
+            if (!unit) { showNotification('Please select a Unit', 'error'); return; }
             if (!validateEditSaleQuantityAgainstLocalStock(true)) return;
+
             setButtonLoading('updateSaleBtn', 'updateSaleSpinner', 'updateSaleText', true);
-            
+            const snapshot = saleIdentitySnapshot_(oldData);
+            const operationId = 'UPDATE_SALE_' + ((typeof crypto !== 'undefined' && crypto.randomUUID)
+                ? crypto.randomUUID() : Date.now().toString(36) + '_' + Math.random().toString(36).slice(2));
             const payload = {
-                rowIndex: parseInt(rowIndex),
-                product: product,
-                unit: unit,
-                quantity: quantity,
-                unitPrice: unitPrice,
-                total: total || quantity * unitPrice,
-                customer: customer || "Walk-in",
-                paymentMethod: paymentMethod,
+                operationId,
+                rowIndex: parseInt(rowIndex, 10),
+                recordId: snapshot.recordId || undefined,
+                id: snapshot.id || undefined,
+                externalId: snapshot.externalId || undefined,
+                product, unit, quantity, unitPrice,
+                total: Number.isFinite(total) && total > 0 ? total : quantity * unitPrice,
+                customer: customer || 'Walk-in', paymentMethod,
                 newBranchId: newBranch !== originalBranch ? newBranch : undefined,
-                // Send the old data to the server for stock adjustment
-                oldProduct: oldData.product,
-                oldQuantity: oldData.quantity,
-                oldBranchId: oldData.branchId,
-                oldUnit: oldData.unit,
-                // Immutable old snapshot lets D1 locate the correct sale even
-                // when product/quantity are changed in the edit form.
-                sale: { ...oldData }
+                oldProduct: snapshot.product, oldQuantity: snapshot.quantity,
+                oldBranchId: snapshot.branchId, oldUnit: snapshot.unit,
+                sale: snapshot
             };
-            
+            const values = { product, unit, quantity, unitPrice, total: payload.total, customer: customer || 'Walk-in', paymentMethod, newBranch };
+
             try {
                 const result = await apiCall('updateSale', payload);
-                
-                if (result.success) {
-                    // Update local cache - FIND BY ROW INDEX, NOT BY ID
-                    if (salesCache.data) {
-                        // The row in sheet corresponds to index in array + 2
-                        const cacheIndex = parseInt(rowIndex) - 2;
-                        if (cacheIndex >= 0 && cacheIndex < salesCache.data.length) {
-                            // Update the existing entry - keep original date, seller
-                            salesCache.data[cacheIndex].product = product;
-                            salesCache.data[cacheIndex].unit = unit;
-                            salesCache.data[cacheIndex].branchId = newBranch;
-                            salesCache.data[cacheIndex].quantity = quantity;
-                            salesCache.data[cacheIndex].unitPrice = unitPrice;
-                            salesCache.data[cacheIndex].total = total || quantity * unitPrice;
-                            salesCache.data[cacheIndex].customer = customer || "Walk-in";
-                            salesCache.data[cacheIndex].paymentMethod = paymentMethod;
-                            // IMPORTANT: Do NOT change date, sellerId
-                        } else {
-                            await refreshAllData();
-                        }
-                        
-                        // Update filtered based on user type
-                        if (currentUser.userType === 'seller') {
-                            salesCache.filtered = salesCache.data.filter(s => s.sellerId === currentUser.sellerId);
-                        } else {
-                            salesCache.filtered = salesCache.data;
-                        }
-                        saveSalesCache();
-                        
-                        // Reconcile Stock locally too, mirroring the backend.
-                        if (stockCache.data) {
-                            const restore = stockCache.data.find(s => s.product === oldData.product && (s.branchId || 'MAIN') === oldData.branchId && (s.unit || '') === (oldData.unit || ''));
-                            if (restore) {
-                                restore.quantity = (restore.quantity || 0) + (Number(oldData.quantity) || 0);
-                                restore.value = restore.quantity * (restore.buyPrice || 0);
-                            }
-                            const deduct = stockCache.data.find(s => s.product === product && (s.branchId || 'MAIN') === newBranch && (s.unit || '') === unit);
-                            if (deduct) {
-                                deduct.quantity = Math.max(0, (deduct.quantity || 0) - quantity);
-                                deduct.value = deduct.quantity * (deduct.buyPrice || 0);
-                            }
-                            stockCache.summary = calculateStockSummary(stockCache.data);
-                            saveStockCache();
-                        }
-                    }
-                    
-                    hideEditSaleModal();
-                    showNotification('Sale updated successfully. Stock adjusted.', 'success');
-                    loadSales();
-                    loadDashboard();
-                    
-                    // Clear the stored old data
-                    window.oldSaleData = null;
-                } else {
-                    showNotification(result.error || 'Failed to update sale', 'error');
+                if (!result || result.success !== true) {
+                    showNotification(result?.error || 'Failed to update sale. Your original sale has not been changed.', 'error');
+                    return;
                 }
-            } catch (error) {
-                // Offline/network failure - queue the edit for later sync
-                // and apply it to the local cache right away.
-                if (!offlineData.saleEdits) offlineData.saleEdits = [];
-                offlineData.saleEdits.push(payload);
-                saveOfflineData();
-                
-                if (salesCache.data) {
-                    const cacheIndex = parseInt(rowIndex) - 2;
-                    if (cacheIndex >= 0 && cacheIndex < salesCache.data.length) {
-                        salesCache.data[cacheIndex].product = product;
-                        salesCache.data[cacheIndex].unit = unit;
-                        salesCache.data[cacheIndex].branchId = newBranch;
-                        salesCache.data[cacheIndex].quantity = quantity;
-                        salesCache.data[cacheIndex].unitPrice = unitPrice;
-                        salesCache.data[cacheIndex].total = total || quantity * unitPrice;
-                        salesCache.data[cacheIndex].customer = customer || "Walk-in";
-                        salesCache.data[cacheIndex].paymentMethod = paymentMethod;
-                    }
-                    salesCache.filtered = currentUser.userType === 'seller'
-                        ? salesCache.data.filter(s => s.sellerId === currentUser.sellerId)
-                        : salesCache.data;
-                    saveSalesCache();
-                    
-                    // Reconcile Stock locally too, mirroring the backend.
-                    if (stockCache.data) {
-                        const restore = stockCache.data.find(s => s.product === oldData.product && (s.branchId || 'MAIN') === oldData.branchId && (s.unit || '') === (oldData.unit || ''));
-                        if (restore) {
-                            restore.quantity = (restore.quantity || 0) + (Number(oldData.quantity) || 0);
-                            restore.value = restore.quantity * (restore.buyPrice || 0);
-                        }
-                        const deduct = stockCache.data.find(s => s.product === product && (s.branchId || 'MAIN') === newBranch && (s.unit || '') === unit);
-                        if (deduct) {
-                            deduct.quantity = Math.max(0, (deduct.quantity || 0) - quantity);
-                            deduct.value = deduct.quantity * (deduct.buyPrice || 0);
-                        }
-                        stockCache.summary = calculateStockSummary(stockCache.data);
-                        saveStockCache();
-                    }
-                }
-                
+                const updated = applySaleEditToLocalCache_(payload, snapshot, values);
                 hideEditSaleModal();
-                showNotification('Sale updated offline. Will sync when online.', 'info');
-                loadSales();
-                loadDashboard();
                 window.oldSaleData = null;
+                showNotification('Sale updated successfully. Stock adjusted.', 'success');
+                if (!updated) await refreshAllData();
+                else { loadSales(); loadStock(); loadDashboard(); }
+            } catch (error) {
+                // Keep the exact same operation ID and immutable record identity for retry.
+                if (!offlineData.saleEdits) offlineData.saleEdits = [];
+                const alreadyQueued = offlineData.saleEdits.some(x => x && x.operationId === operationId);
+                if (!alreadyQueued) offlineData.saleEdits.push(payload);
+                saveOfflineData();
+                applySaleEditToLocalCache_(payload, snapshot, values);
+                hideEditSaleModal();
+                window.oldSaleData = null;
+                showNotification('Sale edit saved on this device and queued for sync. The same operation ID will be reused.', 'info');
+                loadSales(); loadDashboard();
+            } finally {
+                setButtonLoading('updateSaleBtn', 'updateSaleSpinner', 'updateSaleText', false);
             }
-            
-            setButtonLoading('updateSaleBtn', 'updateSaleSpinner', 'updateSaleText', false);
         }
-        
-        
-        // Live per-branch product cache used by the Sale search field below.
-        // Rebuilt whenever the branch changes or the modal opens.
-        let saleProductsInBranchCache = {};
-        let selectedSaleProduct = null;
-        let selectedSaleProductUnit = null;
-        
         function pluralizeUnit(unit, qty) {
             if (!unit) return '';
             if (qty === 1 || qty === -1) return unit;
@@ -18366,8 +18602,9 @@ async function updateStock() {
         if (stockCache.data) {
             stockCache.data.forEach(item => {
                 const itemBranchId = item.branchId || 'MAIN';
-                if (item.product === selectedProduct && itemBranchId === branchId) {
-                    available += item.quantity || 0;
+                const selectedUnit = (selectedSaleProduct === selectedProduct && selectedSaleProductUnit !== null) ? selectedSaleProductUnit : (document.getElementById('saleUnit')?.value || '');
+                if (item.product === selectedProduct && itemBranchId === branchId && String(item.unit || '') === String(selectedUnit || '')) {
+                    available += Number(item.quantity) || 0;
                 }
             });
         }
@@ -19166,8 +19403,9 @@ async function updateStock() {
                     paymentMethod: paymentMethod,
                     type: item.isStockProduct ? 'stock' : 'service',
                     sellerId: currentUser.sellerId,
-                    sellerName: currentUser.userType === 'seller' ? currentUser.sellerName : 'Admin',
+                    sellerName: currentUser.userType === 'seller' ? getOfflineSellerName_() : 'Admin',
                     branchId: item.branchId,
+                    branchName: getOfflineBranchName_(item.branchId),
                     unit: item.unit || '',
                     receiptNo: receiptNo || null,
                     operationId: operationId,
@@ -19207,6 +19445,18 @@ async function updateStock() {
             itemsToProcess.forEach(item => {
                 if (!item.operationId) item.operationId = generateSaleOperationId();
             });
+            if (!navigator.onLine) {
+                const movements = itemsToProcess.filter(item => item.isStockProduct).map(item => ({
+                    operationId:item.operationId, product:item.product, quantity:item.qty, unit:item.unit || '',
+                    branchId:item.branchId || currentUser.branchId || 'MAIN', isStockProduct:true
+                }));
+                const validation = validateOfflineStockMovements_(movements);
+                if (!validation.success) {
+                    setButtonLoading('submitSaleBtn', 'saleSpinner', 'submitSaleText', false);
+                    showNotification(validation.error || 'Cached Stock is insufficient. Sale was not completed.', 'error');
+                    return;
+                }
+            }
 
             // Clear the Record Sale form immediately after confirmation. The
             // captured values above remain available to the silent save.
@@ -19295,6 +19545,8 @@ async function updateStock() {
                 branchId: branchId,
                 timestamp: new Date().toISOString(),
                 sellerId: currentUser.sellerId,
+                sellerName: currentUser.userType === 'seller' ? getOfflineSellerName_() : 'Admin',
+                branchName: getOfflineBranchName_(branchId),
                 customerId: customerId,
                 unit: saleUnit,
                 receiptNo: receiptNo || null,
@@ -19423,16 +19675,14 @@ async function updateStock() {
                     return null;
                 } else if (!navigator.onLine) {
                     isOnline = false;
-                    saveSaleOffline(saleData, isNewCustomer);
-                    return 'offline';
+                    return saveSaleOffline(saleData, isNewCustomer) ? 'offline' : null;
                 } else {
                     // The browser still reports online, so do not tell the
                     // user that the sale was saved offline. Keep the existing
                     // queue only as a silent last-resort retry if the server
                     // endpoint is temporarily unreachable.
                     console.warn('Server unreachable while browser is online; queuing sale silently for retry.', lastError);
-                    saveSaleOffline(saleData, isNewCustomer);
-                    return 'online-pending';
+                    return saveSaleOffline(saleData, isNewCustomer) ? 'online-pending' : null;
                 }
             } else {
                 isOnline = false;
@@ -19443,6 +19693,14 @@ async function updateStock() {
         
         
         function saveSaleOffline(data, isNewCustomer = false) {
+            const movement = data.isStockProduct ? {
+                operationId: data.operationId, product: data.product, quantity: Number(data.qty) || 0,
+                unit: data.unit || '', branchId: data.branchId || currentUser.branchId || 'MAIN', isStockProduct:true
+            } : null;
+            if (movement) {
+                const validation = validateOfflineStockMovements_(movement);
+                if (!validation.success) { showNotification(validation.error || 'Insufficient cached Stock.', 'error'); return false; }
+            }
             if (isNewCustomer && data.customer && data.customer !== "Walk-in") {
                 const newCustomer = {
                     id: 'temp_' + Date.now(),
@@ -19464,45 +19722,15 @@ async function updateStock() {
                 offlineData.customers.push(newCustomer);
             }
             
-            if (data.isStockProduct) {
-                if (!productsCache[data.product] || productsCache[data.product].quantity < data.qty) {
-                    showNotification('Insufficient stock!', 'error');
-                    return;
-                }
-                
-                productsCache[data.product].quantity -= data.qty;
-                
-                if (stockCache.data) {
-                    let remainingToReduce = data.qty;
-                    
-                    const sortedStock = [...stockCache.data]
-                        .filter(item => item.product === data.product && (item.branchId || 'MAIN') === data.branchId && (item.unit || '') === (data.unit || '') && item.quantity > 0)
-                        .sort((a, b) => new Date(a.date) - new Date(b.date));
-                    
-                    for (let i = 0; i < sortedStock.length && remainingToReduce > 0; i++) {
-                        const stockItem = sortedStock[i];
-                        const index = stockCache.data.findIndex(item => 
-                            item.date === stockItem.date && 
-                            item.product === stockItem.product && 
-                            item.quantity === stockItem.quantity
-                        );
-                        
-                        if (index !== -1) {
-                            const reduceBy = Math.min(stockCache.data[index].quantity, remainingToReduce);
-                            stockCache.data[index].quantity -= reduceBy;
-                            stockCache.data[index].value = stockCache.data[index].quantity * stockCache.data[index].buyPrice;
-                            remainingToReduce -= reduceBy;
-                        }
-                    }
-                    
-                    stockCache.summary = calculateStockSummary(stockCache.data);
-                    saveStockCache();
-                }
-                
-                saveProductsCache();
+            // Save the exact operation to the durable queue before changing the
+            // local Stock balance. The same operationId makes recovery idempotent.
+            offlineData.sales = Array.isArray(offlineData.sales) ? offlineData.sales : [];
+            if (!offlineData.sales.some(x => String(x.operationId || '') === String(data.operationId || ''))) offlineData.sales.push(data);
+            saveOfflineData();
+            if (movement) {
+                const stockResult = applyOfflineStockMovements_(movement);
+                if (!stockResult.success) { showNotification(stockResult.error || 'Sale is queued; local Stock update needs a retry.', 'warning'); return false; }
             }
-            
-            offlineData.sales.push(data);
             
             if (salesCache.data) {
                 const newSale = {
@@ -19515,8 +19743,9 @@ async function updateStock() {
                     paymentMethod: data.paymentMethod,
                     type: data.isStockProduct ? 'stock' : 'service',
                     sellerId: data.sellerId,
-                    sellerName: data.sellerId ? (currentUser.sellerName || 'Seller') : 'Admin',
+                    sellerName: data.sellerName || (data.sellerId ? getOfflineSellerName_() : 'Admin'),
                     branchId: data.branchId,
+                    branchName: data.branchName || getOfflineBranchName_(data.branchId),
                     unit: data.unit || '',
                     receiptNo: data.receiptNo || null,
                     saleBatchId: data.saleBatchId || null,
@@ -19550,6 +19779,7 @@ async function updateStock() {
             } else {
                 registerNonStockProductLocally(data.product, data.unit);
             }
+            return true;
         }
         
         function applySalesFilters() {
@@ -19689,7 +19919,7 @@ async function updateStock() {
                     const subtotal=g.items.reduce((sum,x)=>sum+getSaleLineAmount_(x),0);
                     const customerName=g.customer || 'Walk-in Customer';
                     const sellerName=getSellerDisplayName(g.sellerId, first.sellerName || sellerMap[g.sellerId]);
-                    const branchName=branchMap[g.branchId] || g.branchId || 'Main Branch';
+                    const branchName=first.branchName || branchMap[g.branchId] || getOfflineBranchName_(g.branchId) || g.branchId || 'Main Branch';
                     const receiptNo=first.receiptNo || first.receipt || `SALE-${String(gi+1).padStart(4,'0')}`;
                     const items=g.items.map(x=>`<div class="sales-receipt-item"><div><div class="sales-receipt-item-name">${escapeHtml(x.product||x.service||'Item')}</div><div class="sales-receipt-item-sub">${formatQuantity(x.quantity)}${x.unit?' '+pluralizeUnit(x.unit,x.quantity):''} × ${formatCurrency(x.unitPrice||0)}</div></div><div class="sales-receipt-item-price">${formatCurrency(getSaleLineAmount_(x))}</div></div>`).join('');
                     return `<div class="sales-receipt-card">
@@ -19789,13 +20019,13 @@ async function updateStock() {
             const hasCachedLogo = typeof logoBase64Cache !== 'undefined' && logoBase64Cache && logoBase64Cache.data && logoBase64Cache.url === currentUser.logoUrl;
             const logoHTML = hasCachedLogo ? `<img src="${logoBase64Cache.data}" class="receipt-logo" alt="">` : '';
             const customer = group.customer || '';
-            const seller = first.sellerName || (typeof sellersCache !== 'undefined' && sellersCache.data ? ((sellersCache.data.find(x => x.id === group.sellerId) || {}).name || '') : '') || (group.sellerId ? 'Unknown Seller' : 'Admin');
+            const seller = getSellerDisplayName(group.sellerId, first.sellerName || '');
             const receiptNo = first.receiptNo || first.receipt || 'Sale';
             const rows = group.items.map(item => `<tr><td>${escapeHtml(item.product || item.service || 'Item')}</td><td class="qty">${formatQuantity(item.quantity)}${item.unit ? ' ' + pluralizeUnit(item.unit, item.quantity) : ''}</td><td class="money">${formatCurrency(item.unitPrice || 0)}</td><td class="money">${formatCurrency(item.total || 0)}</td></tr>`).join('');
             const total = group.items.reduce((sum,item) => sum + (Number(item.total)||0), 0);
             return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Receipt ${escapeHtml(receiptNo)}</title><style>
             *{box-sizing:border-box} body{font-family:Arial,'Segoe UI',sans-serif;color:#172033;background:#fff;margin:0;padding:20px}.receipt{width:100%;max-width:760px;margin:0 auto;border:1px solid #dbe3ec;border-radius:14px;overflow:hidden;background:#fff}.receipt-top{padding:22px 24px 16px;text-align:center;border-bottom:2px dashed #cbd5e1}.receipt-logo{width:58px;height:58px;object-fit:cover;border-radius:50%;margin-bottom:8px}.business{font-size:20px;font-weight:900;text-transform:uppercase;letter-spacing:.04em}.receipt-title{font-size:12px;color:#64748b;margin-top:4px;text-transform:uppercase;letter-spacing:.12em}.meta{display:grid;grid-template-columns:1fr 1fr;gap:7px 18px;padding:16px 24px;background:#f8fafc;font-size:12px}.meta div{display:flex;justify-content:space-between;gap:12px}.meta strong{color:#334155}.items{padding:10px 24px 6px}table{width:100%;border-collapse:collapse;font-size:12px}th{padding:9px 5px;border-bottom:2px solid #1e293b;text-align:left;font-size:11px;text-transform:uppercase;color:#475569}td{padding:9px 5px;border-bottom:1px dashed #dbe3ec;vertical-align:top}.qty{text-align:center}.money{text-align:right;white-space:nowrap}.total{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-top:2px dashed #94a3b8;font-size:18px;font-weight:900}.payment{margin:0 24px 18px;padding:11px 13px;border-radius:9px;background:#f8fafc;font-size:12px;display:flex;justify-content:space-between}.footer{text-align:center;padding:15px 24px 22px;color:#64748b;font-size:11px;border-top:1px solid #eef2f7}.print-btn{display:block;margin:0 auto 18px;padding:10px 20px;border:0;border-radius:9px;background:#2563eb;color:#fff;font-weight:800;cursor:pointer}@media print{body{padding:0}.receipt{border:0;max-width:none;border-radius:0}.print-btn{display:none}}@media(max-width:600px){.meta{grid-template-columns:1fr}.items{padding-left:14px;padding-right:14px}.meta,.total{padding-left:14px;padding-right:14px}.payment{margin-left:14px;margin-right:14px}}
-            </style></head><body><button class="print-btn" onclick="window.print()">Print Receipt</button><div class="receipt"><div class="receipt-top">${logoHTML}<div class="business">${escapeHtml(currentUser.business || 'SmartTrade')}</div><div class="receipt-title">Sales Receipt</div></div><div class="meta"><div><span>Receipt No.</span><strong>${escapeHtml(receiptNo)}</strong></div><div><span>Date & Time</span><strong>${escapeHtml(formatDate(first.date,true))}</strong></div>${customer ? `<div><span>Customer</span><strong>${escapeHtml(customer)}</strong></div>` : ''}<div><span>Served by</span><strong>${escapeHtml(seller)}</strong></div></div><div class="items"><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Amount</th></tr></thead><tbody>${rows}</tbody></table></div><div class="total"><span>TOTAL</span><span>${formatCurrency(total)}</span></div><div class="payment"><span>Payment Method</span><strong>${escapeHtml(group.paymentMethod || 'Cash')}</strong></div><div class="footer">Thank you for your business!</div></div></body></html>`;
+            </style></head><body><button class="print-btn" onclick="window.print()">Print Receipt</button><div class="receipt"><div class="receipt-top">${logoHTML}<div class="business">${escapeHtml(currentUser.business || 'SmartTrade')}</div><div class="receipt-title">Sales Receipt</div></div><div class="meta"><div><span>Receipt No.</span><strong>${escapeHtml(receiptNo)}</strong></div><div><span>Date & Time</span><strong>${escapeHtml(formatDate(first.date,true))}</strong></div>${customer ? `<div><span>Customer</span><strong>${escapeHtml(customer)}</strong></div>` : ''}<div><span>Served by</span><strong>${escapeHtml(seller)}</strong></div><div><span>Branch</span><strong>${escapeHtml(first.branchName || group.branchId || 'Main Branch')}</strong></div></div><div class="items"><table><thead><tr><th>Item</th><th style="text-align:center">Qty</th><th style="text-align:right">Unit Price</th><th style="text-align:right">Amount</th></tr></thead><tbody>${rows}</tbody></table></div><div class="total"><span>TOTAL</span><span>${formatCurrency(total)}</span></div><div class="payment"><span>Payment Method</span><strong>${escapeHtml(group.paymentMethod || 'Cash')}</strong></div><div class="footer">Thank you for your business!</div></div></body></html>`;
         }
 
         function printSalesReceipt(groupIndex, event) {
@@ -19996,7 +20226,7 @@ function editSalesReceiptItem(groupIndex, itemIndex, event) {
     if (rowIndex < 2) return;
     const menu = document.getElementById(`salesReceiptMenu-${groupIndex}`);
     if (menu) menu.classList.remove('show');
-    editSale(rowIndex, sale.product || sale.service || '', sale.quantity, sale.unitPrice, sale.total, sale.customer || '', sale.paymentMethod || 'cash', sale.sellerId || '', sale.branchId || 'MAIN', sale.date || '', sale.unit || '');
+    editSale(rowIndex, sale.product || sale.service || '', sale.quantity, sale.unitPrice, sale.total, sale.customer || '', sale.paymentMethod || 'cash', sale.sellerId || '', sale.branchId || 'MAIN', sale.date || sale.timestamp || '', sale.unit || '', sale);
 }
 
 function deleteSalesReceiptItem(groupIndex, itemIndex, event) {
@@ -20038,7 +20268,7 @@ document.addEventListener('click', function(event) {
     }
 }, true);
 
-function editSale(rowIndex, product, quantity, unitPrice, total, customer, paymentMethod, sellerId, branchId, date, unit) {
+function editSale(rowIndex, product, quantity, unitPrice, total, customer, paymentMethod, sellerId, branchId, date, unit, saleRecord) {
             // Store the original values before editing
             window.oldSaleData = {
                 rowIndex: rowIndex,
@@ -20047,7 +20277,14 @@ function editSale(rowIndex, product, quantity, unitPrice, total, customer, payme
                 branchId: branchId,
                 unit: unit || '',
                 timestamp: date || '',
-                date: date || ''
+                date: date || '',
+                id: saleRecord?._externalId || saleRecord?._recordId || saleRecord?.id || '',
+                _recordId: saleRecord?._recordId || '',
+                _externalId: saleRecord?._externalId || '',
+                recordId: saleRecord?._recordId || saleRecord?._externalId || saleRecord?.id || '',
+                operationId: saleRecord?.operationId || '',
+                receiptNo: saleRecord?.receiptNo || saleRecord?.receipt || '',
+                saleBatchId: saleRecord?.saleBatchId || ''
             };
 
             document.getElementById('editSaleRowIndex').value = rowIndex;
@@ -20247,7 +20484,6 @@ function deleteSale(rowIndex, saleOverride) {
             // INSTANT: update the visible cache/card before any await/network.
             removeSaleFromLocalCacheInstantly_(saleBeingDeleted);
             returnQuantityToStockCacheLocally(saleBeingDeleted);
-            showNotification('Sale deleted.', 'success');
 
             // If the sale existed only in the local offline queue and has not
             // entered an in-flight sync request, the operation is already fully
@@ -20255,6 +20491,7 @@ function deleteSale(rowIndex, saleOverride) {
             // send deleteSaleRow() and never create a delete queue entry.
             if (cancelledBeforeSync) {
                 saveOfflineData();
+                showNotification('Offline sale cancelled successfully.', 'success');
                 return;
             }
 
@@ -20274,6 +20511,7 @@ function deleteSale(rowIndex, saleOverride) {
                     }
                 }
                 saveOfflineData();
+                showNotification('Sale removed from this device. Deletion will sync automatically when online.', 'info');
                 return;
             }
 
@@ -20287,6 +20525,7 @@ function deleteSale(rowIndex, saleOverride) {
 
                 if (result && result.success) {
                     removePendingSaleDelete_(operationId);
+                    showNotification(result.message || 'Sale deleted successfully.', 'success');
                     // Do not call loadSales() here: it can race and reinsert
                     // an old server snapshot. Background refresh remains safe
                     // because mergeSalesServerDataPreservingPending_ filters the
@@ -20559,34 +20798,36 @@ function showEditCustomerSuggestions() {
         // possible, otherwise queues it (mirrors how Stock/Sales/Units
         // queue offline writes) - the caller always gets an optimistic
         // success back so the UI never has to wait on connectivity.
+        function ensurePurchaseOperationId(payload, prefix = 'PURCHASE') {
+            if (payload && payload.operationId) return payload.operationId;
+            const id = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + '_' + Math.random().toString(36).slice(2));
+            if (payload) payload.operationId = prefix + '_' + id;
+            return payload?.operationId;
+        }
+
         async function executePurchaseRequestAction(type, payload) {
-            const actionMap = {
-                saveDraft: 'saveDraftPurchaseRequest',
-                submit: 'submitPurchaseRequest',
-                approve: 'approvePurchaseRequest',
-                reject: 'rejectPurchaseRequest',
-                delete: 'deletePurchaseRequest',
-                completeItem: 'completePurchaseRequestItem',
-                saveReviewDraft: 'saveReviewDraft'
-            };
-            
+            const actionMap = { saveDraft:'saveDraftPurchaseRequest', submit:'submitPurchaseRequest', approve:'approvePurchaseRequest', reject:'rejectPurchaseRequest', delete:'deletePurchaseRequest', completeItem:'completePurchaseRequestItem', saveReviewDraft:'saveReviewDraft' };
+            const action = actionMap[type];
+            if (!action) return { success:false, error:'Unsupported Purchase Request action.' };
+            const queuedPayload = { ...payload };
+            ensurePurchaseOperationId(queuedPayload, 'PURCHASE_REQUEST');
             if (isOnline) {
                 try {
-                    return await apiCall(actionMap[type], payload);
+                    const result = await apiCall(action, queuedPayload, 25000);
+                    return result || { success:false, error:'Server returned no confirmation.' };
                 } catch (error) {
                     if (!offlineData.purchaseRequestActions) offlineData.purchaseRequestActions = [];
-                    offlineData.purchaseRequestActions.push({ type, payload, timestamp: new Date().toISOString() });
+                    offlineData.purchaseRequestActions.push({ type, payload:queuedPayload, operationId:queuedPayload.operationId, timestamp:new Date().toISOString() });
                     saveOfflineData();
-                    return { success: true, offline: true };
+                    return { success:true, offline:true, operationId:queuedPayload.operationId };
                 }
-            } else {
-                if (!offlineData.purchaseRequestActions) offlineData.purchaseRequestActions = [];
-                offlineData.purchaseRequestActions.push({ type, payload, timestamp: new Date().toISOString() });
-                saveOfflineData();
-                return { success: true, offline: true };
             }
+            if (!offlineData.purchaseRequestActions) offlineData.purchaseRequestActions = [];
+            offlineData.purchaseRequestActions.push({ type, payload:queuedPayload, operationId:queuedPayload.operationId, timestamp:new Date().toISOString() });
+            saveOfflineData();
+            return { success:true, offline:true, operationId:queuedPayload.operationId };
         }
-        
+
         function setupPurchaseTabsForUser() {
             const isAdmin = currentUser.userType === 'admin';
             
@@ -20601,6 +20842,30 @@ function showEditCustomerSuggestions() {
             switchPurchaseTab(defaultTab);
         }
         
+        async function refreshPurchaseRequestsFromServer(statusFilter, adminList = false) {
+            if (!isOnline) return false;
+            const isAdmin = currentUser?.userType === 'admin';
+            const params = {};
+            if (statusFilter) params.status = statusFilter;
+            if (!isAdmin) {
+                params.sellerId = currentUser.sellerId;
+                params.branchId = currentUser.branchId || 'MAIN';
+            } else if (adminList) {
+                params.sellerId = 'ADMIN';
+            }
+            try {
+                const result = await apiCall('getPurchaseRequests', params, 20000);
+                if (!result || result.success !== true) throw new Error(result?.error || 'Server did not confirm Purchase Requests retrieval.');
+                const rows = Array.isArray(result.requests) ? result.requests : (Array.isArray(result.data) ? result.data : []);
+                applyPurchaseRequestsFromServer(rows);
+                return true;
+            } catch (error) {
+                console.error('Purchase Requests server refresh failed:', error);
+                showNotification('Imeshindwa kupata Purchase Requests kutoka Server: ' + (error.message || 'Unknown error'), 'error');
+                return false;
+            }
+        }
+
         function switchPurchaseTab(tab) {
             ['add', 'mylist', 'pending', 'approved', 'myrequests', 'completed'].forEach(t => {
                 document.getElementById('purchaseTabBtn-' + t).classList.toggle('active', t === tab);
@@ -20621,12 +20886,17 @@ function showEditCustomerSuggestions() {
         // Looks up a Branch's display name from the cache - never shows
         // the raw ID (matches the same lookup used for Sales/Purchases).
         function getBranchDisplayName(branchId) {
-            if (!branchId || branchId === 'MAIN') return 'Main Branch';
-            if (branchesCache?.data) {
-                const found = branchesCache.data.find(b => b.id === branchId);
-                if (found) return found.name;
-            }
-            return branchId;
+            const key = String(branchId || 'MAIN').trim();
+            if (!key || key.toUpperCase() === 'MAIN') return 'Main Branch';
+            const rows = Array.isArray(branchesCache?.data) ? branchesCache.data : [];
+            const found = rows.find(b => [
+                b.id, b.branchId, b.branchID, b._externalId, b.externalId,
+                b._recordId, b.recordId, b.code, b.branchCode, b.branch_id,
+                b.name, b.branchName
+            ].some(v => v !== undefined && v !== null && String(v).trim() === key));
+            const name = found && String(found.name || found.branchName || '').trim();
+            if (name) return name;
+            return getOfflineBranchName_(key) || key;
         }
         
         // ---- New / Draft Purchase Request (Seller) ----
@@ -20933,36 +21203,36 @@ function showEditCustomerSuggestions() {
         
         // Called automatically (Title/Notes typing, item add/remove) - saves
         // the in-progress request as a Draft without needing a button.
-        async function autosaveDraftPurchaseRequest() {
+        let purchaseDraftSaveTimer = null;
+        let purchaseDraftSaveChain = Promise.resolve();
+        function autosaveDraftPurchaseRequest() {
             const title = document.getElementById('prTitle')?.value.trim() || '';
             const notes = document.getElementById('prNotes')?.value.trim() || '';
-            
-            if (currentPRItems.length === 0 && !title) return; // nothing worth saving yet
+            if (currentPRItems.length === 0 && !title) return;
             if (!currentPRRequestId) currentPRRequestId = generateRequestId();
-            
             const payload = {
-                requestId: currentPRRequestId,
-                title: title,
-                items: currentPRItems,
-                notes: notes,
-                branchId: currentUser.branchId || 'MAIN',
-                sellerId: currentUser.sellerId,
-                sellerName: currentUser.sellerName || currentUser.email
+                requestId:currentPRRequestId, title, items:currentPRItems.map(x=>({...x})), notes,
+                branchId:currentUser.branchId || 'MAIN', sellerId:currentUser.sellerId,
+                sellerName:currentUser.sellerName || currentUser.email
             };
-            
-            upsertLocalPurchaseRequest(currentPRRequestId, {
-                title: payload.title,
-                items: payload.items,
-                notes: payload.notes,
-                sellerId: payload.sellerId,
-                sellerName: payload.sellerName,
-                branchId: payload.branchId,
-                status: 'draft'
-            });
-            
-            await executePurchaseRequestAction('saveDraft', payload);
+            upsertLocalPurchaseRequest(currentPRRequestId, { title, items:payload.items, notes, sellerId:payload.sellerId, sellerName:payload.sellerName, branchId:payload.branchId, status:'draft', _localDraftPending:true });
+            clearTimeout(purchaseDraftSaveTimer);
+            purchaseDraftSaveTimer = setTimeout(() => {
+                purchaseDraftSaveTimer = null;
+                const save = async () => {
+                    const result = await executePurchaseRequestAction('saveDraft', payload);
+                    const local = getLocalPurchaseRequest(payload.requestId);
+                    if (result?.success === true) {
+                        if (local) { local._localDraftPending=Boolean(result.offline); local._draftSaveError=''; savePurchaseRequestsCache(); }
+                    } else {
+                        if (local) { local._localDraftPending=true; local._draftSaveError=result?.error||'Draft save failed'; savePurchaseRequestsCache(); }
+                        showNotification('Draft haijahifadhiwa Server: '+(result?.error||'Unknown error'),'error');
+                    }
+                };
+                purchaseDraftSaveChain = purchaseDraftSaveChain.catch(()=>{}).then(save);
+            },650);
         }
-        
+
         function submitNewPurchaseRequest() {
             if (currentPRItems.length === 0) {
                 showNotification('Please add at least one item to the request', 'error');
@@ -20977,6 +21247,7 @@ function showEditCustomerSuggestions() {
         }
         
         async function submitNewPurchaseRequestConfirmed() {
+            if (purchaseDraftSaveTimer) { clearTimeout(purchaseDraftSaveTimer); purchaseDraftSaveTimer = null; }
             setButtonLoading('submitPRBtn', 'prSpinner', 'submitPRText', true, 'Submitting Request...');
             
             if (!currentPRRequestId) currentPRRequestId = generateRequestId();
@@ -21002,6 +21273,7 @@ function showEditCustomerSuggestions() {
                 date: new Date().toISOString()
             });
             
+            ensurePurchaseOperationId(payload, 'PURCHASE_SUBMIT');
             const result = await executePurchaseRequestAction('submit', payload);
             
             if (result.success) {
@@ -21365,54 +21637,64 @@ function showEditCustomerSuggestions() {
             adminListSaveTimeout = setTimeout(() => saveAdminListToServer(), 800);
         }
         
+        let adminListSaveChain = Promise.resolve();
         async function saveAdminListToServer() {
             if (!currentAdminListRequestId) return;
-            if (currentAdminListItems.length === 0) return;
-            
             const payload = {
-                requestId: currentAdminListRequestId,
-                title: document.getElementById('alTitle').value.trim(),
-                items: currentAdminListItems,
-                branchId: currentUser.branchId || 'MAIN',
-                sellerName: currentUser.email,
-                approvedBy: currentUser.email
+                requestId:currentAdminListRequestId,
+                title:document.getElementById('alTitle').value.trim(),
+                items:currentAdminListItems.map(x=>({...x})),
+                branchId:currentUser.branchId || 'MAIN',
+                sellerName:currentUser.email,
+                approvedBy:currentUser.email
             };
-            
-            upsertLocalPurchaseRequest(currentAdminListRequestId, {
-                title: payload.title,
-                items: payload.items,
-                sellerId: 'ADMIN',
-                sellerName: payload.sellerName,
-                branchId: payload.branchId,
-                status: 'approved',
-                approvedBy: payload.approvedBy,
-                approvedDate: new Date().toISOString()
-            });
-            
+            ensurePurchaseOperationId(payload,'ADMIN_PURCHASE_LIST');
+            upsertLocalPurchaseRequest(payload.requestId,{title:payload.title,items:payload.items,sellerId:'ADMIN',sellerName:payload.sellerName,branchId:payload.branchId,status:'approved',approvedBy:payload.approvedBy,approvedDate:new Date().toISOString(),_localSavePending:true});
             loadMyListRequests();
-            
-            const actionMap = { submitAdminPurchaseList: 'submitAdminPurchaseList' };
-            if (isOnline) {
-                try {
-                    await apiCall('submitAdminPurchaseList', payload);
-                } catch (error) {
-                    if (!offlineData.purchaseRequestActions) offlineData.purchaseRequestActions = [];
-                    offlineData.purchaseRequestActions.push({ type: 'submitAdminList', payload, timestamp: new Date().toISOString() });
+            const saveSnapshot = async () => {
+                if (isOnline) {
+                    try {
+                        const result=await apiCall('submitAdminPurchaseList',payload,25000);
+                        if (result?.success===true) {
+                            if(result.data) applyPurchaseRequestsFromServer([result.data]);
+                            const local=getLocalPurchaseRequest(payload.requestId);
+                            if(local){local._localSavePending=false;local._saveError='';savePurchaseRequestsCache();}
+                            loadMyListRequests();
+                        } else {
+                            const local=getLocalPurchaseRequest(payload.requestId);
+                            if(local){local._localSavePending=true;local._saveError=result?.error||'Server rejected save';savePurchaseRequestsCache();}
+                            showNotification('Server haijahifadhi Purchase List. Taarifa zimebaki kwenye kifaa: '+(result?.error||'Unknown error'),'error');
+                        }
+                    } catch(error) {
+                        if(!offlineData.purchaseRequestActions) offlineData.purchaseRequestActions=[];
+                        offlineData.purchaseRequestActions.push({type:'submitAdminList',payload,operationId:payload.operationId,timestamp:new Date().toISOString()});
+                        saveOfflineData();
+                        const local=getLocalPurchaseRequest(payload.requestId);
+                        if(local){local._localSavePending=true;local._saveError='Waiting for server sync';savePurchaseRequestsCache();}
+                        showNotification('Purchase List imehifadhiwa kwenye kifaa na kusubiri Sync.','info');
+                    }
+                } else {
+                    if(!offlineData.purchaseRequestActions) offlineData.purchaseRequestActions=[];
+                    offlineData.purchaseRequestActions.push({type:'submitAdminList',payload,operationId:payload.operationId,timestamp:new Date().toISOString()});
                     saveOfflineData();
+                    const local=getLocalPurchaseRequest(payload.requestId);
+                    if(local){local._localSavePending=true;local._saveError='Waiting for internet';savePurchaseRequestsCache();}
                 }
-            } else {
-                if (!offlineData.purchaseRequestActions) offlineData.purchaseRequestActions = [];
-                offlineData.purchaseRequestActions.push({ type: 'submitAdminList', payload, timestamp: new Date().toISOString() });
-                saveOfflineData();
-            }
+            };
+            adminListSaveChain=adminListSaveChain.catch(()=>{}).then(saveSnapshot);
+            return adminListSaveChain;
         }
-        
+
         function loadMyListRequests() {
             const requests = (purchaseRequestsCache.data || [])
                 .filter(r => r.sellerId === 'ADMIN')
                 .sort((a, b) => new Date(b.date) - new Date(a.date));
             renderMyListRequestsList(requests);
-        }
+        
+            refreshPurchaseRequestsFromServer(['approved','completed'], true).then(ok => {
+                if (ok) renderMyListRequestsList((purchaseRequestsCache.data || []).filter(r => r.sellerId === 'ADMIN').sort((a,b) => new Date(b.date)-new Date(a.date)));
+            });
+}
         
         function renderMyListRequestsList(requests) {
             const container = document.getElementById('myListContainer');
@@ -21471,7 +21753,11 @@ function showEditCustomerSuggestions() {
                 badge.textContent = requests.length;
                 badge.classList.toggle('hidden', requests.length === 0);
             }
-        }
+        
+            refreshPurchaseRequestsFromServer(['draft','pending','approved','rejected']).then(ok => {
+                if (ok) renderMyRequestsList((purchaseRequestsCache.data || []).filter(r => r.sellerId === currentUser.sellerId && ['draft','pending','approved','rejected'].includes(r.status)).sort((a,b) => new Date(b.date)-new Date(a.date)));
+            });
+}
         
         function renderApprovalNotesBlock(approvalNotes) {
             if (!approvalNotes) return '';
@@ -21569,7 +21855,11 @@ function showEditCustomerSuggestions() {
                 .filter(r => r.sellerId === currentUser.sellerId && r.status === 'completed')
                 .sort((a, b) => new Date(b.completedDate || b.date) - new Date(a.completedDate || a.date));
             renderCompletedRequestsList(requests);
-        }
+        
+            refreshPurchaseRequestsFromServer(['completed']).then(ok => {
+                if (ok) renderCompletedRequestsList((purchaseRequestsCache.data || []).filter(r => r.sellerId === currentUser.sellerId && r.status === 'completed').sort((a,b) => new Date(b.completedDate||b.date)-new Date(a.completedDate||a.date)));
+            });
+}
         
         function renderCompletedRequestsList(requests) {
             const container = document.getElementById('completedRequestsContainer');
@@ -21717,7 +22007,16 @@ function showEditCustomerSuggestions() {
                 badge.textContent = requests.length;
                 badge.classList.toggle('hidden', requests.length === 0);
             }
-        }
+        
+            refreshPurchaseRequestsFromServer(['pending']).then(ok => {
+                if (ok) {
+                    const fresh = (purchaseRequestsCache.data || []).filter(r => r.status === 'pending').sort((a,b) => new Date(b.date)-new Date(a.date));
+                    renderPendingRequestsList(fresh);
+                    const freshBadge = document.getElementById('pendingRequestsBadge');
+                    if (freshBadge) { freshBadge.textContent = fresh.length; freshBadge.classList.toggle('hidden', fresh.length === 0); }
+                }
+            });
+}
         
         function renderPendingRequestsList(requests) {
             const container = document.getElementById('pendingRequestsContainer');
@@ -21756,7 +22055,11 @@ function showEditCustomerSuggestions() {
                 .filter(r => r.status === 'approved' || r.status === 'completed')
                 .sort((a, b) => new Date(b.approvedDate || b.date) - new Date(a.approvedDate || a.date));
             renderApprovedRequestsList(requests);
-        }
+        
+            refreshPurchaseRequestsFromServer(['approved','completed']).then(ok => {
+                if (ok) renderApprovedRequestsList((purchaseRequestsCache.data || []).filter(r => r.status === 'approved' || r.status === 'completed').sort((a,b) => new Date(b.approvedDate||b.date)-new Date(a.approvedDate||a.date)));
+            });
+}
         
         function renderApprovedRequestsList(requests) {
             const container = document.getElementById('approvedRequestsContainer');
@@ -21899,7 +22202,8 @@ function showEditCustomerSuggestions() {
         function applyPurchaseRequestsFromServer(requests) {
             if (!Array.isArray(requests)) return;
             requests.forEach(fresh => {
-                const idx = (purchaseRequestsCache.data || []).findIndex(r => r.requestId === fresh.requestId);
+                fresh.requestId = fresh.requestId || fresh.id;
+                const idx = (purchaseRequestsCache.data || []).findIndex(r => String(r.requestId || r.id) === String(fresh.requestId || fresh.id));
                 if (idx !== -1) {
                     purchaseRequestsCache.data[idx] = fresh;
                 } else {
@@ -22419,7 +22723,7 @@ function showEditCustomerSuggestions() {
         purchasesCache.filtered.forEach((purchase, index) => {
             const dateDisplay = formatDate(purchase.date, true);
             const sellerName = getSellerDisplayName(purchase.sellerId, purchase.sellerName || sellerMap[purchase.sellerId]);
-            const branchName = branchMap[purchase.branchId] || purchase.branchId || 'Main Branch';
+            const branchName = purchase.branchName || branchMap[purchase.branchId] || getOfflineBranchName_(purchase.branchId) || purchase.branchId || 'Main Branch';
             // IMPORTANT: use the row index that came from the server (which
             // matches the ACTUAL row in the PURCHASES sheet), never the
             // position within this filtered/sorted display list - those
@@ -22934,6 +23238,7 @@ function showEditSupplierSuggestions() {
             }
             
             const purchaseData = {
+                operationId: 'PURCHASE_' + ((typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + '_' + Math.random().toString(36).slice(2)),
                 product,
                 qty: quantity,
                 unitCost,
@@ -23003,11 +23308,12 @@ function showEditSupplierSuggestions() {
                             loadStock();
                         }
                     } else {
-                        showNotification('Failed to record purchase: ' + (result.error || 'Unknown error'), 'error');
+                        showNotification('Server haijahifadhi Purchase: ' + (result.error || 'Unknown error'), 'error');
                     }
 
                 } catch (error) {
                     savePurchaseOffline(purchaseData, isNewSupplier);
+                    showNotification('Purchase imehifadhiwa offline; itatumwa Server mtandao utakaporudi.', 'info');
                 }
             } else {
                 savePurchaseOffline(purchaseData, isNewSupplier);
@@ -25084,7 +25390,7 @@ function displayStockTable(data, summary) {
     data.forEach((item) => {
         const dateDisplay = formatDate(item.date, true);
         const branchId = item.branchId || 'MAIN';
-        const branchName = branchMap[branchId] || branchId;
+        const branchName = branchMap[branchId] || getOfflineBranchName_(branchId) || branchId;
         
         // Escape single quotes for JavaScript string
         const safeProduct = (item.product || '').replace(/'/g, "\\'");
@@ -26193,7 +26499,7 @@ function showEditPurchaseUnitSuggestions() {
                 const totalSales = seller.totalSales ? formatCurrency(seller.totalSales) : '—';
                 const totalPurchases = seller.totalPurchases ? formatCurrency(seller.totalPurchases) : '—';
                 const lastActive = seller.lastActive ? formatDate(seller.lastActive, true) : '—';
-                const branchName = branchMap[seller.branchId] || seller.branchId || 'Main Branch';
+                const branchName = branchMap[seller.branchId] || getOfflineBranchName_(seller.branchId) || seller.branchId || 'Main Branch';
                 
                 const statusClass = seller.status === 'active' ? 'success' : 'danger';
                 const statusText = seller.status === 'active' ? 'Active' : 'Inactive';
@@ -26325,7 +26631,10 @@ function showEditPurchaseUnitSuggestions() {
             const seller = sellersCache.data.find(s => s.id === id);
             if (!seller) return;
             
-            document.getElementById('editSellerId').value = seller.id;
+            const editIdEl = document.getElementById('editSellerId');
+            editIdEl.value = seller.id || seller._externalId || seller._recordId || '';
+            editIdEl.dataset.externalId = seller._externalId || '';
+            editIdEl.dataset.recordId = seller._recordId || '';
             document.getElementById('editSellerName').value = seller.name;
             document.getElementById('editSellerPhone').value = seller.phone || '';
             document.getElementById('editSellerEmail').value = seller.email;
@@ -26349,7 +26658,10 @@ function showEditPurchaseUnitSuggestions() {
         }
         
         async function updateSeller() {
-            const id = document.getElementById('editSellerId').value;
+            const editIdEl = document.getElementById('editSellerId');
+            const id = editIdEl.value;
+            const externalId = editIdEl.dataset.externalId || '';
+            const recordId = editIdEl.dataset.recordId || '';
             const name = document.getElementById('editSellerName').value.trim();
             const phone = document.getElementById('editSellerPhone').value.trim();
             const email = document.getElementById('editSellerEmail').value.trim();
@@ -26372,6 +26684,8 @@ function showEditPurchaseUnitSuggestions() {
             try {
                 const result = await apiCall('updateSeller', {
                     sellerId: id,
+                    _externalId: externalId,
+                    _recordId: recordId,
                     name,
                     phone,
                     sellerEmail: email,
@@ -27010,7 +27324,7 @@ function showEditPurchaseUnitSuggestions() {
             if (!isAdmin && branchId && sale.branchId !== branchId) return;
             
             const sellerName = getSellerDisplayName(sale.sellerId, sale.sellerName || sellerMap[sale.sellerId]);
-            const branchName = branchMap[sale.branchId] || sale.branchId || 'Main Branch';
+            const branchName = sale.branchName || branchMap[sale.branchId] || getOfflineBranchName_(sale.branchId) || sale.branchId || 'Main Branch';
             const customer = sale.customer || 'Walk-in';
             
             let details;
@@ -27042,7 +27356,7 @@ function showEditPurchaseUnitSuggestions() {
             if (!isAdmin && branchId && purchase.branchId !== branchId) return;
             
             const sellerName = getSellerDisplayName(purchase.sellerId, purchase.sellerName);
-            const branchName = branchMap[purchase.branchId] || purchase.branchId || 'Main Branch';
+            const branchName = purchase.branchName || branchMap[purchase.branchId] || getOfflineBranchName_(purchase.branchId) || purchase.branchId || 'Main Branch';
             const supplierPhrase = purchase.supplier ? ` from ${purchase.supplier}` : '';
             
             let details;
@@ -27073,7 +27387,7 @@ function showEditPurchaseUnitSuggestions() {
             if (!isAdmin && stock.sellerId !== sellerId) return;
             if (!isAdmin && branchId && stock.branchId !== branchId) return;
             
-            const branchName = branchMap[stock.branchId] || stock.branchId || 'Main Branch';
+            const branchName = branchMap[stock.branchId] || getOfflineBranchName_(stock.branchId) || stock.branchId || 'Main Branch';
             
             let details;
             if (isAdmin) {
@@ -27104,8 +27418,33 @@ function showEditPurchaseUnitSuggestions() {
 }
         
         
+        async function ensureSellerDashboardBranchName() {
+            if (!currentUser || currentUser.userType !== 'seller') return '';
+            const branchId = String(currentUser.branchId || 'MAIN').trim();
+            try {
+                const result = await apiCall('getMyBranchIdentity', {}, 12000);
+                if (result && result.success && result.branchName) {
+                    currentUser.branchId = result.branchId || branchId;
+                    currentUser.branchName = result.branchName;
+                    try {
+                        localStorage.setItem('smartTradeBranchId', currentUser.branchId);
+                        localStorage.setItem('smartTradeBranchName', currentUser.branchName);
+                    } catch (_) {}
+                    return result.branchName;
+                }
+                console.warn('Seller branch identity lookup did not resolve:', result?.error || 'No branch name returned');
+            } catch (error) {
+                console.warn('Seller branch identity lookup deferred:', error);
+            }
+            // Offline fallback only: use a previously verified name, never show a generated BR_* ID.
+            const cachedName = String(currentUser.branchName || localStorage.getItem('smartTradeBranchName') || '').trim();
+            if (cachedName && cachedName !== branchId && !/^BR[_-]/i.test(cachedName)) return cachedName;
+            return branchId.toUpperCase() === 'MAIN' ? 'Main Branch' : 'Branch name unavailable';
+        }
+
         async function loadDashboard() {
     const isAdmin = currentUser.userType === 'admin';
+    if (!isAdmin) await ensureSellerDashboardBranchName();
     
     const statsContainer = document.getElementById('dashboardStats');
     if (statsContainer) {
@@ -27126,9 +27465,9 @@ function showEditPurchaseUnitSuggestions() {
             
             statsContainer.innerHTML = `
                 <div class="stat-card" style="grid-column: span 2; background: linear-gradient(135deg, var(--accent), #0ea5e9);">
-                    <h3 style="color: white; font-size: 1.2rem;">👋 Welcome, ${firstName}!</h3>
+                    <h3 style="color: white; font-size: 1.2rem;">👋 Welcome, ${escapeHtml(firstName)}!</h3>
                     <div style="color: white; font-size: 1rem; margin-top: 10px;">
-                        <i class="fas fa-code-branch"></i> Branch: ${branchName}
+                        <i class="fas fa-code-branch"></i> Branch: ${escapeHtml(branchName)}
                     </div>
                     <div style="color: white; font-size: 1rem; margin-top: 5px;">
                         <i class="fas fa-calendar-day"></i> ${formatDate(new Date().toISOString(), false)}
@@ -27337,9 +27676,12 @@ function showEditPurchaseUnitSuggestions() {
         
         document.getElementById('stockBadge').textContent = totalProducts || quickStats.stockItems || 0;
     } else {
-        let sellerFullName = currentUser.sellerName || 'Seller';
+        let sellerFullName = currentUser.sellerName || currentUser.email || 'Seller';
         let firstName = sellerFullName;
-        let branchName = currentUser.branchName || currentUser.branchId || 'Main Branch';
+        let branchName = getBranchDisplayName(currentUser.branchId || 'MAIN');
+        if ((!branchName || branchName === currentUser.branchId || /^BR[_-]/i.test(branchName)) &&
+            currentUser.branchName && !/^BR[_-]/i.test(String(currentUser.branchName))) branchName = currentUser.branchName;
+        if (!branchName || /^BR[_-]/i.test(branchName)) branchName = 'Branch name unavailable';
         
         if (sellerFullName.includes(' ')) {
             firstName = sellerFullName.split(' ')[0];
@@ -29170,15 +29512,26 @@ function showSettingsSection(section) {
         }
         
         function showNotification(message, type = 'info') {
+            // Notifications are permitted only while the main application is
+            // visible. Do not inspect child login-page classes: they remain
+            // mounted while authContainer is hidden after a successful login.
+            const authContainer = document.getElementById('authContainer');
+            const appContainer = document.getElementById('appContainer');
+            const appIsVisible = !!appContainer && !appContainer.classList.contains('hidden');
+            const authIsVisible = !!authContainer && !authContainer.classList.contains('hidden');
+            if (!appIsVisible || authIsVisible) {
+                document.querySelectorAll('.notification').forEach(n => n.remove());
+                return false;
+            }
+
             document.querySelectorAll('.notification').forEach(n => n.remove());
-            
             const notification = document.createElement('div');
             notification.className = `notification ${type}`;
-            
+
             const icons = {
-                'success': 'check-circle',
-                'error': 'exclamation-circle',
-                'info': 'info-circle'
+                success: 'check-circle',
+                error: 'exclamation-circle',
+                info: 'info-circle'
             };
             const safeMessage = (message === undefined || message === null || String(message).trim() === '')
                 ? (type === 'success' ? 'Operation completed successfully' : type === 'error' ? 'Something went wrong. Please try again.' : 'Information')
@@ -29188,16 +29541,15 @@ function showSettingsSection(section) {
             notification.appendChild(icon);
             notification.appendChild(document.createTextNode(` ${safeMessage}`));
             document.body.appendChild(notification);
-            
+
             setTimeout(() => {
                 notification.style.opacity = '0';
                 notification.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
+                setTimeout(() => notification.remove(), 300);
             }, 5000);
+            return true;
         }
-        
+
         function formatQuantity(quantity) {
     if (quantity === undefined || quantity === null) return '0';
     
@@ -29351,8 +29703,18 @@ function mergePendingDebtRows(serverRows) {
 }
 
 function registerOptimisticDebtRow(row) {
-    // Disabled for Debt: only server-confirmed rows may enter the Debt cache.
-    return false;
+    if (!row || !row.operationId) return false;
+    if (!Array.isArray(debtsCache.data)) debtsCache.data = [];
+    const op = String(row.operationId);
+    const index = debtsCache.data.findIndex(d => String(d?.operationId || '') === op);
+    const localRow = Object.assign({}, row, {_optimistic:true, _pendingLocal:true, offline:true});
+    if (index >= 0) debtsCache.data[index] = Object.assign({}, debtsCache.data[index], localRow);
+    else debtsCache.data.unshift(localRow);
+    debtsCache.filtered = getDebtDisplayRowsForCurrentUser(debtsCache.data);
+    saveDebtsCache(); displayDebtsTable();
+    const badge = document.getElementById('debtsBadge');
+    if (badge) badge.textContent = debtsCache.filtered.length;
+    return true;
 }
 
 function confirmOptimisticDebtRow(operationId, serverRow) {
@@ -29384,6 +29746,29 @@ function confirmOptimisticDebtRow(operationId, serverRow) {
     // Hakikisha debtsCache ipo
     if (!debtsCache.data) debtsCache.data = [];
     if (!debtsCache.filtered) debtsCache.filtered = [];
+    // Rebuild visible offline debt receipts from the durable queue after an
+    // app restart, without duplicating rows already restored in the cache.
+    (Array.isArray(offlineData.debts) ? offlineData.debts : []).forEach(function(q) {
+        if (!q || !q.operationId) return;
+        var localDebtRow = {
+            id:q.id || q.debtId || ('OFFLINE_' + q.operationId), debtId:q.debtId || q.id,
+            operationId:String(q.operationId), date:q.timestamp || q._queuedAt || new Date().toISOString(),
+            timestamp:q.timestamp || q._queuedAt || new Date().toISOString(),
+            borrowerName:q.borrowerName || '', borrowerPhone:q.borrowerPhone || '', borrowerNIDA:q.borrowerNIDA || '',
+            photoId:q.photoId || '', photoUrl:q.photoUrl || '', photoBase64:q.photoBase64 || '', photoMimeType:q.photoMimeType || 'image/jpeg',
+            product:q.product || '', quantity:Number(q.quantity) || 0, unitPrice:Number(q.unitPrice) || 0,
+            totalAmount:Number(q.totalAmount ?? q.total) || (Number(q.quantity) * Number(q.unitPrice)),
+            paidAmount:Number(q.paidAmount) || 0, unit:q.unit || '', status:q.status || 'pending',
+            branchId:q.branchId || 'MAIN', branchName:q.branchName || getOfflineBranchName_(q.branchId),
+            sellerId:q.sellerId || '', sellerName:q.sellerName || getOfflineSellerName_(), notes:q.notes || '',
+            _optimistic:true, _pendingLocal:true, offline:true
+        };
+        var existingLocal = debtsCache.data.findIndex(function(d) { return String(d && d.operationId || '') === String(q.operationId); });
+        if (existingLocal >= 0) debtsCache.data[existingLocal] = Object.assign({}, debtsCache.data[existingLocal], localDebtRow);
+        else debtsCache.data.push(localDebtRow);
+    });
+    debtsCache.filtered = getDebtDisplayRowsForCurrentUser(debtsCache.data);
+    saveDebtsCache();
     
     // SHOW CACHE FIRST - IMMEDIATE DISPLAY
     if (debtsCache.data.length > 0) {
@@ -29415,7 +29800,8 @@ function confirmOptimisticDebtRow(operationId, serverRow) {
                     if (result && result.success) {
                         // Check if data has changed
                         // The server is authoritative. Debt has no optimistic/offline rows.
-                        var mergedDebtData = (result.data || []).filter(function(d) { return d && !d._optimistic && !d._pendingLocal && !d.offline; });
+                        var serverDebtRows = (result.data || []).filter(function(d) { return d && !d._optimistic && !d._pendingLocal && !d.offline; });
+                        var mergedDebtData = mergePendingDebtRows(serverDebtRows);
                         var hasChanges = JSON.stringify(debtsCache.data) !== JSON.stringify(mergedDebtData);
                         if (hasChanges) {
                             debtsCache.data = mergedDebtData;
@@ -29446,10 +29832,15 @@ function saveDebtsCache() {
 
 
 function saveDebtOffline(debtData) {
-    // Debt is intentionally ONLINE-ONLY. Kept as a compatibility stub so any
-    // older code path cannot create an offline Debt or alter local Stock.
-    console.warn('Debt offline save disabled by design:', debtData && debtData.product);
-    return false;
+    if (!debtData || !debtData.operationId) return false;
+    return registerOptimisticDebtRow(Object.assign({
+        id: debtData.id || debtData.debtId || ('OFFLINE_' + debtData.operationId),
+        debtId: debtData.debtId || debtData.id,
+        date: debtData.timestamp || debtData._queuedAt || new Date().toISOString(),
+        timestamp: debtData.timestamp || debtData._queuedAt || new Date().toISOString(),
+        totalAmount: Number(debtData.totalAmount ?? debtData.total) || (Number(debtData.quantity) * Number(debtData.unitPrice)),
+        paidAmount: Number(debtData.paidAmount) || 0, status: debtData.status || 'pending'
+    }, debtData));
 }
 
 function debtPhotoDataUrl(debt) {
@@ -29748,6 +30139,7 @@ function displayDebtsTable() {
     function getPhoto(debt) {
         var imageSrc = '';
         if (debt.photoBase64) imageSrc = debtPhotoDataUrl(debt);
+        else if (debt.photoUrl) imageSrc = debt.photoUrl;
         else if (debt.photoId) {
             imageSrc = getDebtPhotoFromCache(debt.photoId) || '';
             if (!imageSrc && isOnline && String(debt.id).indexOf('OFFLINE_') !== 0) imageSrc = 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(debt.photoId) + '=s240';
@@ -29759,13 +30151,14 @@ function displayDebtsTable() {
         return '<button type="button" class="' + (cls || '') + '" data-debt-action="' + action + '" data-debt-id="' + escapeHtml(getDebtIdentityValue(debt)) + '"' + (extra || '') + '><i class="fas ' + icon + '"></i> ' + label + '</button>';
     }
 
+    var htmlCards = [];
     var html = groups.map(function(group, cardIndex) {
         var items = group.items;
         var first = group.first;
         var borrower = escapeHtml(first.borrowerName || '');
         var phone = escapeHtml(first.borrowerPhone == null ? '—' : String(first.borrowerPhone));
-        var nida = escapeHtml(first.borrowerNIDA == null ? '—' : String(first.borrowerNIDA));
-        var branchName = branchMap[first.branchId] || first.branchId || 'Main Branch';
+        var nida = escapeHtml(first.borrowerNIDA == null ? '—' : (displayNida(first.borrowerNIDA) || '—'));
+        var branchName = first.branchName || branchMap[first.branchId] || getOfflineBranchName_(first.branchId) || first.branchId || 'Main Branch';
         var dateDisplay = formatDate(first.date || first.timestamp, true);
         var sharedPhotoRecord = getSharedDebtPhotoRecord(first);
         var photoSrc = getPhoto(sharedPhotoRecord);
@@ -29792,8 +30185,9 @@ function displayDebtsTable() {
         var statusClass = allPaid ? 'success' : allDenied ? 'danger' : hasPaidOrPartial ? 'info' : 'warning';
         var statusText = allPaid ? 'Paid' : allDenied ? 'Denied' : hasPaidOrPartial ? 'Partial' : 'Pending';
 
+        var isPendingLocalGroup = items.some(function(d) { return d && (d._pendingLocal || d._optimistic || d.offline); });
         var menu = '<div class="st-debt-card-menu" id="debtCardMenu-' + cardIndex + '">' +
-            '<div class="st-debt-card-menu-title">Debt options</div>' +
+            '<div class="st-debt-card-menu-title">' + (isPendingLocalGroup ? 'Saved Offline • Waiting to Sync' : 'Debt options') + '</div>' +
             (allPaid
                 ? '<div class="st-debt-card-menu-item full"><button type="button" data-debt-menu-action="print-paid-receipt" data-debt-card-index="' + cardIndex + '"><i class="fas fa-receipt"></i> Print Payment Receipt</button></div>'
                 : '<div class="st-debt-card-menu-item full"><button type="button" data-debt-menu-action="print-group" data-debt-card-index="' + cardIndex + '"><i class="fas fa-print"></i> Print Agreement</button></div>');
@@ -29801,7 +30195,7 @@ function displayDebtsTable() {
         // Actions are kept per underlying debt row, exactly as the existing
         // backend edit/pay/delete functions expect. They are simply grouped
         // inside this transaction's single three-dot menu.
-        items.forEach(function(debt) {
+        if (!isPendingLocalGroup) items.forEach(function(debt) {
             var total = Number(debt.totalAmount) || 0;
             var paid = Number(debt.paidAmount) || 0;
             var quantity = Number(debt.quantity) || 0;
@@ -29838,17 +30232,35 @@ function displayDebtsTable() {
             return '<div class="st-debt-card-product"><div class="st-debt-card-product-name">' + escapeHtml(debt.product || 'Item') + '</div><div class="st-debt-card-product-sub">' + formatQuantity(qty) + (debt.unit ? ' ' + pluralizeUnit(debt.unit, qty) : '') + ' × ' + formatCurrency(Number(debt.unitPrice) || 0) + '<span style="float:right;font-weight:800;color:#1e293b;">' + formatCurrency(total) + '</span></div><div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:10px;"><span style="font-size:.82rem;color:#64748b;">Status</span><span class="badge ' + itemStatusClass + '">' + itemStatus + '</span></div></div>';
         }).join('');
 
-        return '<article class="st-debt-card">' +
+        var cardHtml = '<article class="st-debt-card">' +
             '<div class="st-debt-card-head"><div class="st-debt-card-person">' + photo + '<div style="min-width:0"><div class="st-debt-card-name">' + borrower + '</div><div class="st-debt-card-id">' + items.length + ' item(s) • ' + escapeHtml(String(first.id || 'Debt')) + '</div></div></div>' +
             '<div class="st-debt-card-menu-wrap"><button type="button" class="st-debt-card-menu-btn" aria-label="Debt options" onclick="toggleDebtCardMenu(' + cardIndex + ', event)"><i class="fas fa-ellipsis-vertical"></i></button>' + menu + '</div></div>' +
-            '<div class="st-debt-card-meta"><span><strong>Phone:</strong> ' + phone + '</span><span><strong>NIDA:</strong> ' + nida + '</span><span><strong>Branch:</strong> ' + escapeHtml(String(branchName)) + '</span><span><strong>Date:</strong> ' + dateDisplay + '</span></div>' +
+            '<div class="st-debt-card-meta"><span><strong>Phone:</strong> ' + phone + '</span><span><strong>NIDA:</strong> ' + nida + '</span><span><strong>Branch:</strong> ' + escapeHtml(String(branchName)) + '</span><span><strong>Seller:</strong> ' + escapeHtml(getSellerDisplayName(first.sellerId || '', first.sellerName || '')) + '</span><span><strong>Date:</strong> ' + dateDisplay + '</span></div>' +
             '<div class="st-debt-card-items">' + itemsHtml + '</div>' +
             '<div class="st-debt-card-finance"><div class="st-debt-card-finance-row total"><span>Total</span><span>' + formatCurrency(totalAmount) + '</span></div><div class="st-debt-card-finance-row"><span>Paid</span><span>' + formatCurrency(paidAmount) + '</span></div><div class="st-debt-card-finance-row balance"><span>Balance</span><strong style="color:' + (balance > 0 && !allDenied ? 'var(--warning)' : 'var(--success)') + ';">' + formatCurrency(balance) + '</strong></div></div>' +
             '<div class="st-debt-card-status"><span class="badge ' + statusClass + '">' + statusText + '</span><span class="st-debt-card-date">' + items.length + ' product(s)</span></div>' +
             '</article>';
+        htmlCards[cardIndex] = cardHtml;
+        return cardHtml;
     }).join('');
 
-    if (cardsContainer) cardsContainer.innerHTML = html;
+    var cardsByDate = {};
+    groups.forEach(function(group) {
+        var rawDate = group.first && (group.first.date || group.first.timestamp);
+        var parsedDate = rawDate ? new Date(rawDate) : null;
+        var dayKey = parsedDate && !isNaN(parsedDate.getTime()) && typeof getBusinessDateString === 'function' ? getBusinessDateString(parsedDate) : (parsedDate && !isNaN(parsedDate.getTime()) ? parsedDate.toISOString().slice(0,10) : 'Unknown Date');
+        if (!cardsByDate[dayKey]) cardsByDate[dayKey] = {total:0, indexes:[]};
+        cardsByDate[dayKey].total += group.items.reduce(function(sum, debt) { return sum + (Number(debt.totalAmount) || 0); }, 0);
+        cardsByDate[dayKey].indexes.push(groups.indexOf(group));
+    });
+    var dateSections = Object.keys(cardsByDate).sort(function(a,b) { if(a==='Unknown Date') return 1; if(b==='Unknown Date') return -1; return new Date(b).getTime()-new Date(a).getTime(); }).map(function(dayKey) {
+        var bucket = cardsByDate[dayKey];
+        var dateParts = dayKey.split('-');
+        var label = dayKey === 'Unknown Date' ? dayKey : (dateParts.length === 3 ? dateParts[2] + '/' + dateParts[1] + '/' + dateParts[0] : dayKey);
+        var cards = bucket.indexes.map(function(i) { return htmlCards[i] || ''; }).join('');
+        return '<section class="st-debt-day-section"><div class="st-debt-day-header"><div class="st-debt-day-title">DEBTS AS OF ' + escapeHtml(label) + '</div><div class="st-debt-day-total">Total Debts: ' + formatCurrency(bucket.total) + '</div></div><div class="st-debt-day-cards">' + cards + '</div></section>';
+    }).join('');
+    if (cardsContainer) cardsContainer.innerHTML = dateSections;
     if (tableBody) tableBody.innerHTML = '';
 }
 
@@ -29932,6 +30344,7 @@ function printDebtAgreementGroup(cardIndex) {
     var photo = '';
     if (photoRecord) {
         if (photoRecord.photoBase64) photo = debtPhotoDataUrl(photoRecord);
+        else if (photoRecord.photoUrl) photo = photoRecord.photoUrl;
         else if (photoRecord.photoId) photo = getDebtPhotoFromCache(photoRecord.photoId) || '';
         if (!photo && photoRecord.photoId && isOnline && String(photoRecord.id).indexOf('OFFLINE_') !== 0) {
             photo = 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(photoRecord.photoId) + '=s1200';
@@ -30031,11 +30444,15 @@ function printDebtPaymentReceiptGroup(cardIndex) {
     var dateTimeDisplay = formatDate(now.toISOString(), true) + ' ' + new Intl.DateTimeFormat(undefined, {
         timeZone: getBusinessTimeZone(), hour: '2-digit', minute: '2-digit', second: '2-digit'
     }).format(now);
-    var sellerName = currentUser.userType === 'seller' ? (currentUser.sellerName || 'Seller') : 'Admin';
+    var sellerName = getSellerDisplayName(first.sellerId || (currentUser.userType === 'seller' ? currentUser.sellerId : ''), first.sellerName || (currentUser.userType === 'seller' ? currentUser.sellerName : 'Admin'));
     var borrowerName = String(first.borrowerName || '').trim();
     var borrowerPhone = String(first.borrowerPhone || '').trim();
-    var borrowerNIDA = String(first.borrowerNIDA || '').trim();
-    var branchName = first.branchId || 'Main Branch';
+    var borrowerNIDA = displayNida(first.borrowerNIDA || '');
+    var debtBranchId = String(first.branchId || 'MAIN');
+    var debtBranch = (branchesCache && Array.isArray(branchesCache.data) ? branchesCache.data : []).find(function(b) {
+        return String(b.id || b.branchId || b._externalId || '') === debtBranchId;
+    });
+    var branchName = first.branchName || (debtBranch ? (debtBranch.name || debtBranch.branchName || debtBranchId) : (debtBranchId === 'MAIN' ? 'Main Branch' : debtBranchId));
     var hasCachedLogo = logoBase64Cache && logoBase64Cache.data && logoBase64Cache.url === currentUser.logoUrl;
     var logoHTML = hasCachedLogo ? '<img src="' + logoBase64Cache.data + '" class="receipt-logo" alt="Business logo">' : '';
     var rows = items.map(function(item) {
@@ -30382,11 +30799,19 @@ function openAddDebtModal() {
     modal.classList.add('show');
     document.body.style.overflow = 'hidden';
     
-    // Set default branch for admin
+    // Seller branch identity is already stored in the offline session; never
+    // require the live Branches list to determine where this Debt belongs.
+    const debtBranchGroup = document.getElementById('debtBranchGroup');
     if (currentUser.userType === 'admin') {
+        if (debtBranchGroup) debtBranchGroup.style.display = '';
+        const branchSelect = document.getElementById('debtBranchSelect');
+        if (branchSelect) branchSelect.value = 'MAIN';
+    } else {
+        if (debtBranchGroup) debtBranchGroup.style.display = 'block';
         const branchSelect = document.getElementById('debtBranchSelect');
         if (branchSelect) {
-            branchSelect.value = 'MAIN';
+            branchSelect.innerHTML = `<option value="${escapeHtml(currentUser.branchId || 'MAIN')}">${escapeHtml(getOfflineBranchName_(currentUser.branchId || 'MAIN'))}</option>`;
+            branchSelect.value = currentUser.branchId || 'MAIN';
         }
     }
     
@@ -30394,6 +30819,8 @@ function openAddDebtModal() {
     // same idea as the Sale cart, so this is never lost by closing this
     // modal or refreshing the page.
     const restored = loadDebtCartFromStorage();
+    debtBorrowerHistoryLoadPromise = loadDebtBorrowerHistory();
+    ensureDebtBorrowerSuggestionContainer();
     document.getElementById('debtBorrowerName').value = restored.borrowerName;
     document.getElementById('debtBorrowerPhone').value = restored.borrowerPhone;
     document.getElementById('debtBorrowerNIDA').value = restored.borrowerNIDA;
@@ -30401,6 +30828,8 @@ function openAddDebtModal() {
     document.getElementById('debtPhotoId').value = '';
     selectedDebtPhotoFile = null;
     debtPhotoBase64 = null;
+    selectedSavedBorrowerPhotoId = '';
+    selectedSavedBorrowerPhotoUrl = '';
     const debtPhotoInput = document.getElementById('debtPhotoFile');
     const debtGalleryInput = document.getElementById('debtPhotoGalleryFile');
     if (debtPhotoInput) debtPhotoInput.value = '';
@@ -30460,6 +30889,7 @@ function resetDebtFormAfterSubmit() {
     };
 
     clearValue('debtBorrowerName');
+    hideDebtBorrowerSuggestions();
     clearValue('debtBorrowerPhone');
     clearValue('debtBorrowerNIDA');
     clearValue('debtPhotoId');
@@ -30478,6 +30908,8 @@ function resetDebtFormAfterSubmit() {
 
     selectedDebtPhotoFile = null;
     debtPhotoBase64 = null;
+    selectedSavedBorrowerPhotoId = '';
+    selectedSavedBorrowerPhotoUrl = '';
 
     const debtPhotoInput = document.getElementById('debtPhotoFile');
     const debtGalleryInput = document.getElementById('debtPhotoGalleryFile');
@@ -31004,6 +31436,239 @@ function hideDebtSavingOverlay() {
 }
 
 
+
+// Saved borrower directory uses the existing durable IndexedDB store.
+// It is scoped per business and works offline without filling localStorage.
+function debtBorrowerHistoryKey() {
+    return 'borrowerHistory:' + String(currentUser && currentUser.databaseId || 'default');
+}
+async function loadDebtBorrowerHistory() {
+    try {
+        const rows = await stpOutboxGet(debtBorrowerHistoryKey());
+        return Array.isArray(rows) ? rows : [];
+    } catch (error) {
+        console.warn('Borrower history could not be loaded:', error);
+        return [];
+    }
+}
+async function saveDebtBorrowerHistoryRecord(record) {
+    if (!record || !String(record.name || '').trim()) return false;
+    try {
+        const rows = await loadDebtBorrowerHistory();
+        const normalizedName = String(record.name).trim().toLocaleLowerCase();
+        const normalizedPhone = String(record.phone || '').replace(/\s+/g, '');
+        const existingIndex = rows.findIndex(r =>
+            String(r.name || '').trim().toLocaleLowerCase() === normalizedName &&
+            (!normalizedPhone || String(r.phone || '').replace(/\s+/g, '') === normalizedPhone)
+        );
+        const saved = {
+            name: String(record.name).trim(),
+            phone: String(record.phone || '').trim(),
+            nida: String(record.nida || '').trim(),
+            photoBase64: String(record.photoBase64 || ''),
+            photoMimeType: record.photoMimeType || 'image/jpeg',
+            updatedAt: new Date().toISOString()
+        };
+        if (existingIndex >= 0) rows.splice(existingIndex, 1);
+        rows.unshift(saved);
+        await stpOutboxPut(debtBorrowerHistoryKey(), rows.slice(0, 100));
+        return true;
+    } catch (error) {
+        console.warn('Borrower history could not be saved:', error);
+        return false;
+    }
+}
+
+let debtBorrowerSuggestionRows = [];
+let debtBorrowerSuggestionIndex = -1;
+let debtBorrowerHistoryLoadPromise = null;
+let selectedSavedBorrowerPhotoId = '';
+let selectedSavedBorrowerPhotoUrl = '';
+let debtBorrowerSearchSequence = 0;
+
+function ensureDebtBorrowerSuggestionContainer(inputElement) {
+    const input = inputElement || document.getElementById('debtBorrowerName');
+    if (!input) return null;
+    let wrap = input.closest('.st-borrower-autocomplete');
+    if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.className = 'st-borrower-autocomplete';
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+    }
+    const listId = input.id === 'debtBorrowerNIDA' ? 'debtBorrowerNidaSuggestions' : 'debtBorrowerSuggestions';
+    let list = document.getElementById(listId);
+    if (!list) {
+        list = document.createElement('div');
+        list.id = listId;
+        list.className = 'st-borrower-suggestions hidden';
+        list.setAttribute('role', 'listbox');
+        list.setAttribute('aria-label', 'Saved borrowers');
+        wrap.appendChild(list);
+    } else if (list.parentElement !== wrap) {
+        wrap.appendChild(list);
+    }
+    return list;
+}
+function hideDebtBorrowerSuggestions() {
+    ['debtBorrowerSuggestions','debtBorrowerNidaSuggestions'].forEach(id => {
+        const list = document.getElementById(id);
+        if (list) list.classList.add('hidden');
+    });
+    debtBorrowerSuggestionIndex = -1;
+}
+// Resolve stored borrower asset references against the Cloudflare Worker origin.
+// This is essential when the PWA/HTML is opened from a local content:// URL.
+function resolveBorrowerPhotoUrl(recordOrUrl) {
+    const value = typeof recordOrUrl === 'string' ? recordOrUrl : (recordOrUrl?.photoUrl || '');
+    const photoId = typeof recordOrUrl === 'object' && recordOrUrl ? String(recordOrUrl.photoId || '') : '';
+    const candidate = String(value || (photoId ? '/asset/' + encodeURIComponent(photoId) : '')).trim();
+    if (!candidate) return '';
+    try { return new URL(candidate, API_URL).href; }
+    catch (_) { return candidate; }
+}
+
+function selectSavedDebtBorrower(index) {
+    const record = debtBorrowerSuggestionRows[index];
+    if (!record) return;
+    const name = document.getElementById('debtBorrowerName');
+    const phone = document.getElementById('debtBorrowerPhone');
+    const nida = document.getElementById('debtBorrowerNIDA');
+    if (name) name.value = record.name || '';
+    if (phone) phone.value = record.phone || '';
+    if (nida) nida.value = displayNida(record.nida || '');
+    debtPhotoBase64 = record.photoBase64 || null;
+    selectedSavedBorrowerPhotoId = record.photoId || '';
+    selectedSavedBorrowerPhotoUrl = resolveBorrowerPhotoUrl(record) || '';
+    selectedDebtPhotoFile = null;
+    const photoInput = document.getElementById('debtPhotoFile');
+    const galleryInput = document.getElementById('debtPhotoGalleryFile');
+    if (photoInput) photoInput.value = '';
+    if (galleryInput) galleryInput.value = '';
+    showDebtPhotoPreview('debtPhotoPreview',
+        record.photoBase64 ? debtPhotoDataUrl({photoBase64:record.photoBase64,photoMimeType:record.photoMimeType}) : (resolveBorrowerPhotoUrl(record) || null),
+        '<i class="fas fa-camera" style="font-size:24px;color:var(--accent);"></i>');
+    hideDebtBorrowerSuggestions();
+    if (typeof renderDebtCartSummary === 'function') renderDebtCartSummary();
+}
+// Tanzania NIDA NIN: 20 digits displayed as 8-5-5-2.
+// Accept digits pasted with or without separators, then format consistently.
+function normalizeTanzaniaNIN(value) {
+    const digits = String(value == null ? '' : value).replace(/\D/g, '').slice(0, 20);
+    if (!digits) return '';
+    return [digits.slice(0,8), digits.slice(8,13), digits.slice(13,18), digits.slice(18,20)].filter(Boolean).join('-');
+}
+function isValidTanzaniaNIN(value) {
+    return /^\d{8}-\d{5}-\d{5}-\d{2}$/.test(normalizeTanzaniaNIN(value)) && String(value).replace(/\D/g,'').length === 20;
+}
+function formatNidaInput(input) {
+    if (!input) return;
+    const start = input.selectionStart;
+    const before = input.value;
+    const formatted = normalizeTanzaniaNIN(before);
+    if (formatted !== before) {
+        input.value = formatted;
+        try { const pos = Math.min(formatted.length, start + (formatted.length - before.length)); input.setSelectionRange(pos, pos); } catch (_) {}
+    }
+}
+function validateBorrowerNIN(value, label) {
+    const raw = String(value == null ? '' : value).trim();
+    if (!raw) return {valid:true,value:''};
+    const digits = raw.replace(/\D/g, '');
+    if (digits.length !== 20) return {valid:false,value:raw,message:(label || 'NIDA') + ' lazima iwe na tarakimu 20 kamili (muundo: 12345678-12345-12345-12).'};
+    return {valid:true,value:normalizeTanzaniaNIN(digits)};
+}
+function displayNida(value) {
+    const raw = String(value == null ? '' : value).trim();
+    if (!raw) return '';
+    const digits = raw.replace(/\D/g, '');
+    return digits.length === 20 ? normalizeTanzaniaNIN(digits) : raw;
+}
+
+async function runDebtBorrowerLookup(input, searchBy) {
+    if (!input) return;
+    const list = ensureDebtBorrowerSuggestionContainer(input);
+    if (!list) return;
+    const rawQuery = String(input.value || '').trim();
+    const query = searchBy === 'nida' ? rawQuery.replace(/\D/g, '') : rawQuery.toLocaleLowerCase();
+    const minLength = searchBy === 'nida' ? 4 : 1;
+    if (query.length < minLength) { list.classList.add('hidden'); return; }
+    const sequence = ++debtBorrowerSearchSequence;
+    let matches = [];
+    if (navigator.onLine) {
+        try {
+            const result = await apiCall('searchBorrowers', {query, searchBy, limit:8}, 12000);
+            if (result && result.success && Array.isArray(result.data)) matches = result.data;
+        } catch (error) {
+            console.warn('Cloud borrower search unavailable; using this device cache:', error);
+        }
+    }
+    if (!matches.length) {
+        if (!debtBorrowerHistoryLoadPromise) debtBorrowerHistoryLoadPromise = loadDebtBorrowerHistory();
+        const history = await debtBorrowerHistoryLoadPromise;
+        matches = history.filter(r => {
+            if (searchBy === 'nida') return String(r.nida || '').replace(/\D/g,'').includes(query);
+            return String(r.name || '').toLocaleLowerCase().includes(query);
+        }).slice(0,8);
+    }
+    if (sequence !== debtBorrowerSearchSequence || String(input.value || '').trim() !== rawQuery) return;
+    debtBorrowerSuggestionRows = matches;
+    debtBorrowerSuggestionIndex = -1;
+    list.innerHTML = '';
+    if (!matches.length) { list.classList.add('hidden'); return; }
+    matches.forEach((record, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'st-borrower-suggestion';
+        button.setAttribute('role', 'option');
+        const imageSrc = resolveBorrowerPhotoUrl(record) || (record.photoBase64 ? debtPhotoDataUrl({photoBase64:record.photoBase64,photoMimeType:record.photoMimeType}) : '');
+        if (imageSrc) {
+            const img = document.createElement('img');
+            img.alt = '';
+            img.src = imageSrc;
+            img.onerror = function(){ this.style.display='none'; };
+            button.appendChild(img);
+        } else {
+            const avatar = document.createElement('span');
+            avatar.className = 'st-borrower-avatar';
+            avatar.innerHTML = '<i class="fas fa-user"></i>';
+            button.appendChild(avatar);
+        }
+        const meta = document.createElement('span');
+        meta.className = 'st-borrower-suggestion-meta';
+        const title = document.createElement('span');
+        title.className = 'st-borrower-suggestion-name';
+        title.textContent = record.name || '';
+        const detail = document.createElement('span');
+        detail.className = 'st-borrower-suggestion-detail';
+        detail.textContent = [record.phone, record.nida ? 'NIDA: ' + displayNida(record.nida) : ''].filter(Boolean).join(' • ');
+        meta.append(title, detail);
+        button.appendChild(meta);
+        button.addEventListener('mousedown', function(event) {
+            event.preventDefault();
+            selectSavedDebtBorrower(index);
+        });
+        list.appendChild(button);
+    });
+    list.classList.remove('hidden');
+}
+async function handleDebtBorrowerNameInput(input) { return runDebtBorrowerLookup(input || document.getElementById('debtBorrowerName'), 'name'); }
+async function handleDebtBorrowerNidaInput(input) { return runDebtBorrowerLookup(input || document.getElementById('debtBorrowerNIDA'), 'nida'); }
+function handleDebtBorrowerNameKeydown(event) {
+    if (!event) return;
+    if (event.key === 'Escape') { hideDebtBorrowerSuggestions(); return; }
+    if (!debtBorrowerSuggestionRows.length) return;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        debtBorrowerSuggestionIndex = (debtBorrowerSuggestionIndex + (event.key === 'ArrowDown' ? 1 : -1) + debtBorrowerSuggestionRows.length) % debtBorrowerSuggestionRows.length;
+        document.querySelectorAll('#debtBorrowerSuggestions .st-borrower-suggestion').forEach((button, i) =>
+            button.setAttribute('aria-selected', i === debtBorrowerSuggestionIndex ? 'true' : 'false'));
+    } else if (event.key === 'Enter' && debtBorrowerSuggestionIndex >= 0) {
+        event.preventDefault();
+        selectSavedDebtBorrower(debtBorrowerSuggestionIndex);
+    }
+}
+
 async function queueDebtTransactionOffline(transaction, issueAgreement = true, clearManualCart = true) {
     const items = mergeDebtCartItemsForSubmission(transaction.items || []);
     if (!items.length) throw new Error('Hakuna bidhaa za Debt za kuhifadhi.');
@@ -31022,8 +31687,8 @@ async function queueDebtTransactionOffline(transaction, issueAgreement = true, c
             borrowerName: transaction.borrowerName || '',
             borrowerPhone: transaction.borrowerPhone || '',
             borrowerNIDA: transaction.borrowerNIDA || '',
-            photoId: '', photoUrl: '', photoBase64: queuedPhotoBase64,
-            photoMimeType: 'image/jpeg',
+            photoId: transaction.photoId || selectedSavedBorrowerPhotoId || '', photoUrl: transaction.photoUrl || selectedSavedBorrowerPhotoUrl || '', photoBase64: queuedPhotoBase64,
+            photoMimeType: transaction.photoMimeType || 'image/jpeg',
             product: item.product,
             quantity: Number(item.qty) || Number(item.quantity) || 0,
             unitPrice: Number(item.unitPrice) || 0,
@@ -31032,11 +31697,24 @@ async function queueDebtTransactionOffline(transaction, issueAgreement = true, c
             isStockProduct: item.isStockProduct === true,
             branchId: item.branchId || currentUser.branchId || 'MAIN',
             sellerId: currentUser.sellerId,
+            sellerName: getOfflineSellerName_(),
+            branchName: getOfflineBranchName_(item.branchId || currentUser.branchId || 'MAIN'),
             notes: transaction.notes || '',
             status: 'pending', paidAmount: 0, checkStock: true,
             _queuedAt: timestamp, _issueAgreement: issueAgreement !== false
         };
     });
+    // Validate aggregate branch/product/unit quantities before persisting the
+    // Debt queue. This prevents a partially queued debt when cached Stock is
+    // insufficient or unavailable on this device.
+    const stockMovements = queueItems.filter(x => x.isStockProduct).map(x => ({
+        operationId:x.operationId, product:x.product, quantity:x.quantity, unit:x.unit,
+        branchId:x.branchId, isStockProduct:true
+    }));
+    if (stockMovements.length) {
+        const validation = validateOfflineStockMovements_(stockMovements);
+        if (!validation.success) throw new Error((validation.error || 'Insufficient cached Stock.') + ' Debt was not queued.');
+    }
     // Persist the whole batch with stable item operation IDs before clearing any UI state.
     offlineData.debts = Array.isArray(offlineData.debts) ? offlineData.debts : [];
     const existing = new Set(offlineData.debts.map(x => String(x.operationId || '')));
@@ -31050,6 +31728,20 @@ async function queueDebtTransactionOffline(transaction, issueAgreement = true, c
     // Require an explicit IndexedDB transaction commit before clearing the user's cart.
     await stpOutboxPut('queue', JSON.parse(JSON.stringify(offlineData)));
     await stpOutboxMirrorPromise;
+    if (stockMovements.length) {
+        const stockResult = applyOfflineStockMovements_(stockMovements);
+        if (!stockResult.success) throw new Error(stockResult.error || 'Debt is queued but local Stock could not be updated. Keep the app data and retry refresh.');
+    }
+    await saveDebtBorrowerHistoryRecord({
+        name: transaction.borrowerName,
+        phone: transaction.borrowerPhone,
+        nida: transaction.borrowerNIDA,
+        photoBase64: queuedPhotoBase64,
+        photoMimeType: transaction.photoMimeType || 'image/jpeg'
+    });
+    queueItems.forEach(function(item) {
+        saveDebtOffline(Object.assign({}, item, {totalAmount:item.total, date:item.timestamp, timestamp:item.timestamp, _pendingLocal:true, _optimistic:true}));
+    });
     if (clearManualCart) {
         currentDebtTransactionId = null;
         currentDebtCart = [];
@@ -31062,12 +31754,20 @@ async function queueDebtTransactionOffline(transaction, issueAgreement = true, c
 }
 
 async function completeDebtConfirmed(issueAgreement = true) {
+    const nidaInput = document.getElementById('debtBorrowerNIDA');
+    const nidaCheck = validateBorrowerNIN(nidaInput ? nidaInput.value : '', 'NIDA ya mkopaji');
+    if (!nidaCheck.valid) { showNotification(nidaCheck.message, 'error'); if (nidaInput) nidaInput.focus(); return; }
+    if (nidaInput) nidaInput.value = nidaCheck.value;
     if (!navigator.onLine) {
         isOnline = false;
         await queueDebtTransactionOffline({
             borrowerName: document.getElementById('debtBorrowerName').value.trim(),
             borrowerPhone: document.getElementById('debtBorrowerPhone').value.trim(),
             borrowerNIDA: document.getElementById('debtBorrowerNIDA').value.trim(),
+            photoBase64: debtPhotoBase64 || '',
+            photoId: selectedSavedBorrowerPhotoId || '',
+            photoUrl: selectedSavedBorrowerPhotoUrl || '',
+            photoMimeType: 'image/jpeg',
             notes: document.getElementById('debtNotes').value.trim(),
             items: currentDebtCart,
             transactionId: currentDebtTransactionId
@@ -31116,8 +31816,8 @@ async function completeDebtConfirmed(issueAgreement = true) {
             borrowerName: borrowerName,
             borrowerPhone: borrowerPhone,
             borrowerNIDA: borrowerNIDA,
-            photoId: '',
-            photoUrl: '',
+            photoId: selectedSavedBorrowerPhotoId || '',
+            photoUrl: selectedSavedBorrowerPhotoUrl || '',
             photoBase64: photoBase64 || '',
             photoMimeType: 'image/jpeg',
             sellerId: currentUser.sellerId,
@@ -31168,6 +31868,25 @@ async function completeDebtConfirmed(issueAgreement = true) {
                     r ? r.alreadyProcessed === true : false
                 );
             }
+        }
+
+        await saveDebtBorrowerHistoryRecord({
+            name: borrowerName, phone: borrowerPhone, nida: borrowerNIDA,
+            photoBase64: photoBase64 || '', photoMimeType: 'image/jpeg'
+        });
+        try {
+            const profileResult = await apiCall('saveBorrowerProfile', {
+                name: borrowerName, phone: borrowerPhone, nida: borrowerNIDA,
+                photoId: selectedSavedBorrowerPhotoId || '',
+                photoUrl: selectedSavedBorrowerPhotoUrl || '',
+                photoBase64: photoBase64 || '',
+                photoMimeType: 'image/jpeg'
+            }, 30000);
+            if (!profileResult || !profileResult.success) {
+                console.warn('Borrower profile cloud save was not confirmed:', profileResult);
+            }
+        } catch (profileError) {
+            console.warn('Borrower profile cloud save failed; debt itself is already saved:', profileError);
         }
 
         // Stock was deducted by the backend exactly once for the aggregate
@@ -31627,7 +32346,7 @@ function editDebt(debtId) {
     
     document.getElementById('editDebtBorrowerName').value = debt.borrowerName || '';
     document.getElementById('editDebtBorrowerPhone').value = debt.borrowerPhone || '';
-    document.getElementById('editDebtBorrowerNIDA').value = debt.borrowerNIDA || '';
+    document.getElementById('editDebtBorrowerNIDA').value = displayNida(debt.borrowerNIDA || '');
     selectedEditDebtPhotoFile = null;
     editDebtPhotoBase64 = null;
     const editPhotoInput = document.getElementById('editDebtPhotoFile');
@@ -31737,7 +32456,11 @@ async function submitDebtEdit() {
     
     const borrowerName = document.getElementById('editDebtBorrowerName').value.trim();
     const borrowerPhone = document.getElementById('editDebtBorrowerPhone').value.trim();
-    const borrowerNIDA = document.getElementById('editDebtBorrowerNIDA').value.trim();
+    const editNidaInput = document.getElementById('editDebtBorrowerNIDA');
+    const editNidaCheck = validateBorrowerNIN(editNidaInput.value, 'NIDA ya mkopaji');
+    if (!editNidaCheck.valid) { showNotification(editNidaCheck.message, 'error'); editNidaInput.focus(); return; }
+    editNidaInput.value = editNidaCheck.value;
+    const borrowerNIDA = editNidaCheck.value;
     const product = document.getElementById('editDebtProductSelect').value.trim();
     const quantity = parseFloat(document.getElementById('editDebtQuantity').value);
     const unitPrice = parseFloat(document.getElementById('editDebtUnitPrice').value);
@@ -31910,9 +32633,9 @@ function chooseDebtPhotoSource(source) {
 function showDebtPhotoPreview(previewId, dataUrl, fallbackIcon) {
     const preview = document.getElementById(previewId);
     if (!preview) return;
-    preview.innerHTML = dataUrl
-        ? `<img src="${dataUrl}" alt="Borrower Photo" style="width:100%;height:100%;object-fit:cover;">`
-        : fallbackIcon;
+    if (!dataUrl) { preview.innerHTML = fallbackIcon; return; }
+    const safeSrc = String(dataUrl).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    preview.innerHTML = `<img src="${safeSrc}" alt="Borrower Photo" referrerpolicy="no-referrer" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null;this.remove();this.parentElement.innerHTML='<i class=\'fas fa-camera\' style=\'font-size:24px;color:var(--accent);\'></i>';">`;
 }
 
 async function processDebtPhotoFile(file, mode) {
@@ -31935,6 +32658,8 @@ async function processDebtPhotoFile(file, mode) {
         } else {
             selectedDebtPhotoFile = file;
             debtPhotoBase64 = compressed.dataUrl;
+            selectedSavedBorrowerPhotoId = '';
+            selectedSavedBorrowerPhotoUrl = '';
         }
         showDebtPhotoPreview(previewId, compressed.dataUrl, fallbackIcon);
         showNotification('Photo prepared and compressed automatically.', 'success');
@@ -32695,7 +33420,7 @@ function generateSaleReceipt(items, customer, paymentMethod, grandTotal) {
 function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal, borrowerPhotoBase64, borrowerNIDA, targetWindow) {
     borrowerName = borrowerName == null ? '' : String(borrowerName).trim();
     borrowerPhone = borrowerPhone == null ? '' : String(borrowerPhone).trim();
-    borrowerNIDA = borrowerNIDA == null ? '' : String(borrowerNIDA).trim();
+    borrowerNIDA = displayNida(borrowerNIDA == null ? '' : borrowerNIDA);
     items = Array.isArray(items) ? items : [];
     grandTotal = Number(grandTotal) || 0;
     const hasCachedLogo = logoBase64Cache && logoBase64Cache.data && logoBase64Cache.url === currentUser.logoUrl;
@@ -33788,6 +34513,7 @@ document.addEventListener('DOMContentLoaded', function() {
     renderRemoteDebtCartSessions();
     stpRestoreDurableOutbox().then(() => { if(navigator.onLine) checkAndSync().catch(console.error); });
     loadCachedData();
+    try { reconcileOfflineStockMovementsFromQueue_(); } catch (e) { console.warn('Offline Stock recovery deferred:', e); }
     installModalPinGuards();
     initFullscreenModalTracking();
     
@@ -34577,7 +35303,7 @@ function getSellerDisplayName(sellerId, storedName) {
     if (name && !looksLikeId(name) && name !== id) return name;
     if (!id || id.toUpperCase() === 'ADMIN') return 'Admin';
     const list = (typeof sellersCache !== 'undefined' && Array.isArray(sellersCache?.data)) ? sellersCache.data : [];
-    const seller = list.find(item => String(item.id || item.sellerId || item._externalId || '') === id);
+    const seller = list.find(item => [item.id,item.sellerId,item._externalId,item._recordId].some(value => value !== undefined && value !== null && String(value) === id));
     const resolved = String(seller?.name || seller?.sellerName || '').trim();
     return resolved && !looksLikeId(resolved) ? resolved : 'Unknown Seller';
 }
