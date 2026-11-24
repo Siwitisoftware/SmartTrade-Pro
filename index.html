@@ -4481,6 +4481,30 @@
     display: none !important;
 }
 
+
+/* Developer account is a standalone panel: hide all regular account navigation. */
+.developer-mode .mobile-bottom-nav,
+.developer-mode .dev-logout-btn {
+    display: none !important;
+}
+.developer-mode .dev-header-actions {
+    width: 100%;
+    justify-content: flex-start;
+}
+.developer-mode .dev-refresh-btn {
+    width: 100%;
+}
+
+/* Developer account recycle-bin tabs */
+.dev-panel-tabs{display:flex;gap:10px;margin:18px 0;flex-wrap:wrap}
+.dev-panel-tab{border:1px solid #334155;background:#1e293b;color:#cbd5e1;border-radius:10px;padding:11px 16px;font-weight:700;cursor:pointer}
+.dev-panel-tab.active{background:#0e7490;color:#fff;border-color:#22d3ee}
+.dev-tab-count{display:inline-flex;min-width:22px;height:22px;align-items:center;justify-content:center;border-radius:20px;background:#ef4444;color:#fff;font-size:12px;margin-left:6px;padding:0 5px}
+.dev-deleted-business{display:block;margin:3px 0;color:#cbd5e1;font-size:12px}
+.dev-action-btn.restore{background:#dcfce7;color:#166534}
+.dev-action-btn.permanent{background:#fee2e2;color:#991b1b}
+#devDeletedAccountsPanel .dev-users-table{min-width:760px}
+
 /* Developer Dashboard Container */
 .dev-dashboard-container {
     max-width: 1400px;
@@ -5519,6 +5543,15 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 .st-borrower-suggestion-detail{font-size:11px;opacity:.72;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 
+<style id="stRegistrationOtpModalStyles">
+.st-registration-otp-backdrop{position:fixed;inset:0;z-index:2147483600;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(4px)}
+.st-registration-otp-card{width:min(100%,440px);background:#fff;color:#172033;border-radius:20px;padding:28px 24px;box-shadow:0 24px 80px rgba(0,0,0,.32);text-align:center;font-family:inherit}
+.st-registration-otp-icon{width:58px;height:58px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#e0f2fe;color:#0284c7;font-size:25px}
+.st-registration-otp-card h2{margin:8px 0;font-size:24px;color:#0f172a}.st-registration-otp-card p{margin:8px 0;color:#64748b}.st-registration-otp-card strong{display:block;overflow-wrap:anywhere;color:#0f766e;margin:6px 0 20px}
+.st-registration-otp-card label{display:block;text-align:left;font-weight:700;margin:0 0 7px}.st-registration-otp-card input{width:100%;box-sizing:border-box;border:1.5px solid #cbd5e1;border-radius:12px;padding:14px;font-size:24px;letter-spacing:8px;text-align:center;color:#0f172a;background:#f8fafc;outline:none}.st-registration-otp-card input:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.15)}
+.st-registration-otp-card small{display:block;color:#64748b;margin:9px 0 16px}.st-registration-otp-card button{width:100%;margin-top:9px;min-height:44px}.st-registration-otp-link,.st-registration-otp-cancel{border:0;background:transparent;color:#0284c7;font-weight:700;cursor:pointer}.st-registration-otp-cancel{color:#64748b}.st-registration-otp-card button:disabled{opacity:.6;cursor:wait}
+</style>
+
 <!-- AUTHENTICATION CONTAINER -->
 <div id="authContainer" class="auth-container">
     <!-- Login Page -->
@@ -5615,6 +5648,22 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 </div>
     </div>
     
+    <!-- Registration Email Verification Modal -->
+    <div id="registrationOtpModal" class="st-registration-otp-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="registrationOtpTitle">
+      <div class="st-registration-otp-card">
+        <div class="st-registration-otp-icon"><i class="fas fa-envelope-circle-check"></i></div>
+        <h2 id="registrationOtpTitle">Verify your email</h2>
+        <p>A six-digit verification code has been sent to:</p>
+        <strong id="registrationOtpEmail"></strong>
+        <label for="registrationOtpInput">Verification code</label>
+        <input id="registrationOtpInput" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="Enter 6-digit code">
+        <small id="registrationOtpHint">The code expires in 5 minutes.</small>
+        <button type="button" id="registrationOtpVerifyBtn" class="btn-primary" onclick="verifyRegistrationOtp()">Verify Email &amp; Create Account</button>
+        <button type="button" id="registrationOtpResendBtn" class="st-registration-otp-link" onclick="resendRegistrationOtp()">Resend verification code</button>
+        <button type="button" class="st-registration-otp-cancel" onclick="closeRegistrationOtpModal()">Cancel</button>
+      </div>
+    </div>
+
     <!-- Forgot Password Page -->
     <div class="auth-box hidden" id="forgotPage">
         <div class="auth-loading" id="forgotAuthLoading">
@@ -6618,6 +6667,11 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 <div class="value" id="devExpiredUsers">0</div>
 </div>
 </div>
+<div class="dev-panel-tabs" role="tablist" aria-label="Developer account sections">
+<button type="button" class="dev-panel-tab active" id="devActiveTab" onclick="switchDeveloperPanelTab('active')"><i class="fas fa-users"></i> Active Accounts</button>
+<button type="button" class="dev-panel-tab" id="devDeletedTab" onclick="switchDeveloperPanelTab('deleted')"><i class="fas fa-trash-restore"></i> Deleted Accounts <span id="devDeletedCount" class="dev-tab-count">0</span></button>
+</div>
+<div id="devActiveAccountsPanel">
 <div class="dev-search">
 <input type="text" id="devUserSearch" placeholder="🔍 Search by business name, email, or user type..." oninput="searchDevUsers()">
 </div>
@@ -6644,6 +6698,12 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 </tr>
 </tbody>
 </table>
+</div>
+</div>
+<div id="devDeletedAccountsPanel" class="hidden">
+<div class="dev-search"><input type="text" id="devDeletedSearch" placeholder="🔍 Search deleted account by email or business..." oninput="searchDeletedAccounts()"></div>
+<div class="table-container"><table class="dev-users-table"><thead><tr><th>Email</th><th>Business Names</th><th>User Type</th><th>Businesses</th><th>Deleted</th><th style="text-align:center;min-width:190px;">Actions</th></tr></thead>
+<tbody id="devDeletedAccountsTableBody"><tr><td colspan="6" class="dev-loading"><div class="spinner"></div><p>Open Deleted Accounts to load records</p></td></tr></tbody></table></div>
 </div>
 </div>
 </div>
@@ -9872,7 +9932,7 @@ let editDebtPhotoBase64 = null;
             
             if (loginBtn) loginBtn.disabled = false;
             if (loginSpinner) loginSpinner.style.display = 'none';
-            if (loginText) loginText.style.opacity = '1';
+            if (loginText) { loginText.style.opacity = '1'; loginText.textContent = loginText.dataset.originalText || 'Login to Dashboard'; }
             
             const authLoading = document.getElementById('authLoading');
             if (authLoading) authLoading.classList.remove('show');
@@ -9970,6 +10030,8 @@ let editDebtPhotoBase64 = null;
         }
         // Once an offline debt is confirmed by D1, publish its borrower profile
         // to the shared business directory so other signed-in devices can find it.
+        // Keep these writes sequential: they are secondary writes and should not
+        // create avoidable write pressure while the main offline batch is settling.
         const publishedBorrowerTransactions = new Set();
         for (const op of operations) {
             if (!op || op.success !== true || !op.operationId) continue;
@@ -9979,7 +10041,7 @@ let editDebtPhotoBase64 = null;
             if (publishedBorrowerTransactions.has(txKey)) continue;
             publishedBorrowerTransactions.add(txKey);
             try {
-                await apiCall('saveBorrowerProfile', {
+                const profileResult = await apiCall('saveBorrowerProfile', {
                     name: queuedDebt.borrowerName || '',
                     phone: queuedDebt.borrowerPhone || '',
                     nida: queuedDebt.borrowerNIDA || '',
@@ -9988,10 +10050,16 @@ let editDebtPhotoBase64 = null;
                     photoBase64: queuedDebt.photoBase64 || '',
                     photoMimeType: queuedDebt.photoMimeType || 'image/jpeg'
                 }, 30000);
+                if (profileResult?.success === false) {
+                    console.warn('Debt was saved, but borrower profile publication was not confirmed:',
+                        profileResult.error || profileResult.message || 'Unknown profile sync error');
+                }
             } catch (profileSyncError) {
-                console.warn('Synced Debt borrower profile will be retried on next save:', profileSyncError);
+                console.warn('Debt was saved, but borrower profile publication failed:',
+                    profileSyncError);
             }
         }
+
         debtsCache.filtered = getDebtDisplayRowsForCurrentUser(debtsCache.data || []);
         saveDebtsCache();
         const operationIdToQueue = new Map();
@@ -10029,8 +10097,9 @@ let editDebtPhotoBase64 = null;
 
         const remaining = queueNames.reduce((n, name) => n + (offlineData[name]?.length || 0), 0);
         if (remaining === 0) {
-            await refreshAllData();
-            await loadUnits();
+            // These are independent read-only refreshes. Run them together so
+            // Stock/dashboard and Unit data do not wait on separate round-trips.
+            await Promise.allSettled([refreshAllData(), loadUnits()]);
             refreshCurrentPage();
             showNotification('Offline data synced successfully', 'success');
         } else {
@@ -10734,7 +10803,7 @@ function checkSession() {
             
             if (loginBtn) loginBtn.disabled = false;
             if (loginSpinner) loginSpinner.style.display = 'none';
-            if (loginText) loginText.style.opacity = '1';
+            if (loginText) { loginText.style.opacity = '1'; loginText.textContent = loginText.dataset.originalText || 'Login to Dashboard'; }
             
             const authLoading = document.getElementById('authLoading');
             if (authLoading) authLoading.classList.remove('show');
@@ -10891,7 +10960,7 @@ async function login() {
     
     if (loginBtn) loginBtn.disabled = true;
     if (loginSpinner) loginSpinner.style.display = 'inline-block';
-    if (loginText) loginText.style.opacity = '0.7';
+    if (loginText) { loginText.dataset.originalText = loginText.textContent; loginText.textContent = 'Verifying credentials...'; }
     
     try {
         const result = await apiCall('login', { email, password });
@@ -10913,7 +10982,7 @@ async function login() {
                     // User has expired subscription - stay on login page
                     if (loginBtn) loginBtn.disabled = false;
                     if (loginSpinner) loginSpinner.style.display = 'none';
-                    if (loginText) loginText.style.opacity = '1';
+                    if (loginText) { loginText.style.opacity = '1'; loginText.textContent = loginText.dataset.originalText || 'Login to Dashboard'; }
                     return;
                 }
             }
@@ -10934,14 +11003,14 @@ async function login() {
             authLoading.classList.remove('show');
             if (loginBtn) loginBtn.disabled = false;
             if (loginSpinner) loginSpinner.style.display = 'none';
-            if (loginText) loginText.style.opacity = '1';
+            if (loginText) { loginText.style.opacity = '1'; loginText.textContent = loginText.dataset.originalText || 'Login to Dashboard'; }
             showNotification(result.error || 'Login failed', 'error');
         }
     } catch (error) {
         authLoading.classList.remove('show');
         if (loginBtn) loginBtn.disabled = false;
         if (loginSpinner) loginSpinner.style.display = 'none';
-        if (loginText) loginText.style.opacity = '1';
+        if (loginText) { loginText.style.opacity = '1'; loginText.textContent = loginText.dataset.originalText || 'Login to Dashboard'; }
         showNotification('Network error. Please check your connection.', 'error');
     }
 }
@@ -12139,6 +12208,10 @@ async function refreshSalesBackground() {
 
 async function refreshPurchasesBackground() {
     if (!isOnline) return;
+    // A queued offline Purchase is still part of the local user's visible
+    // history. Until its operation is acknowledged by the server, do not let
+    // a background snapshot replace the cache and hide that pending entry.
+    if (Array.isArray(offlineData.purchases) && offlineData.purchases.length) return;
     try {
         const result = await apiCall('getPurchases', { sellerId: currentUser.userType !== 'admin' ? currentUser.sellerId : null, branchId: currentUser.userType !== 'admin' ? (currentUser.branchId || null) : null });
         if (result.success) {
@@ -13097,70 +13170,119 @@ function hideAccessDeniedModal() {
 // Make sure your access denied modal has logout button that calls performLogout()
        
         
+        let pendingRegistrationOtpUserId = '';
+        let pendingRegistrationOtpEmail = '';
+
+        function openRegistrationOtpModal(email, userId) {
+            pendingRegistrationOtpUserId = String(userId || '');
+            pendingRegistrationOtpEmail = String(email || '').trim().toLowerCase();
+            const modal = document.getElementById('registrationOtpModal');
+            const emailNode = document.getElementById('registrationOtpEmail');
+            const otpInput = document.getElementById('registrationOtpInput');
+            if (emailNode) emailNode.textContent = pendingRegistrationOtpEmail;
+            if (otpInput) otpInput.value = '';
+            if (modal) modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => { if (otpInput) otpInput.focus(); }, 80);
+        }
+
+        function closeRegistrationOtpModal() {
+            const modal = document.getElementById('registrationOtpModal');
+            if (modal) modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
         async function register() {
             const business = document.getElementById('registerBusiness').value.trim();
-            const email = document.getElementById('registerEmail').value.trim();
+            const email = document.getElementById('registerEmail').value.trim().toLowerCase();
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('registerConfirmPassword').value;
             const acceptedTerms = document.getElementById('registerAcceptTerms').checked;
-            
-            if (!business || !email || !password) {
-                showNotification('Please fill all fields', 'error');
-                return;
-            }
-            
-            if (password !== confirmPassword) {
-                showNotification('Passwords do not match', 'error');
-                return;
-            }
-            
-            if (!isPasswordStrongEnough(password)) {
-                showNotification('Password must be at least 8 characters and include a mix of uppercase, lowercase, numbers or symbols', 'error');
-                return;
-            }
-            
-            if (!validateEmail(email)) {
-                showNotification('Please enter a valid email address', 'error');
-                return;
-            }
-            
-            if (!acceptedTerms) {
-                showNotification('Please accept the Terms and Conditions to continue', 'error');
-                return;
-            }
-            
+            if (!business || !email || !password) return showNotification('Please fill all fields', 'error');
+            if (password !== confirmPassword) return showNotification('Passwords do not match', 'error');
+            if (!isPasswordStrongEnough(password)) return showNotification('Password must be at least 8 characters and include a mix of uppercase, lowercase, numbers or symbols', 'error');
+            if (!validateEmail(email)) return showNotification('Please enter a valid email address', 'error');
+            if (!acceptedTerms) return showNotification('Please accept the Terms and Conditions to continue', 'error');
+
             const authLoading = document.getElementById('registerAuthLoading');
             const registerBtn = document.getElementById('registerBtn');
+            const registerText = document.getElementById('registerText');
             if (authLoading) authLoading.classList.add('show');
             if (registerBtn) registerBtn.disabled = true;
-            
+            if (registerText) registerText.textContent = 'Sending verification code...';
             try {
-                const result = await apiCall('register', { business, email, password });
-                
-                if (result.success) {
-                    if (authLoading) authLoading.classList.remove('show');
-                    showNotification('Account created successfully! Please login.', 'success');
-                    showLoginPage();
-                    
-                    document.getElementById('registerBusiness').value = '';
-                    document.getElementById('registerEmail').value = '';
-                    document.getElementById('registerPassword').value = '';
-                    document.getElementById('registerConfirmPassword').value = '';
-                    document.getElementById('registerAcceptTerms').checked = false;
-                    renderPasswordStrengthUI('', 'passwordStrengthFill', 'passwordStrengthLabel');
+                const result = await apiCall('requestRegistrationOtp', { business, email, password });
+                if (result.success && result.otpRequired && result.userId) {
+                    openRegistrationOtpModal(email, result.userId);
+                    showNotification('Verification code sent. Check your inbox and spam folder.', 'success');
                 } else {
-                    if (authLoading) authLoading.classList.remove('show');
-                    showNotification(result.error || 'Registration failed', 'error');
+                    showNotification(result.error || 'Could not send verification code.', 'error');
                 }
             } catch (error) {
+                showNotification(error.message || 'Network error. Please check your connection.', 'error');
+            } finally {
                 if (authLoading) authLoading.classList.remove('show');
-                showNotification('Network error. Please check your connection.', 'error');
+                if (registerBtn) registerBtn.disabled = false;
+                if (registerText) registerText.textContent = 'Create Account';
             }
-            
-            if (authLoading) authLoading.classList.remove('show');
-            if (registerBtn) registerBtn.disabled = false;
         }
-        
+
+        async function resendRegistrationOtp() {
+            const business = document.getElementById('registerBusiness').value.trim();
+            const email = pendingRegistrationOtpEmail || document.getElementById('registerEmail').value.trim().toLowerCase();
+            const password = document.getElementById('registerPassword').value;
+            const btn = document.getElementById('registrationOtpResendBtn');
+            if (!business || !email || !password) {
+                closeRegistrationOtpModal();
+                showNotification('Please start registration again to request another code.', 'error');
+                return;
+            }
+            if (btn) btn.disabled = true;
+            try {
+                const result = await apiCall('requestRegistrationOtp', { business, email, password });
+                if (result.success && result.userId) {
+                    openRegistrationOtpModal(email, result.userId);
+                    showNotification('A new verification code has been sent.', 'success');
+                } else showNotification(result.error || 'Could not resend verification code.', 'error');
+            } catch (error) {
+                showNotification(error.message || 'Network error. Please try again.', 'error');
+            } finally { if (btn) btn.disabled = false; }
+        }
+
+        async function verifyRegistrationOtp() {
+            const otpInput = document.getElementById('registrationOtpInput');
+            const otp = String(otpInput?.value || '').trim();
+            const btn = document.getElementById('registrationOtpVerifyBtn');
+            if (!pendingRegistrationOtpUserId || !pendingRegistrationOtpEmail) return showNotification('Registration session is missing. Please start again.', 'error');
+            if (!/^\d{6}$/.test(otp)) return showNotification('Enter the six-digit verification code.', 'error');
+            if (btn) { btn.disabled = true; btn.textContent = 'Verifying...'; }
+            try {
+                const result = await apiCall('verifyRegistrationOtp', {
+                    userId: pendingRegistrationOtpUserId,
+                    email: pendingRegistrationOtpEmail,
+                    otp
+                });
+                if (result.success && result.verified) {
+                    closeRegistrationOtpModal();
+                    pendingRegistrationOtpUserId = '';
+                    pendingRegistrationOtpEmail = '';
+                    ['registerBusiness','registerEmail','registerPassword','registerConfirmPassword'].forEach(id => {
+                        const el = document.getElementById(id); if (el) el.value = '';
+                    });
+                    const terms = document.getElementById('registerAcceptTerms'); if (terms) terms.checked = false;
+                    if (typeof renderPasswordStrengthUI === 'function') renderPasswordStrengthUI('', 'passwordStrengthFill', 'passwordStrengthLabel');
+                    showNotification('Email verified and account created successfully. Please login.', 'success');
+                    showLoginPage();
+                } else {
+                    showNotification(result.error || 'Verification failed. Check the code and try again.', 'error');
+                }
+            } catch (error) {
+                showNotification(error.message || 'Could not verify the code. Please try again.', 'error');
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = 'Verify Email & Create Account'; }
+            }
+        }
+
         async function forgotPassword() {
             const email = document.getElementById('forgotEmail').value.trim();
             
@@ -13171,8 +13293,10 @@ function hideAccessDeniedModal() {
             
             const authLoading = document.getElementById('forgotAuthLoading');
             const forgotBtn = document.getElementById('forgotBtn');
+            const forgotText = document.getElementById('forgotText');
             if (authLoading) authLoading.classList.add('show');
             if (forgotBtn) forgotBtn.disabled = true;
+            if (forgotText) { forgotText.dataset.originalText = forgotText.textContent; forgotText.textContent = 'Checking email...'; }
             
             try {
                 const result = await apiCall('forgot', { email });
@@ -13192,6 +13316,7 @@ function hideAccessDeniedModal() {
             
             if (authLoading) authLoading.classList.remove('show');
             if (forgotBtn) forgotBtn.disabled = false;
+            if (forgotText) forgotText.textContent = forgotText.dataset.originalText || 'Recover Password';
         }
         
         function showLogoutConfirmation() {
@@ -13564,7 +13689,7 @@ function hideAccessDeniedModal() {
                 }
             }
 
-            const noAuthActions = ['login', 'register', 'forgot'];
+            const noAuthActions = ['login', 'register', 'requestRegistrationOtp', 'verifyRegistrationOtp', 'forgot'];
             const payload = { ...data, action: action, clientTimeZone: getBusinessTimeZone() };
             if (currentUser.databaseId && !noAuthActions.includes(action)) payload.databaseId = currentUser.databaseId;
             if (currentUser.token && !noAuthActions.includes(action)) payload.token = currentUser.token;
@@ -15978,7 +16103,113 @@ function showEditSupplierProductsSuggestions() {
         
         
         
-        async function refreshAllData(showLoading = false) {
+        
+// ============================================
+// ALL-DASHBOARD BACKGROUND DATA PREFETCH
+// ============================================
+// Warm every dashboard's underlying data after sign-in, even when its page
+// has not been opened. This is read-only: it uses the existing background
+// refreshers, preserves their role filters and cache writers, and never
+// invokes page actions such as Close Accounts or Complete Sale.
+let allDashboardPrefetchPromise = null;
+let allDashboardPrefetchLastAt = 0;
+let allDashboardPrefetchUserKey = '';
+
+async function refreshExpensesDashboardBackground_() {
+    if (!isOnline || currentUser?.userType !== 'admin') return;
+    try {
+        const filters = { dateFrom: '', dateTo: '', category: '', branchId: 'ALL' };
+        const result = await apiCall('getExpensesData', filters);
+        if (result?.success) {
+            lastExpensesResult = result;
+            if (currentUser?.currentPage === 'expenses') {
+                renderExpensesResult(getExpensesResultWithPendingLocal_(result, filters));
+            }
+        }
+    } catch (e) {
+        console.warn('Background expenses dashboard refresh deferred:', e);
+    }
+}
+
+async function refreshAllDashboardsInBackground_(options = {}) {
+    if (!isOnline || !currentUser?.token || !currentUser?.databaseId || isAccessDenied) return false;
+
+    const userKey = [
+        currentUser.databaseId,
+        currentUser.userType,
+        currentUser.sellerId || '',
+        currentUser.branchId || ''
+    ].join('|');
+    const now = Date.now();
+    const force = options.force === true;
+
+    // Single-flight plus a short cooldown prevents multiple actions (e.g.
+    // navigation, save completion and online event) from launching duplicate
+    // dashboard-wide reads at the same time.
+    if (allDashboardPrefetchPromise && allDashboardPrefetchUserKey === userKey) {
+        return allDashboardPrefetchPromise;
+    }
+    if (!force && allDashboardPrefetchUserKey === userKey &&
+        now - allDashboardPrefetchLastAt < 60000) {
+        return false;
+    }
+
+    allDashboardPrefetchUserKey = userKey;
+    const prefetchPromise = (async () => {
+        const isAdmin = currentUser?.userType === 'admin';
+        const tasks = [
+            refreshSalesBackground,
+            refreshDebtsBackground
+        ];
+
+        // Do not replace locally queued Purchases with a partial server view.
+        if (!Array.isArray(offlineData.purchases) || offlineData.purchases.length === 0) {
+            tasks.push(refreshPurchasesBackground);
+        }
+
+        if (isAdmin) {
+            // These datasets belong to the administrator's business-wide
+            // dashboards. Seller sessions intentionally do not prefetch them.
+            if (!Array.isArray(offlineData.customers) || offlineData.customers.length === 0) {
+                tasks.push(refreshCustomersBackground);
+            }
+            if (!Array.isArray(offlineData.suppliers) || offlineData.suppliers.length === 0) {
+                tasks.push(refreshSuppliersBackground);
+            }
+            tasks.push(
+                refreshSellersBackground,
+                refreshBranchesBackground,
+                refreshExpensesDashboardBackground_,
+                loadReportsBackground
+            );
+        }
+
+        // Bound concurrency to three requests. This improves total completion
+        // time over serial loading without flooding D1 or racing write actions.
+        const concurrency = 3;
+        for (let offset = 0; offset < tasks.length; offset += concurrency) {
+            const batch = tasks.slice(offset, offset + concurrency);
+            await Promise.allSettled(batch.map(task => Promise.resolve().then(task)));
+        }
+        return true;
+    })().catch(error => {
+        console.warn('All-dashboard background prefetch deferred:', error);
+        return false;
+    });
+
+    allDashboardPrefetchPromise = prefetchPromise;
+    try {
+        return await prefetchPromise;
+    } finally {
+        // An older session's prefetch must never clear a newer session's lock.
+        if (allDashboardPrefetchPromise === prefetchPromise) {
+            allDashboardPrefetchLastAt = Date.now();
+            allDashboardPrefetchPromise = null;
+        }
+    }
+}
+
+async function refreshAllData(showLoading = false) {
     if (currentUser && currentUser.token && currentUser.databaseId) {
         // Independent read-only requests can run together. This removes the
         // serial dashboard -> stock network wait without changing calculations.
@@ -16002,6 +16233,9 @@ function showEditSupplierProductsSuggestions() {
         } else if (stockOutcome.status === 'rejected') {
             console.warn('D1 stock refresh deferred:', stockOutcome.reason);
         }
+        // Start the remaining dashboard datasets in the background. Do not
+        // await them here: the active page and user actions remain responsive.
+        void refreshAllDashboardsInBackground_();
         return;
     }
     if (showLoading) {
@@ -29512,15 +29746,14 @@ function showSettingsSection(section) {
         }
         
         function showNotification(message, type = 'info') {
-            // Notifications are permitted only while the main application is
-            // visible. Do not inspect child login-page classes: they remain
-            // mounted while authContainer is hidden after a successful login.
+            // Auth pages and the main application both need visible feedback.
+            // The previous app-only gate silently discarded Login/Register/
+            // Forgot-password messages while authContainer was visible.
             const authContainer = document.getElementById('authContainer');
             const appContainer = document.getElementById('appContainer');
             const appIsVisible = !!appContainer && !appContainer.classList.contains('hidden');
             const authIsVisible = !!authContainer && !authContainer.classList.contains('hidden');
-            if (!appIsVisible || authIsVisible) {
-                document.querySelectorAll('.notification').forEach(n => n.remove());
+            if (!appIsVisible && !authIsVisible) {
                 return false;
             }
 
@@ -34961,10 +35194,68 @@ function displayDevUsersTable(users) {
 
 
 
+let devDeletedAccountsData = [];
+let activeDeveloperPanelTab = 'active';
+function switchDeveloperPanelTab(tab) {
+    if (!isDeveloper()) return;
+    activeDeveloperPanelTab = tab === 'deleted' ? 'deleted' : 'active';
+    document.getElementById('devActiveAccountsPanel')?.classList.toggle('hidden', activeDeveloperPanelTab !== 'active');
+    document.getElementById('devDeletedAccountsPanel')?.classList.toggle('hidden', activeDeveloperPanelTab !== 'deleted');
+    document.getElementById('devActiveTab')?.classList.toggle('active', activeDeveloperPanelTab === 'active');
+    document.getElementById('devDeletedTab')?.classList.toggle('active', activeDeveloperPanelTab === 'deleted');
+    if (activeDeveloperPanelTab === 'deleted') loadDeletedAccounts();
+}
+async function loadDeletedAccounts() {
+    if (!isDeveloper()) return;
+    const body = document.getElementById('devDeletedAccountsTableBody'); if (!body) return;
+    body.innerHTML = '<tr><td colspan="6" class="dev-loading"><div class="spinner"></div><p>Loading deleted accounts...</p></td></tr>';
+    try {
+        const result = await apiCall('getDeletedAccounts', { email: currentUser.email });
+        if (!result.success) throw new Error(result.error || 'Unable to load deleted accounts');
+        devDeletedAccountsData = Array.isArray(result.accounts) ? result.accounts : [];
+        const count = document.getElementById('devDeletedCount'); if (count) count.textContent = String(devDeletedAccountsData.length);
+        displayDeletedAccountsTable(devDeletedAccountsData);
+    } catch (error) {
+        body.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#ef4444;padding:30px;">${escapeHtml(error.message || 'Network error loading deleted accounts')}</td></tr>`;
+    }
+}
+function displayDeletedAccountsTable(accounts) {
+    const body=document.getElementById('devDeletedAccountsTableBody'); if(!body)return;
+    if(!accounts.length){body.innerHTML='<tr><td colspan="6" class="dev-empty-state"><i class="fas fa-trash-restore"></i><p>No deleted accounts found</p></td></tr>';return;}
+    body.innerHTML=accounts.map(account=>{
+        const email=String(account.email||''), safeEmail=escapeHtml(email);
+        const businesses=(account.businesses||[]).map(name=>`<span class="dev-deleted-business">• ${escapeHtml(name)}</span>`).join('')||'<span class="dev-deleted-business">No business names</span>';
+        const role=String(account.role||'admin')==='admin'?'Admin':'Seller';
+        const deleted=account.deletedAt?formatDate(account.deletedAt,true):'—';
+        const jsEmail=email.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        return `<tr><td><strong>${safeEmail}</strong></td><td>${businesses}</td><td><span class="badge info">${role}</span></td><td>${Number(account.businessCount||0)}</td><td>${escapeHtml(deleted)}</td><td style="text-align:center;white-space:nowrap;">
+        <button class="dev-action-btn restore" onclick="restoreDeletedAccount('${jsEmail}')" title="Restore account"><i class="fas fa-undo"></i> Restore</button>
+        <button class="dev-action-btn permanent" onclick="permanentlyDeleteAccount('${jsEmail}')" title="Permanently delete"><i class="fas fa-times"></i> Delete Forever</button></td></tr>`;
+    }).join('');
+}
+function searchDeletedAccounts(){
+    const q=(document.getElementById('devDeletedSearch')?.value||'').trim().toLowerCase();
+    displayDeletedAccountsTable(!q?devDeletedAccountsData:devDeletedAccountsData.filter(a=>String(a.email||'').toLowerCase().includes(q)||(a.businesses||[]).some(n=>String(n).toLowerCase().includes(q))));
+}
+function restoreDeletedAccount(email){
+    showConfirmationModal('RESTORE DELETED ACCOUNT',`<div style="text-align:left"><p>Restore account <strong>${escapeHtml(email)}</strong> and all its businesses?</p><p>All business profiles will become active again. Existing sessions remain revoked, so the user must log in again.</p></div>`,async()=>{
+        try{const result=await apiCall('restoreDeletedAccount',{email:currentUser.email,targetEmail:email});if(!result.success){showNotification(result.error||'Restore failed','error');return false;}showNotification(result.message||'Account restored and verified','success');await Promise.all([loadDeletedAccounts(),loadDeveloperDashboard()]);return true;}
+        catch(error){showNotification(error.message||'Network error restoring account','error');return false;}
+    },true);
+}
+function permanentlyDeleteAccount(email){
+    showConfirmationModal('⚠️ PERMANENTLY DELETE ACCOUNT',`<div style="text-align:left"><p><strong>${escapeHtml(email)}</strong></p><p style="color:#dc2626;font-weight:700">This cannot be undone.</p><p>All businesses, sales, stock, purchases, debts, customers, settings, sessions and related D1 records for this account will be permanently removed. Associated R2 assets will also be cleaned up when the bucket is available.</p><p>Type <strong>PERMANENTLY DELETE</strong> to confirm:</p><input id="permanentDeleteConfirmInput" type="text" autocomplete="off" placeholder="PERMANENTLY DELETE" style="width:100%;padding:10px;margin-top:8px"></div>`,async()=>{
+        const input=document.getElementById('permanentDeleteConfirmInput');if(!input||input.value!=='PERMANENTLY DELETE'){showNotification('Type PERMANENTLY DELETE exactly to continue','error');return false;}
+        try{const result=await apiCall('permanentlyDeleteAccount',{email:currentUser.email,targetEmail:email,confirmation:input.value});if(!result.success){showNotification(result.error||'Permanent deletion failed','error');return false;}showNotification(result.message||'Account permanently deleted','success');await loadDeletedAccounts();return true;}
+        catch(error){showNotification(error.message||'Network error permanently deleting account','error');return false;}
+    },true);
+}
+
 // Update refreshAllUsers to use the accurate endpoint
 function refreshAllUsers() {
     if (currentUser.currentPage === 'devdashboard') {
         loadDeveloperDashboard();
+        if (activeDeveloperPanelTab === 'deleted') loadDeletedAccounts();
     }
 }
 
@@ -35343,7 +35634,7 @@ function performDeveloperLogout() {
     
     if (loginBtn) loginBtn.disabled = false;
     if (loginSpinner) loginSpinner.style.display = 'none';
-    if (loginText) loginText.style.opacity = '1';
+    if (loginText) { loginText.style.opacity = '1'; loginText.textContent = loginText.dataset.originalText || 'Login to Dashboard'; }
     
     // Hide auth loading
     const authLoading = document.getElementById('authLoading');
