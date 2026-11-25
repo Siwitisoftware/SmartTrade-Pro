@@ -5543,15 +5543,6 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 .st-borrower-suggestion-detail{font-size:11px;opacity:.72;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 
-<style id="stRegistrationOtpModalStyles">
-.st-registration-otp-backdrop{position:fixed;inset:0;z-index:2147483600;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;padding:18px;backdrop-filter:blur(4px)}
-.st-registration-otp-card{width:min(100%,440px);background:#fff;color:#172033;border-radius:20px;padding:28px 24px;box-shadow:0 24px 80px rgba(0,0,0,.32);text-align:center;font-family:inherit}
-.st-registration-otp-icon{width:58px;height:58px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#e0f2fe;color:#0284c7;font-size:25px}
-.st-registration-otp-card h2{margin:8px 0;font-size:24px;color:#0f172a}.st-registration-otp-card p{margin:8px 0;color:#64748b}.st-registration-otp-card strong{display:block;overflow-wrap:anywhere;color:#0f766e;margin:6px 0 20px}
-.st-registration-otp-card label{display:block;text-align:left;font-weight:700;margin:0 0 7px}.st-registration-otp-card input{width:100%;box-sizing:border-box;border:1.5px solid #cbd5e1;border-radius:12px;padding:14px;font-size:24px;letter-spacing:8px;text-align:center;color:#0f172a;background:#f8fafc;outline:none}.st-registration-otp-card input:focus{border-color:#0ea5e9;box-shadow:0 0 0 3px rgba(14,165,233,.15)}
-.st-registration-otp-card small{display:block;color:#64748b;margin:9px 0 16px}.st-registration-otp-card button{width:100%;margin-top:9px;min-height:44px}.st-registration-otp-link,.st-registration-otp-cancel{border:0;background:transparent;color:#0284c7;font-weight:700;cursor:pointer}.st-registration-otp-cancel{color:#64748b}.st-registration-otp-card button:disabled{opacity:.6;cursor:wait}
-</style>
-
 <!-- AUTHENTICATION CONTAINER -->
 <div id="authContainer" class="auth-container">
     <!-- Login Page -->
@@ -5648,22 +5639,6 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 </div>
     </div>
     
-    <!-- Registration Email Verification Modal -->
-    <div id="registrationOtpModal" class="st-registration-otp-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="registrationOtpTitle">
-      <div class="st-registration-otp-card">
-        <div class="st-registration-otp-icon"><i class="fas fa-envelope-circle-check"></i></div>
-        <h2 id="registrationOtpTitle">Verify your email</h2>
-        <p>A six-digit verification code has been sent to:</p>
-        <strong id="registrationOtpEmail"></strong>
-        <label for="registrationOtpInput">Verification code</label>
-        <input id="registrationOtpInput" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="Enter 6-digit code">
-        <small id="registrationOtpHint">The code expires in 5 minutes.</small>
-        <button type="button" id="registrationOtpVerifyBtn" class="btn-primary" onclick="verifyRegistrationOtp()">Verify Email &amp; Create Account</button>
-        <button type="button" id="registrationOtpResendBtn" class="st-registration-otp-link" onclick="resendRegistrationOtp()">Resend verification code</button>
-        <button type="button" class="st-registration-otp-cancel" onclick="closeRegistrationOtpModal()">Cancel</button>
-      </div>
-    </div>
-
     <!-- Forgot Password Page -->
     <div class="auth-box hidden" id="forgotPage">
         <div class="auth-loading" id="forgotAuthLoading">
@@ -5672,14 +5647,14 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
         </div>
         <div class="auth-logo">
 <h1 class="auth-title">Password Recovery</h1>
-<p class="auth-subtitle">Enter your email to receive password</p>
+<p class="auth-subtitle">Enter your email to receive a secure password reset link</p>
 </div>
         <div class="form-group">
 <input type="email" id="forgotEmail" placeholder="Registered Email Address" required>
 </div>
         <button onclick="forgotPassword()" class="btn-warning" id="forgotBtn">
 <i class="fas fa-paper-plane">
-</i> <span id="forgotText">Send Password</span>
+</i> <span id="forgotText">Send Reset Link</span>
 <span class="spinner small" id="forgotSpinner" style="display: none;">
 </span>
 </button>
@@ -5688,6 +5663,36 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 <i class="fas fa-arrow-left">
 </i> Back to Login</a>
 </div>
+    </div>
+
+    <!-- Secure Password Reset Page -->
+    <div class="auth-box hidden" id="resetPasswordPage">
+        <div class="auth-logo">
+            <h1 class="auth-title">Set a New Password</h1>
+            <p class="auth-subtitle">Create a new password for your SmartTrade Pro account</p>
+        </div>
+        <div class="form-group">
+            <div class="password-toggle-wrapper">
+                <input type="password" id="resetNewPassword" placeholder="New Password (minimum 8 characters)" autocomplete="new-password" required>
+                <i class="fas fa-eye password-toggle-icon" onclick="togglePasswordVisibility('resetNewPassword', this)"></i>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="password-toggle-wrapper">
+                <input type="password" id="resetConfirmPassword" placeholder="Confirm New Password" autocomplete="new-password" required>
+                <i class="fas fa-eye password-toggle-icon" onclick="togglePasswordVisibility('resetConfirmPassword', this)"></i>
+            </div>
+        </div>
+        <button onclick="submitPasswordReset()" class="btn-success" id="resetPasswordBtn">
+            <i class="fas fa-lock"></i> <span id="resetPasswordText">Update Password</span>
+            <span class="spinner small" id="resetPasswordSpinner" style="display:none;"></span>
+        </button>
+        <div class="text-center mt-20">
+            <a onclick="showLoginPage()" style="color: var(--accent); cursor: pointer; text-decoration: none;">
+                <i class="fas fa-arrow-left"></i> Back to Login
+            </a>
+        </div>
+        <p style="color:#94a3b8;font-size:0.8rem;text-align:center;margin-top:14px;">The reset link can only be used once and expires after 30 minutes.</p>
     </div>
 </div>
 
@@ -13170,119 +13175,73 @@ function hideAccessDeniedModal() {
 // Make sure your access denied modal has logout button that calls performLogout()
        
         
-        let pendingRegistrationOtpUserId = '';
-        let pendingRegistrationOtpEmail = '';
-
-        function openRegistrationOtpModal(email, userId) {
-            pendingRegistrationOtpUserId = String(userId || '');
-            pendingRegistrationOtpEmail = String(email || '').trim().toLowerCase();
-            const modal = document.getElementById('registrationOtpModal');
-            const emailNode = document.getElementById('registrationOtpEmail');
-            const otpInput = document.getElementById('registrationOtpInput');
-            if (emailNode) emailNode.textContent = pendingRegistrationOtpEmail;
-            if (otpInput) otpInput.value = '';
-            if (modal) modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-            setTimeout(() => { if (otpInput) otpInput.focus(); }, 80);
-        }
-
-        function closeRegistrationOtpModal() {
-            const modal = document.getElementById('registrationOtpModal');
-            if (modal) modal.style.display = 'none';
-            document.body.style.overflow = '';
-        }
-
         async function register() {
             const business = document.getElementById('registerBusiness').value.trim();
-            const email = document.getElementById('registerEmail').value.trim().toLowerCase();
+            const email = document.getElementById('registerEmail').value.trim();
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('registerConfirmPassword').value;
             const acceptedTerms = document.getElementById('registerAcceptTerms').checked;
-            if (!business || !email || !password) return showNotification('Please fill all fields', 'error');
-            if (password !== confirmPassword) return showNotification('Passwords do not match', 'error');
-            if (!isPasswordStrongEnough(password)) return showNotification('Password must be at least 8 characters and include a mix of uppercase, lowercase, numbers or symbols', 'error');
-            if (!validateEmail(email)) return showNotification('Please enter a valid email address', 'error');
-            if (!acceptedTerms) return showNotification('Please accept the Terms and Conditions to continue', 'error');
-
+            
+            if (!business || !email || !password) {
+                showNotification('Please fill all fields', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showNotification('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (!isPasswordStrongEnough(password)) {
+                showNotification('Password must be at least 8 characters and include a mix of uppercase, lowercase, numbers or symbols', 'error');
+                return;
+            }
+            
+            if (!validateEmail(email)) {
+                showNotification('Please enter a valid email address', 'error');
+                return;
+            }
+            
+            if (!acceptedTerms) {
+                showNotification('Please accept the Terms and Conditions to continue', 'error');
+                return;
+            }
+            
             const authLoading = document.getElementById('registerAuthLoading');
             const registerBtn = document.getElementById('registerBtn');
             const registerText = document.getElementById('registerText');
             if (authLoading) authLoading.classList.add('show');
             if (registerBtn) registerBtn.disabled = true;
-            if (registerText) registerText.textContent = 'Sending verification code...';
+            if (registerText) { registerText.dataset.originalText = registerText.textContent; registerText.textContent = 'Creating account...'; }
+            
             try {
-                const result = await apiCall('requestRegistrationOtp', { business, email, password });
-                if (result.success && result.otpRequired && result.userId) {
-                    openRegistrationOtpModal(email, result.userId);
-                    showNotification('Verification code sent. Check your inbox and spam folder.', 'success');
-                } else {
-                    showNotification(result.error || 'Could not send verification code.', 'error');
-                }
-            } catch (error) {
-                showNotification(error.message || 'Network error. Please check your connection.', 'error');
-            } finally {
-                if (authLoading) authLoading.classList.remove('show');
-                if (registerBtn) registerBtn.disabled = false;
-                if (registerText) registerText.textContent = 'Create Account';
-            }
-        }
-
-        async function resendRegistrationOtp() {
-            const business = document.getElementById('registerBusiness').value.trim();
-            const email = pendingRegistrationOtpEmail || document.getElementById('registerEmail').value.trim().toLowerCase();
-            const password = document.getElementById('registerPassword').value;
-            const btn = document.getElementById('registrationOtpResendBtn');
-            if (!business || !email || !password) {
-                closeRegistrationOtpModal();
-                showNotification('Please start registration again to request another code.', 'error');
-                return;
-            }
-            if (btn) btn.disabled = true;
-            try {
-                const result = await apiCall('requestRegistrationOtp', { business, email, password });
-                if (result.success && result.userId) {
-                    openRegistrationOtpModal(email, result.userId);
-                    showNotification('A new verification code has been sent.', 'success');
-                } else showNotification(result.error || 'Could not resend verification code.', 'error');
-            } catch (error) {
-                showNotification(error.message || 'Network error. Please try again.', 'error');
-            } finally { if (btn) btn.disabled = false; }
-        }
-
-        async function verifyRegistrationOtp() {
-            const otpInput = document.getElementById('registrationOtpInput');
-            const otp = String(otpInput?.value || '').trim();
-            const btn = document.getElementById('registrationOtpVerifyBtn');
-            if (!pendingRegistrationOtpUserId || !pendingRegistrationOtpEmail) return showNotification('Registration session is missing. Please start again.', 'error');
-            if (!/^\d{6}$/.test(otp)) return showNotification('Enter the six-digit verification code.', 'error');
-            if (btn) { btn.disabled = true; btn.textContent = 'Verifying...'; }
-            try {
-                const result = await apiCall('verifyRegistrationOtp', {
-                    userId: pendingRegistrationOtpUserId,
-                    email: pendingRegistrationOtpEmail,
-                    otp
-                });
-                if (result.success && result.verified) {
-                    closeRegistrationOtpModal();
-                    pendingRegistrationOtpUserId = '';
-                    pendingRegistrationOtpEmail = '';
-                    ['registerBusiness','registerEmail','registerPassword','registerConfirmPassword'].forEach(id => {
-                        const el = document.getElementById(id); if (el) el.value = '';
-                    });
-                    const terms = document.getElementById('registerAcceptTerms'); if (terms) terms.checked = false;
-                    if (typeof renderPasswordStrengthUI === 'function') renderPasswordStrengthUI('', 'passwordStrengthFill', 'passwordStrengthLabel');
-                    showNotification('Email verified and account created successfully. Please login.', 'success');
+                const result = await apiCall('register', { business, email, password });
+                
+                if (result.success) {
+                    if (authLoading) authLoading.classList.remove('show');
+                    showNotification('Account created successfully! Please login.', 'success');
                     showLoginPage();
+                    
+                    document.getElementById('registerBusiness').value = '';
+                    document.getElementById('registerEmail').value = '';
+                    document.getElementById('registerPassword').value = '';
+                    document.getElementById('registerConfirmPassword').value = '';
+                    document.getElementById('registerAcceptTerms').checked = false;
+                    renderPasswordStrengthUI('', 'passwordStrengthFill', 'passwordStrengthLabel');
                 } else {
-                    showNotification(result.error || 'Verification failed. Check the code and try again.', 'error');
+                    if (authLoading) authLoading.classList.remove('show');
+                    showNotification(result.error || 'Registration failed', 'error');
                 }
             } catch (error) {
-                showNotification(error.message || 'Could not verify the code. Please try again.', 'error');
-            } finally {
-                if (btn) { btn.disabled = false; btn.textContent = 'Verify Email & Create Account'; }
+                if (authLoading) authLoading.classList.remove('show');
+                showNotification('Network error. Please check your connection.', 'error');
             }
+            
+            if (authLoading) authLoading.classList.remove('show');
+            if (registerBtn) registerBtn.disabled = false;
+            if (registerText) registerText.textContent = registerText.dataset.originalText || 'Create Account';
         }
-
+        
         async function forgotPassword() {
             const email = document.getElementById('forgotEmail').value.trim();
             
@@ -13319,6 +13278,63 @@ function hideAccessDeniedModal() {
             if (forgotText) forgotText.textContent = forgotText.dataset.originalText || 'Recover Password';
         }
         
+
+        // Password reset is completed server-side. The central email token is
+        // never exposed to the account database or stored in localStorage.
+        async function submitPasswordReset() {
+            const token = new URLSearchParams(window.location.search).get('token') || '';
+            const newPassword = document.getElementById('resetNewPassword')?.value || '';
+            const confirmPassword = document.getElementById('resetConfirmPassword')?.value || '';
+            const btn = document.getElementById('resetPasswordBtn');
+            const text = document.getElementById('resetPasswordText');
+            const spinner = document.getElementById('resetPasswordSpinner');
+
+            if (!token || token.length < 32 || token.length > 200) {
+                showNotification('This password reset link is invalid. Request a new link.', 'error');
+                return;
+            }
+            if (newPassword.length < 8) {
+                showNotification('Password must contain at least 8 characters.', 'error');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                showNotification('The passwords do not match.', 'error');
+                return;
+            }
+
+            if (btn) btn.disabled = true;
+            if (spinner) spinner.style.display = 'inline-block';
+            if (text) text.textContent = 'Updating password...';
+            try {
+                const result = await apiCall('resetPassword', { token, newPassword });
+                if (result.success) {
+                    showNotification(result.message || 'Password updated successfully. Please sign in.', 'success');
+                    // Remove the one-time token from the address bar and memory.
+                    history.replaceState({ smartTradeBase: true }, '', window.location.pathname);
+                    document.getElementById('resetNewPassword').value = '';
+                    document.getElementById('resetConfirmPassword').value = '';
+                    showLoginPage();
+                } else {
+                    showNotification(result.error || 'Could not reset password. Request a new link.', 'error');
+                }
+            } catch (error) {
+                showNotification(error.message || 'Network error. Please try again.', 'error');
+            } finally {
+                if (btn) btn.disabled = false;
+                if (spinner) spinner.style.display = 'none';
+                if (text) text.textContent = 'Update Password';
+            }
+        }
+
+        function showPasswordResetPage() {
+            document.getElementById('loginPage')?.classList.add('hidden');
+            document.getElementById('registerPage')?.classList.add('hidden');
+            document.getElementById('forgotPage')?.classList.add('hidden');
+            document.getElementById('resetPasswordPage')?.classList.remove('hidden');
+            document.getElementById('authContainer')?.classList.remove('hidden');
+            document.getElementById('appContainer')?.classList.add('hidden');
+        }
+
         function showLogoutConfirmation() {
             const modal = document.getElementById('logoutConfirmation');
             modal.classList.add('show');
@@ -13689,7 +13705,7 @@ function hideAccessDeniedModal() {
                 }
             }
 
-            const noAuthActions = ['login', 'register', 'requestRegistrationOtp', 'verifyRegistrationOtp', 'forgot'];
+            const noAuthActions = ['login', 'register', 'forgot', 'resetPassword'];
             const payload = { ...data, action: action, clientTimeZone: getBusinessTimeZone() };
             if (currentUser.databaseId && !noAuthActions.includes(action)) payload.databaseId = currentUser.databaseId;
             if (currentUser.token && !noAuthActions.includes(action)) payload.token = currentUser.token;
@@ -34722,6 +34738,14 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
+    // A password-reset email opens this page with ?resetPassword=1&token=...
+    // Keep this flow unauthenticated; do not initialize or restore an app session.
+    const resetParams = new URLSearchParams(window.location.search);
+    if (resetParams.get('resetPassword') === '1') {
+        showPasswordResetPage();
+        return;
+    }
+
     // Restore a Connect Device pairing that survived a page refresh -
     // actual polling resumes automatically once the matching Sale/Debt
     // modal is opened (see openAddSaleModal/openAddDebtModal).
