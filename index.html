@@ -4504,6 +4504,9 @@
 .dev-action-btn.restore{background:#dcfce7;color:#166534}
 .dev-action-btn.permanent{background:#fee2e2;color:#991b1b}
 #devDeletedAccountsPanel .dev-users-table{min-width:760px}
+#devEmailInboxPanel .dev-users-table{min-width:720px}
+#devEmailInboxPanel .dev-unread-row{font-weight:700;background:rgba(14,116,144,.07)}
+#devInboxMessageDetail{color:var(--text-color,#0f172a)}
 
 /* Developer Dashboard Container */
 .dev-dashboard-container {
@@ -5639,60 +5642,64 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 </div>
     </div>
     
-    <!-- Forgot Password Page -->
+    <!-- Forgot Password / OTP Verification / New Password -->
     <div class="auth-box hidden" id="forgotPage">
         <div class="auth-loading" id="forgotAuthLoading">
             <div class="auth-loading-spinner"><div class="auth-logo-icon auth-loading-logo"></div></div>
-            <div class="auth-loading-text">Recovering password...<small>Please wait</small></div>
+            <div class="auth-loading-text">Please wait...<small>Securing your account</small></div>
         </div>
         <div class="auth-logo">
-<h1 class="auth-title">Password Recovery</h1>
-<p class="auth-subtitle">Enter your email to receive a secure password reset link</p>
-</div>
-        <div class="form-group">
-<input type="email" id="forgotEmail" placeholder="Registered Email Address" required>
-</div>
-        <button onclick="forgotPassword()" class="btn-warning" id="forgotBtn">
-<i class="fas fa-paper-plane">
-</i> <span id="forgotText">Send Reset Link</span>
-<span class="spinner small" id="forgotSpinner" style="display: none;">
-</span>
-</button>
-        <div class="text-center mt-20">
-<a onclick="showLoginPage()" style="color: var(--accent); cursor: pointer; text-decoration: none;">
-<i class="fas fa-arrow-left">
-</i> Back to Login</a>
-</div>
-    </div>
+            <h1 class="auth-title" id="recoveryTitle">Password Recovery</h1>
+            <p class="auth-subtitle" id="recoverySubtitle">Enter your registered email to receive a verification code</p>
+        </div>
 
-    <!-- Secure Password Reset Page -->
-    <div class="auth-box hidden" id="resetPasswordPage">
-        <div class="auth-logo">
-            <h1 class="auth-title">Set a New Password</h1>
-            <p class="auth-subtitle">Create a new password for your SmartTrade Pro account</p>
+        <div id="recoveryEmailStep">
+            <div class="form-group">
+                <input type="email" id="forgotEmail" placeholder="Registered Email Address" autocomplete="email" maxlength="254" required>
+            </div>
+            <button type="button" onclick="forgotPassword()" class="btn-warning" id="forgotBtn">
+                <i class="fas fa-paper-plane"></i> <span id="forgotText">Send Verification Code</span>
+                <span class="spinner small" id="forgotSpinner" style="display:none;"></span>
+            </button>
         </div>
-        <div class="form-group">
-            <div class="password-toggle-wrapper">
-                <input type="password" id="resetNewPassword" placeholder="New Password (minimum 8 characters)" autocomplete="new-password" required>
-                <i class="fas fa-eye password-toggle-icon" onclick="togglePasswordVisibility('resetNewPassword', this)"></i>
+
+        <div id="recoveryOtpStep" style="display:none;">
+            <div style="font-size:.88rem;color:var(--text-secondary,#64748b);margin:0 0 12px;">
+                Enter the 6-digit code sent to <strong id="recoveryEmailLabel"></strong>. The code expires in 10 minutes.
+            </div>
+            <div class="form-group">
+                <input type="text" id="recoveryOtp" placeholder="6-digit verification code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}">
+            </div>
+            <button type="button" onclick="verifyRecoveryOtp()" class="btn-warning" id="verifyOtpBtn">
+                <i class="fas fa-shield-alt"></i> <span id="verifyOtpText">Verify Code</span>
+                <span class="spinner small" id="verifyOtpSpinner" style="display:none;"></span>
+            </button>
+            <div class="text-center mt-20">
+                <a onclick="resendRecoveryOtp()" style="color:var(--accent);cursor:pointer;text-decoration:none;">Resend code</a>
+                <span style="padding:0 8px;color:#94a3b8;">·</span>
+                <a onclick="backToRecoveryEmail()" style="color:var(--accent);cursor:pointer;text-decoration:none;">Change email</a>
             </div>
         </div>
-        <div class="form-group">
-            <div class="password-toggle-wrapper">
-                <input type="password" id="resetConfirmPassword" placeholder="Confirm New Password" autocomplete="new-password" required>
-                <i class="fas fa-eye password-toggle-icon" onclick="togglePasswordVisibility('resetConfirmPassword', this)"></i>
+
+        <div id="recoveryNewPasswordStep" style="display:none;">
+            <div class="form-group">
+                <input type="password" id="recoveryNewPassword" placeholder="New password (at least 8 characters)" autocomplete="new-password" maxlength="128">
             </div>
+            <div class="form-group">
+                <input type="password" id="recoveryConfirmPassword" placeholder="Confirm new password" autocomplete="new-password" maxlength="128">
+            </div>
+            <p style="font-size:.8rem;color:var(--text-secondary,#64748b);margin:0 0 12px;">Use at least 8 characters, including letters and numbers.</p>
+            <button type="button" onclick="submitRecoveredPassword()" class="btn-warning" id="resetPasswordBtn">
+                <i class="fas fa-key"></i> <span id="resetPasswordText">Save New Password</span>
+                <span class="spinner small" id="resetPasswordSpinner" style="display:none;"></span>
+            </button>
         </div>
-        <button onclick="submitPasswordReset()" class="btn-success" id="resetPasswordBtn">
-            <i class="fas fa-lock"></i> <span id="resetPasswordText">Update Password</span>
-            <span class="spinner small" id="resetPasswordSpinner" style="display:none;"></span>
-        </button>
+
         <div class="text-center mt-20">
-            <a onclick="showLoginPage()" style="color: var(--accent); cursor: pointer; text-decoration: none;">
+            <a onclick="showLoginPage()" style="color:var(--accent);cursor:pointer;text-decoration:none;">
                 <i class="fas fa-arrow-left"></i> Back to Login
             </a>
         </div>
-        <p style="color:#94a3b8;font-size:0.8rem;text-align:center;margin-top:14px;">The reset link can only be used once and expires after 30 minutes.</p>
     </div>
 </div>
 
@@ -6675,6 +6682,7 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 <div class="dev-panel-tabs" role="tablist" aria-label="Developer account sections">
 <button type="button" class="dev-panel-tab active" id="devActiveTab" onclick="switchDeveloperPanelTab('active')"><i class="fas fa-users"></i> Active Accounts</button>
 <button type="button" class="dev-panel-tab" id="devDeletedTab" onclick="switchDeveloperPanelTab('deleted')"><i class="fas fa-trash-restore"></i> Deleted Accounts <span id="devDeletedCount" class="dev-tab-count">0</span></button>
+<button type="button" class="dev-panel-tab" id="devInboxTab" onclick="switchDeveloperPanelTab('inbox')"><i class="fas fa-inbox"></i> Email Inbox <span id="devInboxUnreadCount" class="dev-tab-count">0</span></button>
 </div>
 <div id="devActiveAccountsPanel">
 <div class="dev-search">
@@ -6709,6 +6717,33 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 <div class="dev-search"><input type="text" id="devDeletedSearch" placeholder="🔍 Search deleted account by email or business..." oninput="searchDeletedAccounts()"></div>
 <div class="table-container"><table class="dev-users-table"><thead><tr><th>Email</th><th>Business Names</th><th>User Type</th><th>Businesses</th><th>Deleted</th><th style="text-align:center;min-width:190px;">Actions</th></tr></thead>
 <tbody id="devDeletedAccountsTableBody"><tr><td colspan="6" class="dev-loading"><div class="spinner"></div><p>Open Deleted Accounts to load records</p></td></tr></tbody></table></div>
+</div>
+<div id="devEmailInboxPanel" class="hidden">
+  <div class="dev-search" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+    <input type="text" id="devInboxSearch" placeholder="Search sender or subject..." oninput="searchDeveloperEmails()" style="flex:1;min-width:220px;">
+    <button type="button" class="dev-refresh-btn" onclick="loadDeveloperEmails()"><i class="fas fa-sync-alt"></i> Refresh Inbox</button>
+  </div>
+  <div style="font-size:13px;color:var(--text-secondary,#94a3b8);margin:8px 0 6px;">Replies and incoming messages sent to the configured Smart Trade Pro support address.</div>
+  <div id="devInboxSyncStatus" aria-live="polite" style="font-size:12px;color:var(--text-secondary,#64748b);margin:0 0 12px;">Live inbox sync is ready.</div>
+  <div class="table-container"><table class="dev-users-table" style="min-width:720px;"><thead><tr><th>Status</th><th>From</th><th>Subject</th><th>Received</th><th style="text-align:center;">Actions</th></tr></thead>
+    <tbody id="devInboxTableBody"><tr><td colspan="5" class="dev-loading"><div class="spinner"></div><p>Open Email Inbox to load messages</p></td></tr></tbody>
+  </table></div>
+  <div id="devInboxMessageDetail" class="hidden" style="margin-top:18px;border:1px solid var(--border-color,#334155);border-radius:12px;padding:16px;background:var(--card-bg,#fff);">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+      <div><h3 id="devInboxDetailSubject" style="margin:0 0 8px;"></h3><div id="devInboxDetailMeta" style="font-size:13px;color:var(--text-secondary,#64748b);"></div></div>
+      <button type="button" class="dev-action-btn permanent" onclick="closeDeveloperEmailDetail()"><i class="fas fa-times"></i> Close</button>
+    </div>
+    <pre id="devInboxDetailBody" style="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;line-height:1.55;margin:18px 0 0;padding:14px;border-radius:8px;background:var(--input-bg,#f8fafc);color:var(--text-color,#0f172a);max-height:520px;overflow:auto;"></pre>
+    <div id="devInboxReplies" style="margin-top:18px;"></div>
+    <div id="devInboxReplyComposer" style="margin-top:18px;border-top:1px solid var(--border-color,#cbd5e1);padding-top:16px;">
+      <label for="devInboxReplyText" style="display:block;font-weight:700;margin-bottom:8px;">Reply from support@siwitisoftware.com</label>
+      <textarea id="devInboxReplyText" rows="5" maxlength="20000" placeholder="Write your reply..." style="width:100%;box-sizing:border-box;resize:vertical;padding:12px;border:1px solid var(--border-color,#cbd5e1);border-radius:10px;background:var(--input-bg,#fff);color:var(--text-color,#0f172a);font:inherit;"></textarea>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px;">
+        <small style="color:var(--text-secondary,#64748b);">Your reply will be sent to the original sender and saved in this conversation.</small>
+        <button type="button" class="dev-refresh-btn" id="devInboxSendReplyBtn" onclick="sendDeveloperEmailReply()"><i class="fas fa-paper-plane"></i> Send Reply</button>
+      </div>
+    </div>
+  </div>
 </div>
 </div>
 </div>
@@ -9945,12 +9980,31 @@ let editDebtPhotoBase64 = null;
         
         
         
-        async function syncOfflineData() {
+        // Phase 6: shared queue inventory and bounded offline sync batches.
+const STP_OFFLINE_QUEUE_NAMES = [
+ 'stock','sales','purchases','expenses','customers','suppliers','units','categories',
+ 'purchaseRequestActions','stockEdits','saleEdits','purchaseEdits','deletes','debts'
+];
+const STP_SYNC_MAX_OPERATIONS_PER_BATCH = 400; // Worker hard limit: 500.
+function stpHasPendingOfflineOperations() {
+ return STP_OFFLINE_QUEUE_NAMES.some(name => Array.isArray(offlineData?.[name]) && offlineData[name].length > 0);
+}
+function stpBuildOfflineSyncSnapshot(names, limit) {
+ const result = Object.fromEntries(names.map(name => [name, []]));
+ let slots = Math.max(0, Number(limit) || 0);
+ for (const name of names) {
+  if (!slots) break;
+  const queue = Array.isArray(offlineData[name]) ? offlineData[name] : [];
+  const count = Math.min(queue.length, slots);
+  result[name] = queue.slice(0, count);
+  slots -= count;
+ }
+ return result;
+}
+
+async function syncOfflineData() {
     if (!currentUser.databaseId || offlineData.isSyncing) return;
-    const queueNames = [
-        'stock','sales','purchases','expenses','customers','suppliers','units','categories',
-        'purchaseRequestActions','stockEdits','saleEdits','purchaseEdits','deletes','debts'
-    ];
+    const queueNames = STP_OFFLINE_QUEUE_NAMES;
     for (const name of queueNames) if (!Array.isArray(offlineData[name])) offlineData[name] = [];
     const makeOperationId = (kind) => 'OFF_' + kind + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,10);
     // Units/categories were historically stored as plain strings. Upgrade them
@@ -9968,8 +10022,8 @@ let editDebtPhotoBase64 = null;
     saveOfflineData();
     if (!offlineData.syncOperationId) offlineData.syncOperationId = makeOperationId('batch');
     const syncId = offlineData.syncOperationId;
-    const snapshots = {};
-    for (const name of queueNames) snapshots[name] = offlineData[name].slice();
+    // Keep each request below the Worker limit; all other items remain queued.
+    const snapshots = stpBuildOfflineSyncSnapshot(queueNames, STP_SYNC_MAX_OPERATIONS_PER_BATCH);
     const totalItems = queueNames.reduce((n, name) => n + snapshots[name].length, 0);
     if (!totalItems) return;
     const syncLockOwner = 'PAGE_' + (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36));
@@ -10101,6 +10155,7 @@ let editDebtPhotoBase64 = null;
         updateSyncIndicator();
 
         const remaining = queueNames.reduce((n, name) => n + (offlineData[name]?.length || 0), 0);
+        const syncedThisBatch = queueNames.reduce((n, name) => n + successfulByQueue[name].size, 0);
         if (remaining === 0) {
             // These are independent read-only refreshes. Run them together so
             // Stock/dashboard and Unit data do not wait on separate round-trips.
@@ -10110,7 +10165,16 @@ let editDebtPhotoBase64 = null;
         } else {
             // Successful records are committed; failed and concurrent records remain
             // durable for retry. Do not claim the batch fully succeeded.
-            showNotification(`${totalItems - remaining} records saved. ${remaining} records remain pending and will retry.`, 'info');
+            showNotification(`${syncedThisBatch} records saved. ${remaining} records remain pending.`, 'info');
+            // Continue only if progress occurred; permanent failures must not
+            // create an endless automatic retry loop.
+            if (syncedThisBatch > 0 && navigator.onLine && isOnline) {
+                setTimeout(() => {
+                    if (navigator.onLine && isOnline && currentUser?.databaseId && !offlineData.isSyncing) {
+                        checkAndSync().catch(error => console.warn('Next offline sync batch deferred:', error));
+                    }
+                }, 1200);
+            }
         }
     } catch (error) {
         offlineData.isSyncing = false;
@@ -10824,6 +10888,9 @@ function checkSession() {
             document.getElementById('loginPage').classList.add('hidden');
             document.getElementById('registerPage').classList.add('hidden');
             document.getElementById('forgotPage').classList.remove('hidden');
+            recoveryVerifiedOtp = '';
+            window.recoveryEmailAddress = '';
+            setRecoveryStep('email');
         }
         
         function updateTextContent() {
@@ -13242,97 +13309,159 @@ function hideAccessDeniedModal() {
             if (registerText) registerText.textContent = registerText.dataset.originalText || 'Create Account';
         }
         
-        async function forgotPassword() {
-            const email = document.getElementById('forgotEmail').value.trim();
-            
-            if (!email) {
-                showNotification('Please enter your email', 'error');
-                return;
-            }
-            
-            const authLoading = document.getElementById('forgotAuthLoading');
-            const forgotBtn = document.getElementById('forgotBtn');
-            const forgotText = document.getElementById('forgotText');
-            if (authLoading) authLoading.classList.add('show');
-            if (forgotBtn) forgotBtn.disabled = true;
-            if (forgotText) { forgotText.dataset.originalText = forgotText.textContent; forgotText.textContent = 'Checking email...'; }
-            
-            try {
-                const result = await apiCall('forgot', { email });
-                
-                if (result.success) {
-                    if (authLoading) authLoading.classList.remove('show');
-                    showNotification(result.message || 'Password sent to your email', 'success');
-                    showLoginPage();
-                } else {
-                    if (authLoading) authLoading.classList.remove('show');
-                    showNotification(result.error || 'Failed to recover password', 'error');
-                }
-            } catch (error) {
-                if (authLoading) authLoading.classList.remove('show');
-                showNotification('Network error. Please check your connection.', 'error');
-            }
-            
-            if (authLoading) authLoading.classList.remove('show');
-            if (forgotBtn) forgotBtn.disabled = false;
-            if (forgotText) forgotText.textContent = forgotText.dataset.originalText || 'Recover Password';
+        let recoveryVerifiedOtp = '';
+        let recoveryRequestBusy = false;
+
+        function setRecoveryStep(step) {
+            const steps = {
+                email: 'recoveryEmailStep',
+                otp: 'recoveryOtpStep',
+                password: 'recoveryNewPasswordStep'
+            };
+            Object.entries(steps).forEach(([name,id]) => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = name === step ? 'block' : 'none';
+            });
+            const title = document.getElementById('recoveryTitle');
+            const subtitle = document.getElementById('recoverySubtitle');
+            if (title) title.textContent = step === 'email' ? 'Password Recovery' : step === 'otp' ? 'Verify Your Email' : 'Create New Password';
+            if (subtitle) subtitle.textContent = step === 'email'
+                ? 'Enter your registered email to receive a verification code'
+                : step === 'otp' ? 'Verify the one-time code sent to your email'
+                : 'Your email is verified. Choose a new password.';
         }
-        
 
-        // Password reset is completed server-side. The central email token is
-        // never exposed to the account database or stored in localStorage.
-        async function submitPasswordReset() {
-            const token = new URLSearchParams(window.location.search).get('token') || '';
-            const newPassword = document.getElementById('resetNewPassword')?.value || '';
-            const confirmPassword = document.getElementById('resetConfirmPassword')?.value || '';
-            const btn = document.getElementById('resetPasswordBtn');
-            const text = document.getElementById('resetPasswordText');
-            const spinner = document.getElementById('resetPasswordSpinner');
+        async function recoveryApi(action, data) {
+            if (recoveryRequestBusy) throw new Error('A recovery request is already in progress.');
+            recoveryRequestBusy = true;
+            try { return await apiCall(action, data); }
+            finally { recoveryRequestBusy = false; }
+        }
 
-            if (!token || token.length < 32 || token.length > 200) {
-                showNotification('This password reset link is invalid. Request a new link.', 'error');
+        async function forgotPassword() {
+            const emailInput = document.getElementById('forgotEmail');
+            const email = String(emailInput?.value || '').trim().toLowerCase();
+            if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showNotification('Please enter a valid registered email address.', 'error');
                 return;
             }
-            if (newPassword.length < 8) {
-                showNotification('Password must contain at least 8 characters.', 'error');
+            const btn = document.getElementById('forgotBtn');
+            const text = document.getElementById('forgotText');
+            const loading = document.getElementById('forgotAuthLoading');
+            if (btn) btn.disabled = true;
+            if (text) text.textContent = 'Sending verification code...';
+            if (loading) loading.classList.add('show');
+            try {
+                const result = await recoveryApi('forgot', {email});
+                if (!result.success) throw new Error(result.error || 'Could not send verification code.');
+                window.recoveryEmailAddress = email;
+                const label = document.getElementById('recoveryEmailLabel');
+                if (label) label.textContent = email;
+                document.getElementById('recoveryOtp').value = '';
+                setRecoveryStep('otp');
+                showNotification(result.message || 'Check your email for the verification code.', 'success');
+                setTimeout(() => document.getElementById('recoveryOtp')?.focus(), 100);
+            } catch (error) {
+                showNotification(error.message || 'Could not send verification code. Please try again.', 'error');
+            } finally {
+                if (loading) loading.classList.remove('show');
+                if (btn) btn.disabled = false;
+                if (text) text.textContent = 'Send Verification Code';
+            }
+        }
+
+        async function resendRecoveryOtp() {
+            const email = window.recoveryEmailAddress || document.getElementById('forgotEmail')?.value.trim();
+            if (!email) return backToRecoveryEmail();
+            const btn = document.getElementById('verifyOtpBtn');
+            if (btn) btn.disabled = true;
+            try {
+                const result = await recoveryApi('forgot', {email});
+                if (!result.success) throw new Error(result.error || 'Could not resend code.');
+                document.getElementById('recoveryOtp').value = '';
+                showNotification(result.message || 'A new code has been sent if the account is registered.', 'success');
+            } catch (error) {
+                showNotification(error.message || 'Could not resend code.', 'error');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        function backToRecoveryEmail() {
+            recoveryVerifiedOtp = '';
+            setRecoveryStep('email');
+        }
+
+        async function verifyRecoveryOtp() {
+            const email = window.recoveryEmailAddress || '';
+            const otp = String(document.getElementById('recoveryOtp')?.value || '').replace(/\s/g,'');
+            if (!/^\d{6}$/.test(otp)) {
+                showNotification('Enter the 6-digit verification code.', 'error');
                 return;
             }
-            if (newPassword !== confirmPassword) {
+            const btn = document.getElementById('verifyOtpBtn');
+            const text = document.getElementById('verifyOtpText');
+            const loading = document.getElementById('forgotAuthLoading');
+            if (btn) btn.disabled = true;
+            if (text) text.textContent = 'Verifying...';
+            if (loading) loading.classList.add('show');
+            try {
+                const result = await recoveryApi('verifyPasswordResetOtp', {email, otp});
+                if (!result.success) throw new Error(result.error || 'Verification failed.');
+                recoveryVerifiedOtp = otp;
+                setRecoveryStep('password');
+                showNotification(result.message || 'Email verified successfully.', 'success');
+            } catch (error) {
+                showNotification(error.message || 'Invalid or expired code.', 'error');
+            } finally {
+                if (loading) loading.classList.remove('show');
+                if (btn) btn.disabled = false;
+                if (text) text.textContent = 'Verify Code';
+            }
+        }
+
+        async function submitRecoveredPassword() {
+            const password = String(document.getElementById('recoveryNewPassword')?.value || '');
+            const confirm = String(document.getElementById('recoveryConfirmPassword')?.value || '');
+            if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+                showNotification('Use at least 8 characters, including letters and numbers.', 'error');
+                return;
+            }
+            if (password !== confirm) {
                 showNotification('The passwords do not match.', 'error');
                 return;
             }
-
-            if (btn) btn.disabled = true;
-            if (spinner) spinner.style.display = 'inline-block';
-            if (text) text.textContent = 'Updating password...';
-            try {
-                const result = await apiCall('resetPassword', { token, newPassword });
-                if (result.success) {
-                    showNotification(result.message || 'Password updated successfully. Please sign in.', 'success');
-                    // Remove the one-time token from the address bar and memory.
-                    history.replaceState({ smartTradeBase: true }, '', window.location.pathname);
-                    document.getElementById('resetNewPassword').value = '';
-                    document.getElementById('resetConfirmPassword').value = '';
-                    showLoginPage();
-                } else {
-                    showNotification(result.error || 'Could not reset password. Request a new link.', 'error');
-                }
-            } catch (error) {
-                showNotification(error.message || 'Network error. Please try again.', 'error');
-            } finally {
-                if (btn) btn.disabled = false;
-                if (spinner) spinner.style.display = 'none';
-                if (text) text.textContent = 'Update Password';
+            if (!recoveryVerifiedOtp || !window.recoveryEmailAddress) {
+                showNotification('Please verify your email again.', 'error');
+                setRecoveryStep('otp');
+                return;
             }
-        }
-
-        function showPasswordResetPage() {
-            document.getElementById('loginPage')?.classList.add('hidden');
-            document.getElementById('registerPage')?.classList.add('hidden');
-            document.getElementById('forgotPage')?.classList.add('hidden');
-            document.getElementById('resetPasswordPage')?.classList.remove('hidden');
-            document.getElementById('authContainer')?.classList.remove('hidden');
-            document.getElementById('appContainer')?.classList.add('hidden');
+            const btn = document.getElementById('resetPasswordBtn');
+            const text = document.getElementById('resetPasswordText');
+            const loading = document.getElementById('forgotAuthLoading');
+            if (btn) btn.disabled = true;
+            if (text) text.textContent = 'Saving password...';
+            if (loading) loading.classList.add('show');
+            try {
+                const result = await recoveryApi('resetPasswordWithOtp', {
+                    email: window.recoveryEmailAddress,
+                    otp: recoveryVerifiedOtp,
+                    newPassword: password
+                });
+                if (!result.success) throw new Error(result.error || 'Could not change password.');
+                recoveryVerifiedOtp = '';
+                document.getElementById('recoveryNewPassword').value = '';
+                document.getElementById('recoveryConfirmPassword').value = '';
+                document.getElementById('recoveryOtp').value = '';
+                showNotification(result.message || 'Password changed. Please sign in.', 'success');
+                showLoginPage();
+            } catch (error) {
+                showNotification(error.message || 'Could not change password.', 'error');
+            } finally {
+                if (loading) loading.classList.remove('show');
+                if (btn) btn.disabled = false;
+                if (text) text.textContent = 'Save New Password';
+            }
         }
 
         function showLogoutConfirmation() {
@@ -13684,7 +13813,7 @@ function hideAccessDeniedModal() {
                 'addBranch','updateBranch','deleteBranch','saveDraftPurchaseRequest','submitPurchaseRequest',
                 'submitAdminPurchaseList','approvePurchaseRequest','rejectPurchaseRequest','saveReviewDraft',
                 'deletePurchaseRequest','completePurchaseRequestItem','updateSettings','updateProfile',
-                'setModalRestrictions','closeAccountingPeriod','syncOfflineData','addBusiness','saveDraft','completeItem','submit','approve','reject'
+                'setModalRestrictions','closeAccountingPeriod','syncOfflineData','addBusiness','saveDraft','completeItem','submit','approve','reject','sendDeveloperEmailReply'
             ];
             let pendingOperationKey = '';
             if (writeActions.includes(action) && !data.operationId) {
@@ -13705,7 +13834,7 @@ function hideAccessDeniedModal() {
                 }
             }
 
-            const noAuthActions = ['login', 'register', 'forgot', 'resetPassword'];
+            const noAuthActions = ['login', 'register', 'forgot'];
             const payload = { ...data, action: action, clientTimeZone: getBusinessTimeZone() };
             if (currentUser.databaseId && !noAuthActions.includes(action)) payload.databaseId = currentUser.databaseId;
             if (currentUser.token && !noAuthActions.includes(action)) payload.token = currentUser.token;
@@ -16040,83 +16169,29 @@ function showEditSupplierProductsSuggestions() {
         }
         
         async function checkAndSync() {
-    if (!isOnline || offlineData.isSyncing) return;
-    
-    // Hakikisha offlineData fields zote mpya zipo (kama kuna upgrade) -
-    // ulinzi wa ziada endapo loadOfflineData() haikuweza kuzirejesha kwa
-    // sababu yoyote (mfano localStorage iliyoharibika).
-    if (!offlineData.expenses) offlineData.expenses = [];
-    if (!offlineData.stockEdits) offlineData.stockEdits = [];
-    if (!offlineData.saleEdits) offlineData.saleEdits = [];
-    if (!offlineData.purchaseEdits) offlineData.purchaseEdits = [];
-    if (!offlineData.deletes) offlineData.deletes = [];
-    if (!offlineData.debts) offlineData.debts = [];
-    
-    const hasOfflineData = (offlineData.stock && offlineData.stock.length > 0) || 
-                           (offlineData.sales && offlineData.sales.length > 0) || 
-                           (offlineData.purchases && offlineData.purchases.length > 0) ||
-                           (offlineData.expenses && offlineData.expenses.length > 0) ||
-                           (offlineData.customers && offlineData.customers.length > 0) ||
-                           (offlineData.suppliers && offlineData.suppliers.length > 0) ||
-                           false ||
-                           (offlineData.units && offlineData.units.length > 0) ||
-                           (offlineData.categories && offlineData.categories.length > 0) ||
-                           (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0) ||
-                           (offlineData.stockEdits && offlineData.stockEdits.length > 0) ||
-                           (offlineData.saleEdits && offlineData.saleEdits.length > 0) ||
-                           (offlineData.purchaseEdits && offlineData.purchaseEdits.length > 0) ||
-                           (offlineData.deletes && offlineData.deletes.length > 0) ||
-                           (offlineData.debts && offlineData.debts.length > 0);
-                           
-    if (hasOfflineData && currentUser.databaseId) {
+    if (!isOnline || !navigator.onLine || offlineData.isSyncing) return;
+    if (stpHasPendingOfflineOperations() && currentUser?.databaseId) {
         await syncOfflineData();
     }
 }
         
         
         async function forceSync() {
-    if (!isOnline) {
+    if (!isOnline || !navigator.onLine) {
         showNotification('Cannot sync while offline', 'error');
         return;
     }
-    
     if (offlineData.isSyncing) {
         showNotification('Sync already in progress', 'info');
         return;
     }
-    
-    // Hakikisha offlineData fields zipo
-    if (!offlineData.expenses) offlineData.expenses = [];
-    if (!offlineData.stockEdits) offlineData.stockEdits = [];
-    if (!offlineData.saleEdits) offlineData.saleEdits = [];
-    if (!offlineData.purchaseEdits) offlineData.purchaseEdits = [];
-    if (!offlineData.deletes) offlineData.deletes = [];
-    if (!offlineData.debts) offlineData.debts = [];
-    
-    const hasOfflineData = (offlineData.stock && offlineData.stock.length > 0) || 
-                           (offlineData.sales && offlineData.sales.length > 0) || 
-                           (offlineData.purchases && offlineData.purchases.length > 0) ||
-                           (offlineData.expenses && offlineData.expenses.length > 0) ||
-                           (offlineData.customers && offlineData.customers.length > 0) ||
-                           (offlineData.suppliers && offlineData.suppliers.length > 0) ||
-                           false ||
-                           (offlineData.units && offlineData.units.length > 0) ||
-                           (offlineData.categories && offlineData.categories.length > 0) ||
-                           (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0) ||
-                           (offlineData.stockEdits && offlineData.stockEdits.length > 0) ||
-                           (offlineData.saleEdits && offlineData.saleEdits.length > 0) ||
-                           (offlineData.purchaseEdits && offlineData.purchaseEdits.length > 0) ||
-                           (offlineData.deletes && offlineData.deletes.length > 0) ||
-                           (offlineData.debts && offlineData.debts.length > 0);
-                                   
-    if (!hasOfflineData) {
+    if (!stpHasPendingOfflineOperations()) {
         showNotification('No offline data to sync', 'info');
+        updateSyncIndicator();
         return;
     }
-    
     await syncOfflineData();
 }
-        
         
         
         
@@ -16430,20 +16505,7 @@ function updateAllCaches(result) {
     if (!offlineData.purchaseEdits) offlineData.purchaseEdits = [];
     if (!offlineData.deletes) offlineData.deletes = [];
     
-    const hasOfflineData = (offlineData.stock && offlineData.stock.length > 0) || 
-                           (offlineData.sales && offlineData.sales.length > 0) || 
-                           (offlineData.purchases && offlineData.purchases.length > 0) ||
-                           (offlineData.expenses && offlineData.expenses.length > 0) ||
-                           (offlineData.customers && offlineData.customers.length > 0) ||
-                           (offlineData.suppliers && offlineData.suppliers.length > 0) ||
-                           false ||
-                           (offlineData.units && offlineData.units.length > 0) ||
-                           (offlineData.categories && offlineData.categories.length > 0) ||
-                           (offlineData.purchaseRequestActions && offlineData.purchaseRequestActions.length > 0) ||
-                           (offlineData.stockEdits && offlineData.stockEdits.length > 0) ||
-                           (offlineData.saleEdits && offlineData.saleEdits.length > 0) ||
-                           (offlineData.purchaseEdits && offlineData.purchaseEdits.length > 0) ||
-                           (offlineData.deletes && offlineData.deletes.length > 0);
+    const hasOfflineData = stpHasPendingOfflineOperations();
     
     // This function gets called very often (after almost every action), so
     // only touch the DOM when the visual state actually needs to change -
@@ -31079,6 +31141,8 @@ function openAddDebtModal() {
     debtPhotoBase64 = null;
     selectedSavedBorrowerPhotoId = '';
     selectedSavedBorrowerPhotoUrl = '';
+    selectedSavedBorrowerName = '';
+    debtBorrowerPhotoCachePromise = Promise.resolve('');
     const debtPhotoInput = document.getElementById('debtPhotoFile');
     const debtGalleryInput = document.getElementById('debtPhotoGalleryFile');
     if (debtPhotoInput) debtPhotoInput.value = '';
@@ -31159,6 +31223,8 @@ function resetDebtFormAfterSubmit() {
     debtPhotoBase64 = null;
     selectedSavedBorrowerPhotoId = '';
     selectedSavedBorrowerPhotoUrl = '';
+    selectedSavedBorrowerName = '';
+    debtBorrowerPhotoCachePromise = Promise.resolve('');
 
     const debtPhotoInput = document.getElementById('debtPhotoFile');
     const debtGalleryInput = document.getElementById('debtPhotoGalleryFile');
@@ -31711,9 +31777,12 @@ async function saveDebtBorrowerHistoryRecord(record) {
             (!normalizedPhone || String(r.phone || '').replace(/\s+/g, '') === normalizedPhone)
         );
         const saved = {
+            id: String(record.id || record.borrowerId || ''),
             name: String(record.name).trim(),
             phone: String(record.phone || '').trim(),
             nida: String(record.nida || '').trim(),
+            photoId: String(record.photoId || ''),
+            photoUrl: String(record.photoUrl || ''),
             photoBase64: String(record.photoBase64 || ''),
             photoMimeType: record.photoMimeType || 'image/jpeg',
             updatedAt: new Date().toISOString()
@@ -31721,6 +31790,9 @@ async function saveDebtBorrowerHistoryRecord(record) {
         if (existingIndex >= 0) rows.splice(existingIndex, 1);
         rows.unshift(saved);
         await stpOutboxPut(debtBorrowerHistoryKey(), rows.slice(0, 100));
+        // Invalidate the in-memory snapshot so newly cached profiles are
+        // immediately available to the next offline autocomplete search.
+        debtBorrowerHistoryLoadPromise = Promise.resolve(rows.slice(0, 100));
         return true;
     } catch (error) {
         console.warn('Borrower history could not be saved:', error);
@@ -31777,7 +31849,35 @@ function resolveBorrowerPhotoUrl(recordOrUrl) {
     catch (_) { return candidate; }
 }
 
-function selectSavedDebtBorrower(index) {
+let debtBorrowerPhotoCachePromise = Promise.resolve('');
+let selectedSavedBorrowerName = '';
+
+// Convert a server-hosted borrower image into a compact data URL and persist
+// it in this device's IndexedDB borrower directory. A URL alone is not enough
+// for offline use because the remote asset cannot be fetched without network.
+async function cacheBorrowerPhotoForOffline(record) {
+    if (!record) return '';
+    const existing = String(record.photoBase64 || '');
+    if (existing) return existing;
+    // Try the browser HTTP cache too: a previously viewed asset may still be
+    // available locally even when navigator.onLine is false.
+    const photoUrl = resolveBorrowerPhotoUrl(record);
+    if (!photoUrl) return '';
+    try {
+        const response = await fetch(photoUrl, { method: 'GET', mode: 'cors', cache: 'force-cache' });
+        if (!response.ok) throw new Error('Picha haikupatikana kwenye seva (' + response.status + ').');
+        const blob = await response.blob();
+        if (!blob || !/^image\//i.test(blob.type || record.photoMimeType || '')) throw new Error('Faili la picha si image halali.');
+        const imageBlob = blob.type ? blob : new Blob([blob], {type:record.photoMimeType || 'image/jpeg'});
+        const compressed = await compressImageFileForSheet(imageBlob, MAX_DEBT_PHOTO_BASE64_LENGTH);
+        return compressed.dataUrl || '';
+    } catch (error) {
+        console.warn('Borrower photo could not be cached for offline use:', error);
+        return '';
+    }
+}
+
+async function selectSavedDebtBorrower(index) {
     const record = debtBorrowerSuggestionRows[index];
     if (!record) return;
     const name = document.getElementById('debtBorrowerName');
@@ -31787,6 +31887,7 @@ function selectSavedDebtBorrower(index) {
     if (phone) phone.value = record.phone || '';
     if (nida) nida.value = displayNida(record.nida || '');
     debtPhotoBase64 = record.photoBase64 || null;
+    selectedSavedBorrowerName = String(record.name || '');
     selectedSavedBorrowerPhotoId = record.photoId || '';
     selectedSavedBorrowerPhotoUrl = resolveBorrowerPhotoUrl(record) || '';
     selectedDebtPhotoFile = null;
@@ -31795,10 +31896,34 @@ function selectSavedDebtBorrower(index) {
     if (photoInput) photoInput.value = '';
     if (galleryInput) galleryInput.value = '';
     showDebtPhotoPreview('debtPhotoPreview',
-        record.photoBase64 ? debtPhotoDataUrl({photoBase64:record.photoBase64,photoMimeType:record.photoMimeType}) : (resolveBorrowerPhotoUrl(record) || null),
+        debtPhotoBase64 ? debtPhotoDataUrl({photoBase64:debtPhotoBase64,photoMimeType:record.photoMimeType}) : (selectedSavedBorrowerPhotoUrl || null),
         '<i class="fas fa-camera" style="font-size:24px;color:var(--accent);"></i>');
     hideDebtBorrowerSuggestions();
     if (typeof renderDebtCartSummary === 'function') renderDebtCartSummary();
+
+    // Finish caching before Complete Debt is allowed to queue offline.
+    debtBorrowerPhotoCachePromise = (async function() {
+        if (!debtPhotoBase64 && selectedSavedBorrowerPhotoUrl) {
+            const cached = await cacheBorrowerPhotoForOffline(record);
+            if (cached) {
+                debtPhotoBase64 = cached;
+                record.photoBase64 = cached;
+                record.photoMimeType = 'image/jpeg';
+                showDebtPhotoPreview('debtPhotoPreview', cached,
+                    '<i class="fas fa-camera" style="font-size:24px;color:var(--accent);"></i>');
+            }
+        }
+        await saveDebtBorrowerHistoryRecord({
+            id:record.id || '', name:record.name, phone:record.phone, nida:record.nida,
+            photoId:record.photoId || '', photoUrl:selectedSavedBorrowerPhotoUrl,
+            photoBase64:debtPhotoBase64 || '', photoMimeType:record.photoMimeType || 'image/jpeg'
+        });
+        if (selectedSavedBorrowerPhotoUrl && !debtPhotoBase64 && !navigator.onLine) {
+            showNotification('Taarifa za mteja zimechaguliwa, lakini picha yake haijahifadhiwa kwenye kifaa hiki. Unganisha internet mara moja ili ihifadhiwe kwa matumizi ya offline.', 'warning');
+        }
+        return debtPhotoBase64 || '';
+    })();
+    await debtBorrowerPhotoCachePromise;
 }
 // Tanzania NIDA NIN: 20 digits displayed as 8-5-5-2.
 // Accept digits pasted with or without separators, then format consistently.
@@ -31839,6 +31964,15 @@ async function runDebtBorrowerLookup(input, searchBy) {
     const list = ensureDebtBorrowerSuggestionContainer(input);
     if (!list) return;
     const rawQuery = String(input.value || '').trim();
+    if (searchBy === 'name' && selectedSavedBorrowerName && rawQuery !== selectedSavedBorrowerName) {
+        selectedSavedBorrowerName = '';
+        selectedSavedBorrowerPhotoId = '';
+        selectedSavedBorrowerPhotoUrl = '';
+        debtPhotoBase64 = null;
+        selectedDebtPhotoFile = null;
+        debtBorrowerPhotoCachePromise = Promise.resolve('');
+        showDebtPhotoPreview('debtPhotoPreview', null, '<i class="fas fa-camera" style="font-size:24px;color:var(--accent);"></i>');
+    }
     const query = searchBy === 'nida' ? rawQuery.replace(/\D/g, '') : rawQuery.toLocaleLowerCase();
     const minLength = searchBy === 'nida' ? 4 : 1;
     if (query.length < minLength) { list.classList.add('hidden'); return; }
@@ -31893,7 +32027,9 @@ async function runDebtBorrowerLookup(input, searchBy) {
         detail.textContent = [record.phone, record.nida ? 'NIDA: ' + displayNida(record.nida) : ''].filter(Boolean).join(' • ');
         meta.append(title, detail);
         button.appendChild(meta);
-        button.addEventListener('mousedown', function(event) {
+        // Pointer events work consistently on Android touchscreens and desktop.
+        // Prevent focus loss before the async profile/photo cache completes.
+        button.addEventListener('pointerdown', function(event) {
             event.preventDefault();
             selectSavedDebtBorrower(index);
         });
@@ -31985,6 +32121,8 @@ async function queueDebtTransactionOffline(transaction, issueAgreement = true, c
         name: transaction.borrowerName,
         phone: transaction.borrowerPhone,
         nida: transaction.borrowerNIDA,
+        photoId: transaction.photoId || selectedSavedBorrowerPhotoId || '',
+        photoUrl: transaction.photoUrl || selectedSavedBorrowerPhotoUrl || '',
         photoBase64: queuedPhotoBase64,
         photoMimeType: transaction.photoMimeType || 'image/jpeg'
     });
@@ -32007,6 +32145,10 @@ async function completeDebtConfirmed(issueAgreement = true) {
     const nidaCheck = validateBorrowerNIN(nidaInput ? nidaInput.value : '', 'NIDA ya mkopaji');
     if (!nidaCheck.valid) { showNotification(nidaCheck.message, 'error'); if (nidaInput) nidaInput.focus(); return; }
     if (nidaInput) nidaInput.value = nidaCheck.value;
+    // Do not queue the debt before a selected remote borrower photo has had
+    // a chance to become a local IndexedDB data URL.
+    try { if (debtBorrowerPhotoCachePromise) await debtBorrowerPhotoCachePromise; }
+    catch (photoCacheError) { console.warn('Borrower photo cache wait failed:', photoCacheError); }
     if (!navigator.onLine) {
         isOnline = false;
         await queueDebtTransactionOffline({
@@ -32121,6 +32263,8 @@ async function completeDebtConfirmed(issueAgreement = true) {
 
         await saveDebtBorrowerHistoryRecord({
             name: borrowerName, phone: borrowerPhone, nida: borrowerNIDA,
+            photoId: selectedSavedBorrowerPhotoId || '',
+            photoUrl: selectedSavedBorrowerPhotoUrl || '',
             photoBase64: photoBase64 || '', photoMimeType: 'image/jpeg'
         });
         try {
@@ -34738,14 +34882,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // A password-reset email opens this page with ?resetPassword=1&token=...
-    // Keep this flow unauthenticated; do not initialize or restore an app session.
-    const resetParams = new URLSearchParams(window.location.search);
-    if (resetParams.get('resetPassword') === '1') {
-        showPasswordResetPage();
-        return;
-    }
-
     // Restore a Connect Device pairing that survived a page refresh -
     // actual polling resumes automatically once the matching Sale/Debt
     // modal is opened (see openAddSaleModal/openAddDebtModal).
@@ -35220,15 +35356,152 @@ function displayDevUsersTable(users) {
 
 let devDeletedAccountsData = [];
 let activeDeveloperPanelTab = 'active';
+let developerInboxRefreshTimer = null;
+let developerInboxLoadInFlight = false;
+function stopDeveloperInboxPolling() {
+    if (developerInboxRefreshTimer) {
+        clearInterval(developerInboxRefreshTimer);
+        developerInboxRefreshTimer = null;
+    }
+}
+function startDeveloperInboxPolling() {
+    stopDeveloperInboxPolling();
+    developerInboxRefreshTimer = setInterval(() => {
+        if (isDeveloper() && activeDeveloperPanelTab === 'inbox') loadDeveloperEmails(true);
+        else stopDeveloperInboxPolling();
+    }, 15000);
+}
 function switchDeveloperPanelTab(tab) {
     if (!isDeveloper()) return;
-    activeDeveloperPanelTab = tab === 'deleted' ? 'deleted' : 'active';
+    activeDeveloperPanelTab = ['deleted','inbox'].includes(tab) ? tab : 'active';
     document.getElementById('devActiveAccountsPanel')?.classList.toggle('hidden', activeDeveloperPanelTab !== 'active');
     document.getElementById('devDeletedAccountsPanel')?.classList.toggle('hidden', activeDeveloperPanelTab !== 'deleted');
+    document.getElementById('devEmailInboxPanel')?.classList.toggle('hidden', activeDeveloperPanelTab !== 'inbox');
     document.getElementById('devActiveTab')?.classList.toggle('active', activeDeveloperPanelTab === 'active');
     document.getElementById('devDeletedTab')?.classList.toggle('active', activeDeveloperPanelTab === 'deleted');
-    if (activeDeveloperPanelTab === 'deleted') loadDeletedAccounts();
+    document.getElementById('devInboxTab')?.classList.toggle('active', activeDeveloperPanelTab === 'inbox');
+    if (activeDeveloperPanelTab === 'deleted') { stopDeveloperInboxPolling(); loadDeletedAccounts(); }
+    if (activeDeveloperPanelTab === 'inbox') { loadDeveloperEmails(); startDeveloperInboxPolling(); }
+    if (activeDeveloperPanelTab === 'active') stopDeveloperInboxPolling();
 }
+let developerInboundEmails = [];
+let selectedDeveloperEmailId = '';
+function formatDeveloperEmailDate(value) {
+    const date = new Date(value || '');
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});
+}
+async function loadDeveloperEmails(silent = false) {
+    if (!isDeveloper() || developerInboxLoadInFlight) return;
+    const body=document.getElementById('devInboxTableBody'); if(!body)return;
+    developerInboxLoadInFlight = true;
+    if (!silent) body.innerHTML='<tr><td colspan="5" class="dev-loading"><div class="spinner"></div><p>Loading and syncing incoming emails...</p></td></tr>';
+    const status=document.getElementById('devInboxSyncStatus');
+    try {
+        const result=await apiCall('getDeveloperInboundEmails',{});
+        if(!result.success) throw new Error(result.error||'Unable to load Developer Email Inbox');
+        developerInboundEmails=Array.isArray(result.emails)?result.emails:[];
+        const count=document.getElementById('devInboxUnreadCount'); if(count) count.textContent=String(result.unreadCount||0);
+        renderDeveloperEmails(developerInboundEmails);
+        if(status) {
+            if(result.sync?.ok===false) {
+                status.textContent='Inbox loaded from saved messages; Resend sync issue: '+String(result.sync.error||'temporary connection issue');
+                status.style.color='#d97706';
+            } else {
+                const imported=Number(result.sync?.imported||0);
+                status.textContent=imported>0
+                    ? `Synced ${imported} new message${imported===1?'':'s'} from Resend · auto-refresh every 15 seconds`
+                    : 'Connected to Resend · auto-refresh every 15 seconds';
+                status.style.color='var(--text-secondary,#64748b)';
+            }
+        }
+    } catch(error) {
+        if (!silent || !developerInboundEmails.length) body.innerHTML=`<tr><td colspan="5" style="text-align:center;color:#ef4444;padding:28px;">${escapeHtml(error.message||'Unable to load inbox')}</td></tr>`;
+        if(status) { status.textContent=String(error.message||'Inbox sync failed'); status.style.color='#dc2626'; }
+    } finally {
+        developerInboxLoadInFlight = false;
+    }
+}
+function renderDeveloperEmails(emails) {
+    const body=document.getElementById('devInboxTableBody'); if(!body)return;
+    if(!emails.length){body.innerHTML='<tr><td colspan="5" class="dev-empty-state"><i class="fas fa-inbox"></i><p>No incoming emails yet</p></td></tr>';return;}
+    body.innerHTML=emails.map(email=>{
+        const id=String(email.id||'');
+        const sender=escapeHtml(email.sender||'Unknown sender');
+        const subject=escapeHtml(email.subject||'(No subject)');
+        const unread=!email.isRead;
+        const safeId=id.replace(/[^A-Za-z0-9_-]/g,'');
+        return `<tr class="${unread?'dev-unread-row':''}"><td>${unread?'<span class="badge warning">Unread</span>':'<span class="badge success">Read</span>'}</td><td>${sender}</td><td>${subject}</td><td>${escapeHtml(formatDeveloperEmailDate(email.received_at))}</td><td style="text-align:center;white-space:nowrap;"><button class="dev-action-btn restore" onclick="openDeveloperEmail('${safeId}')"><i class="fas fa-eye"></i> View</button> <button class="dev-action-btn permanent" onclick="deleteDeveloperEmail('${safeId}')" title="Delete email"><i class="fas fa-trash"></i></button></td></tr>`;
+    }).join('');
+}
+function searchDeveloperEmails() {
+    const q=String(document.getElementById('devInboxSearch')?.value||'').trim().toLowerCase();
+    renderDeveloperEmails(!q?developerInboundEmails:developerInboundEmails.filter(email=>`${email.sender||''} ${email.subject||''} ${email.body_text||''}`.toLowerCase().includes(q)));
+}
+async function openDeveloperEmail(id) {
+    if(!isDeveloper())return;
+    const email=developerInboundEmails.find(item=>String(item.id)===String(id)); if(!email)return;
+    selectedDeveloperEmailId=String(id);
+    const detail=document.getElementById('devInboxMessageDetail');
+    document.getElementById('devInboxDetailSubject').textContent=email.subject||'(No subject)';
+    const recipients=Array.isArray(email.recipients)?email.recipients.join(', '):'';
+    document.getElementById('devInboxDetailMeta').textContent=`From: ${email.sender||'Unknown'} · To: ${recipients} · ${formatDeveloperEmailDate(email.received_at)}`;
+    const content=String(email.body_text||'').trim() || (String(email.body_html||'').replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim()) || '(This email has no readable text body.)';
+    document.getElementById('devInboxDetailBody').textContent=content;
+    renderDeveloperEmailReplies(email);
+    const composer=document.getElementById('devInboxReplyComposer'); if(composer)composer.classList.remove('hidden');
+    const replyBox=document.getElementById('devInboxReplyText'); if(replyBox)replyBox.value='';
+    detail?.classList.remove('hidden');
+    if(!email.isRead){
+        try {
+            const result=await apiCall('markDeveloperInboundEmailRead',{emailId:id});
+            if(result.success){email.isRead=true;const unread=document.getElementById('devInboxUnreadCount');if(unread)unread.textContent=String(Math.max(0,Number(unread.textContent||0)-1));renderDeveloperEmails(developerInboundEmails);}
+        } catch(error){console.warn('Could not mark inbound email as read:',error);}
+    }
+    detail?.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderDeveloperEmailReplies(email) {
+    const container=document.getElementById('devInboxReplies'); if(!container)return;
+    const replies=Array.isArray(email?.replies)?email.replies:[];
+    if(!replies.length){container.innerHTML='';return;}
+    container.innerHTML='<h4 style="margin:0 0 10px;">Sent replies</h4>'+replies.map(reply=>`
+      <div style="border:1px solid var(--border-color,#cbd5e1);border-radius:10px;padding:12px;margin:8px 0;background:var(--card-bg,#fff);">
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--text-secondary,#64748b);"><strong>Siwiti Software · support@siwitisoftware.com</strong><span>${escapeHtml(formatDeveloperEmailDate(reply.sent_at))}</span></div>
+        <div style="margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere;">${escapeHtml(reply.body_text||'')}</div>
+      </div>`).join('');
+}
+async function sendDeveloperEmailReply() {
+    if(!isDeveloper()||!selectedDeveloperEmailId)return;
+    const input=document.getElementById('devInboxReplyText');
+    const button=document.getElementById('devInboxSendReplyBtn');
+    const message=String(input?.value||'').trim();
+    if(!message){showNotification('Write a reply before sending.','warning');return;}
+    const email=developerInboundEmails.find(item=>String(item.id)===String(selectedDeveloperEmailId));
+    if(!email){showNotification('Original email is no longer available. Refresh the inbox.','error');return;}
+    if(button){button.disabled=true;button.innerHTML='<i class="fas fa-spinner fa-spin"></i> Sending...';}
+    try{
+        const result=await apiCall('sendDeveloperEmailReply',{emailId:selectedDeveloperEmailId,message},45000);
+        if(!result.success)throw new Error(result.error||'Reply could not be sent.');
+        email.replies=Array.isArray(email.replies)?email.replies:[];
+        if(result.reply)email.replies.push(result.reply);
+        email.isRead=true;
+        if(input)input.value='';
+        renderDeveloperEmailReplies(email);
+        const unread=document.getElementById('devInboxUnreadCount');
+        if(unread)unread.textContent=String(developerInboundEmails.filter(item=>!item.isRead).length);
+        renderDeveloperEmails(developerInboundEmails);
+        showNotification('Reply sent successfully.','success');
+    }catch(error){showNotification(error.message||'Reply could not be sent.','error');}
+    finally{if(button){button.disabled=false;button.innerHTML='<i class="fas fa-paper-plane"></i> Send Reply';}}
+}
+function closeDeveloperEmailDetail(){selectedDeveloperEmailId='';document.getElementById('devInboxMessageDetail')?.classList.add('hidden');}
+function deleteDeveloperEmail(id){
+    showConfirmationModal('DELETE INCOMING EMAIL','<p>Move this email out of the Developer Inbox?</p><p>The original email remains available in Resend.</p>',async()=>{
+        try{const result=await apiCall('deleteDeveloperInboundEmail',{emailId:id});if(!result.success)throw new Error(result.error||'Delete failed');developerInboundEmails=developerInboundEmails.filter(email=>String(email.id)!==String(id));if(selectedDeveloperEmailId===String(id))closeDeveloperEmailDetail();renderDeveloperEmails(developerInboundEmails);const count=document.getElementById('devInboxUnreadCount');if(count)count.textContent=String(developerInboundEmails.filter(email=>!email.isRead).length);showNotification('Email removed from Developer Inbox','success');return true;}
+        catch(error){showNotification(error.message||'Could not delete email','error');return false;}
+    },true);
+}
+
 async function loadDeletedAccounts() {
     if (!isDeveloper()) return;
     const body = document.getElementById('devDeletedAccountsTableBody'); if (!body) return;
@@ -35280,6 +35553,7 @@ function refreshAllUsers() {
     if (currentUser.currentPage === 'devdashboard') {
         loadDeveloperDashboard();
         if (activeDeveloperPanelTab === 'deleted') loadDeletedAccounts();
+        if (activeDeveloperPanelTab === 'inbox') loadDeveloperEmails();
     }
 }
 
