@@ -5602,7 +5602,11 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 <input type="text" id="registerBusiness" placeholder="Business Name" required>
 </div>
         <div class="form-group">
-<input type="email" id="registerEmail" placeholder="Email Address" required>
+<input type="email" id="registerEmail" placeholder="Email Address" autocomplete="email" required>
+</div>
+        <div class="form-group">
+<input type="tel" id="registerPhone" placeholder="Phone Number (e.g. 0712345678)" inputmode="tel" autocomplete="tel" maxlength="16" required>
+<small style="display:block;color:#94a3b8;margin-top:5px;">Namba hii itatumika kwa password recovery. Utahitajika kuithibitisha kwa OTP baada ya kuingia.</small>
 </div>
         <div class="form-group">
             <div class="password-toggle-wrapper">
@@ -5655,11 +5659,18 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 
         <div id="recoveryEmailStep">
             <div class="form-group">
-                <input type="email" id="forgotEmail" placeholder="Registered Email Address" autocomplete="email" maxlength="254" required>
+                <input type="email" id="forgotEmail" placeholder="Registered Email Address" autocomplete="email" maxlength="254">
             </div>
             <button type="button" onclick="forgotPassword()" class="btn-warning" id="forgotBtn">
                 <i class="fas fa-paper-plane"></i> <span id="forgotText">Send Verification Code</span>
                 <span class="spinner small" id="forgotSpinner" style="display:none;"></span>
+            </button>
+            <div style="text-align:center;margin:12px 0;color:#94a3b8;font-size:.85rem;">— OR —</div>
+            <div class="form-group">
+                <input type="tel" id="forgotPhone" placeholder="Registered Phone Number (07XXXXXXXX)" inputmode="tel" autocomplete="tel" maxlength="16">
+            </div>
+            <button type="button" onclick="forgotPhonePassword()" class="btn-warning" id="forgotPhoneBtn" style="background:#0f766e;">
+                <i class="fas fa-sms"></i> Send OTP to Phone
             </button>
         </div>
 
@@ -5668,7 +5679,7 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
                 Enter the 6-digit code sent to <strong id="recoveryEmailLabel"></strong>. The code expires in 10 minutes.
             </div>
             <div class="form-group">
-                <input type="text" id="recoveryOtp" placeholder="6-digit verification code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}">
+                <input type="text" id="recoveryOtp" placeholder="6-digit verification code" inputmode="numeric" autocomplete="one-time-code" name="one-time-code" maxlength="6" pattern="[0-9]{6}">
             </div>
             <button type="button" onclick="verifyRecoveryOtp()" class="btn-warning" id="verifyOtpBtn">
                 <i class="fas fa-shield-alt"></i> <span id="verifyOtpText">Verify Code</span>
@@ -5701,6 +5712,35 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
             </a>
         </div>
     </div>
+</div>
+
+
+<!-- Optional phone number setup for legacy accounts and verification for new accounts -->
+<div id="accountPhoneSetupModal" class="confirmation-modal" style="z-index:100000;">
+  <div class="confirmation-content" style="max-width:460px;text-align:left;">
+    <h2 class="confirmation-title">Ongeza namba ya simu</h2>
+    <p style="color:#94a3b8;font-size:.9rem;line-height:1.5;">Weka namba yako ya simu ili uweze kurejesha password kwa SMS OTP. Unaweza kuruka hatua hii na kuikamilisha baadaye.</p>
+    <div class="form-group">
+      <label for="accountRecoveryPhone">Namba ya simu</label>
+      <input id="accountRecoveryPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="0712345678" maxlength="16">
+    </div>
+    <button type="button" id="accountPhoneSendOtpBtn" class="btn-primary" onclick="sendAccountPhoneOtp()" style="width:100%;">
+      <i class="fas fa-sms"></i> Tuma OTP ya kuthibitisha
+    </button>
+    <div id="accountPhoneOtpArea" style="display:none;margin-top:14px;">
+      <div class="form-group">
+        <label for="accountPhoneOtp">OTP ya tarakimu 6</label>
+        <input id="accountPhoneOtp" type="text" inputmode="numeric" autocomplete="one-time-code" name="one-time-code" maxlength="6" placeholder="000000">
+      </div>
+      <button type="button" id="accountPhoneVerifyBtn" class="btn-success" onclick="verifyAccountPhoneOtp()" style="width:100%;">
+        <i class="fas fa-check-circle"></i> Thibitisha na hifadhi namba
+      </button>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px;">
+      <button type="button" class="btn-secondary" onclick="skipAccountPhoneSetup()">Ruka kwa sasa</button>
+    </div>
+    <small id="accountPhoneSetupStatus" style="display:block;margin-top:10px;color:#94a3b8;"></small>
+  </div>
 </div>
 
 <!-- Terms and Conditions -->
@@ -7076,6 +7116,18 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
             <div class="settings-section active" id="profileSection">
                 <h2 class="card-title" style="margin-bottom: 20px;">Profile Settings</h2>
                 <div class="settings-grid">
+                    <div class="setting-card" id="accountRecoveryPhoneProfileCard" style="display:none;">
+                        <h3><i class="fas fa-mobile-alt"></i> Account Recovery Phone</h3>
+                        <p style="color:var(--text-muted,#64748b);font-size:.9rem;">Namba hii hutumika kuthibitisha akaunti na kurejesha password kwa SMS OTP.</p>
+                        <div class="form-group">
+                            <label>Namba ya simu ya akaunti</label>
+                            <input type="tel" id="profileAccountRecoveryPhone" readonly placeholder="Haijawekwa">
+                        </div>
+                        <div id="profileAccountPhoneStatus" style="font-size:.85rem;margin:8px 0;">Haijathibitishwa</div>
+                        <button type="button" class="btn-primary" onclick="showAccountPhoneSetup(currentUser.phoneNumber||'')">
+                            <i class="fas fa-shield-alt"></i> Weka / Badilisha na Thibitisha
+                        </button>
+                    </div>
                     <div class="setting-card">
                         <h3>
 <i class="fas fa-building">
@@ -7087,10 +7139,6 @@ Closing Stock is saved as a snapshot. The live Stock Inventory is never deleted 
                         <div class="form-group">
                             <label>Email Address</label>
                             <input type="email" id="profileEmail" placeholder="Email Address" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Phone Number</label>
-                            <input type="tel" id="profilePhone" placeholder="Phone Number">
                         </div>
                         <div class="form-group">
                             <label>Business Address</label>
@@ -10418,6 +10466,10 @@ async function syncOfflineData() {
         currentPage: "dashboard",
         currency: restoredCurrency,
         userType: response.userType || "admin",
+        // Account recovery phone comes from the authoritative D1 account row.
+        phoneNumber: String(response.phoneNumber || ''),
+        phoneVerified: response.phoneVerified === true,
+        phoneStatusLoaded: typeof response.phoneVerified === 'boolean',
         sellerId: response.sellerId || null,
         sellerName: response.sellerName || null,
         branchId: response.branchId || null,
@@ -10441,6 +10493,9 @@ async function syncOfflineData() {
     localStorage.setItem('smartTradeCurrency', restoredCurrency);
     localStorage.setItem('smartTradeCurrentPage', 'dashboard');
     localStorage.setItem('smartTradeUserType', response.userType || "admin");
+    localStorage.setItem('smartTradePhoneNumber', String(response.phoneNumber || ''));
+    localStorage.setItem('smartTradePhoneVerified', response.phoneVerified === true ? 'true' : 'false');
+    localStorage.setItem('smartTradePhoneStatusLoaded', typeof response.phoneVerified === 'boolean' ? 'true' : 'false');
     localStorage.setItem('smartTradeSellerId', response.sellerId || '');
     localStorage.setItem('smartTradeSellerName', response.sellerName || '');
     localStorage.setItem('smartTradeBranchId', response.branchId || '');
@@ -10517,6 +10572,9 @@ function checkSession() {
         currentUser.currency = localStorage.getItem('smartTradeCurrency') || currentUser.currency || "TZS";
         currentUser.currentPage = currentPage;
         currentUser.userType = localStorage.getItem('smartTradeUserType') || "admin";
+        currentUser.phoneNumber = localStorage.getItem('smartTradePhoneNumber') || '';
+        currentUser.phoneVerified = localStorage.getItem('smartTradePhoneVerified') === 'true';
+        currentUser.phoneStatusLoaded = localStorage.getItem('smartTradePhoneStatusLoaded') === 'true';
         currentUser.sellerId = localStorage.getItem('smartTradeSellerId') || null;
         currentUser.sellerName = localStorage.getItem('smartTradeSellerName') || null;
         currentUser.branchId = localStorage.getItem('smartTradeBranchId') || null;
@@ -10889,6 +10947,8 @@ function checkSession() {
             document.getElementById('registerPage').classList.add('hidden');
             document.getElementById('forgotPage').classList.remove('hidden');
             recoveryVerifiedOtp = '';
+            recoveryChannel = 'email';
+            recoveryPhoneNumber = '';
             window.recoveryEmailAddress = '';
             setRecoveryStep('email');
         }
@@ -11010,7 +11070,35 @@ function checkSession() {
 }
        
        
-       // ============================================
+// OTP autofill support without domain-bound SMS annotations.
+// The SMS body intentionally contains only the human-readable code message.
+// Android/browser OTP suggestions can fill inputs marked autocomplete="one-time-code".
+// Once six digits are entered or autofilled, the input handler verifies automatically.
+const stpOtpAutoVerifyBusy = new WeakSet();
+function stpStartOtpCapture(inputId, verifyCallback) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    input.setAttribute('autocomplete', 'one-time-code');
+    input.setAttribute('inputmode', 'numeric');
+    input.setAttribute('maxlength', '6');
+    if (input.dataset.stpOtpBound === '1') return;
+    input.dataset.stpOtpBound = '1';
+    input.addEventListener('input', () => {
+        const digits = String(input.value || '').replace(/\D/g, '').slice(0, 6);
+        if (input.value !== digits) input.value = digits;
+        if (digits.length === 6 && !stpOtpAutoVerifyBusy.has(input)) {
+            stpOtpAutoVerifyBusy.add(input);
+            Promise.resolve().then(() => verifyCallback()).catch(() => {}).finally(() => stpOtpAutoVerifyBusy.delete(input));
+        }
+    });
+}
+function stpStopOtpCapture(inputId) {
+    // No long-running SMS-reading request is started. Kept as a safe lifecycle hook.
+    const input = document.getElementById(inputId);
+    if (input) input.dataset.stpOtpBound = '0';
+}
+
+// ============================================
 // LOGIN FUNCTION WITH SUBSCRIPTION CHECK
 // ============================================
 
@@ -11046,6 +11134,9 @@ async function login() {
             
             // Onyesha app
             showApp();
+            if (result.userType !== 'seller' && email !== 'daxsystems.tz.co@gmail.com' && !result.phoneVerified) {
+                setTimeout(() => showAccountPhoneSetup(result.phoneNumber || ''), 450);
+            }
             
             // Check subscription after login (for non-developers)
             if (email !== 'daxsystems.tz.co@gmail.com' && result.authProvider !== 'cloudflare-d1') {
@@ -11090,6 +11181,120 @@ async function login() {
 
 
 // Update subscription cache from server
+
+let accountPhonePending = false;
+function updateAccountRecoveryPhoneProfile() {
+    const card=document.getElementById('accountRecoveryPhoneProfileCard');
+    if(!card) return;
+    const isSeller=String(currentUser?.userType||'').toLowerCase()==='seller';
+    card.style.display=isSeller?'none':'block';
+    if(isSeller) return;
+    const input=document.getElementById('profileAccountRecoveryPhone');
+    const status=document.getElementById('profileAccountPhoneStatus');
+    if(input) input.value=currentUser?.phoneNumber||'';
+    if(status) {
+        if(currentUser?.phoneVerified === true) {
+            status.textContent='✓ Namba imethibitishwa';
+            status.style.color='#16a34a';
+        } else if(currentUser?.phoneStatusLoaded === true) {
+            status.textContent='⚠ Namba haijathibitishwa. Thibitisha ili iweze kutumika kurejesha password.';
+            status.style.color='#d97706';
+        } else {
+            status.textContent='Inapakia hali ya namba kutoka kwenye akaunti...';
+            status.style.color='#64748b';
+        }
+    }
+}
+
+async function syncAccountPhoneStatusFromServer() {
+    if(!currentUser?.token || String(currentUser?.userType||'').toLowerCase()==='seller') return;
+    // Render a cached verified number immediately; refresh it silently from D1.
+    updateAccountRecoveryPhoneProfile();
+    try {
+        const result=await apiCall('getAccountPhoneStatus',{});
+        if(!result?.success) throw new Error(result?.error||'Imeshindwa kupata hali ya namba.');
+        currentUser.phoneNumber=String(result.phoneNumber||'');
+        currentUser.phoneVerified=result.phoneVerified===true;
+        currentUser.phoneStatusLoaded=true;
+        localStorage.setItem('smartTradePhoneNumber',currentUser.phoneNumber);
+        localStorage.setItem('smartTradePhoneVerified',currentUser.phoneVerified?'true':'false');
+        localStorage.setItem('smartTradePhoneStatusLoaded','true');
+        try { localStorage.setItem('smartTradeUser',JSON.stringify(currentUser)); } catch (_) {}
+        updateAccountRecoveryPhoneProfile();
+    } catch(error) {
+        // Do not overwrite a known cached status with a false/unverified state.
+        const status=document.getElementById('profileAccountPhoneStatus');
+        if(status && currentUser.phoneStatusLoaded !== true) {
+            status.textContent='Imeshindwa kusoma hali ya namba kutoka server. Angalia mtandao kisha jaribu tena.';
+            status.style.color='#dc2626';
+        }
+        console.warn('Account recovery phone status sync failed:',error);
+    }
+}
+
+function showAccountPhoneSetup(existingPhone='') {
+    if(String(currentUser?.userType||'').toLowerCase()==='seller') return;
+    const modal=document.getElementById('accountPhoneSetupModal');
+    if(!modal) return;
+    const input=document.getElementById('accountRecoveryPhone');
+    if(input && existingPhone) input.value=existingPhone;
+    const area=document.getElementById('accountPhoneOtpArea');
+    if(area) area.style.display='none';
+    const status=document.getElementById('accountPhoneSetupStatus');
+    if(status) status.textContent=existingPhone ? 'Thibitisha namba hii au badilisha iwe namba yako sahihi.' : 'Akaunti yako bado haina namba ya simu iliyothibitishwa.';
+    modal.classList.add('show');
+}
+function skipAccountPhoneSetup() {
+    document.getElementById('accountPhoneSetupModal')?.classList.remove('show');
+}
+async function sendAccountPhoneOtp() {
+    const raw=String(document.getElementById('accountRecoveryPhone')?.value||'').trim();
+    const phone=raw.replace(/[^0-9+]/g,'').replace(/^0/,'255').replace(/^\+/,'');
+    if(!/^255[67][0-9]{8}$/.test(phone)) {
+        showNotification('Weka namba sahihi ya Tanzania, mfano 0712345678.','error'); return;
+    }
+    const btn=document.getElementById('accountPhoneSendOtpBtn');
+    if(btn) btn.disabled=true;
+    try {
+        const result=await apiCall('sendAccountPhoneVerification',{phone});
+        if(!result.success) throw new Error(result.error||'OTP haikutumwa.');
+        accountPhonePending=true;
+        document.getElementById('accountPhoneOtpArea').style.display='block';
+        document.getElementById('accountPhoneOtp').value='';
+        document.getElementById('accountPhoneSetupStatus').textContent=result.message||'OTP imetumwa. Angalia SMS zako.';
+        showNotification(result.message||'OTP imetumwa.','success');
+        const otpInput=document.getElementById('accountPhoneOtp');
+        otpInput?.focus();
+        stpStartOtpCapture('accountPhoneOtp', verifyAccountPhoneOtp);
+    } catch(error) {
+        showNotification(error.message||'Imeshindikana kutuma OTP.','error');
+    } finally { if(btn) btn.disabled=false; }
+}
+async function verifyAccountPhoneOtp() {
+    const otp=String(document.getElementById('accountPhoneOtp')?.value||'').replace(/\s/g,'');
+    if(!/^\d{6}$/.test(otp)) { showNotification('Weka OTP yenye tarakimu 6.','error'); return; }
+    const btn=document.getElementById('accountPhoneVerifyBtn');
+    if(btn) btn.disabled=true;
+    try {
+        const result=await apiCall('verifyAndSaveAccountPhone',{otp});
+        if(!result.success) throw new Error(result.error||'Namba haikuthibitishwa.');
+        accountPhonePending=false;
+        stpStopOtpCapture('accountPhoneOtp');
+        currentUser.phoneNumber=result.phoneNumber||document.getElementById('accountRecoveryPhone')?.value||'';
+        currentUser.phoneVerified=true;
+        currentUser.phoneStatusLoaded=true;
+        localStorage.setItem('smartTradePhoneNumber',currentUser.phoneNumber);
+        localStorage.setItem('smartTradePhoneVerified','true');
+        localStorage.setItem('smartTradePhoneStatusLoaded','true');
+        try { localStorage.setItem('smartTradeUser',JSON.stringify(currentUser)); } catch (_) {}
+        updateAccountRecoveryPhoneProfile();
+        document.getElementById('accountPhoneSetupStatus').textContent=result.message||'Namba imethibitishwa.';
+        showNotification(result.message||'Namba imethibitishwa.','success');
+        skipAccountPhoneSetup();
+    } catch(error) { showNotification(error.message||'Imeshindikana kuthibitisha namba.','error'); }
+    finally { if(btn) btn.disabled=false; }
+}
+
 async function updateSubscriptionCache() {
     if (!currentUser.email) return;
     
@@ -13063,6 +13268,8 @@ function showApp() {
     updateTextContent();
     applyLanguage(currentUser.language || 'en');
     applyMenuRestrictions();
+    updateAccountRecoveryPhoneProfile();
+    syncAccountPhoneStatusFromServer().catch(()=>{});
     updateDashboardStructure();
     applyDeveloperMode();
     setupBranchVisibility();
@@ -13245,12 +13452,13 @@ function hideAccessDeniedModal() {
         async function register() {
             const business = document.getElementById('registerBusiness').value.trim();
             const email = document.getElementById('registerEmail').value.trim();
+            const phone = document.getElementById('registerPhone').value.trim();
             const password = document.getElementById('registerPassword').value;
             const confirmPassword = document.getElementById('registerConfirmPassword').value;
             const acceptedTerms = document.getElementById('registerAcceptTerms').checked;
             
-            if (!business || !email || !password) {
-                showNotification('Please fill all fields', 'error');
+            if (!business || !email || !phone || !password) {
+                showNotification('Please fill business name, email, phone number and password.', 'error');
                 return;
             }
             
@@ -13269,6 +13477,11 @@ function hideAccessDeniedModal() {
                 return;
             }
             
+            const phoneDigits = phone.replace(/[^0-9+]/g,'').replace(/^0/,'255').replace(/^\+/,'');
+            if (!/^255[67][0-9]{8}$/.test(phoneDigits)) {
+                showNotification('Please enter a valid Tanzania mobile number, e.g. 0712345678.', 'error');
+                return;
+            }
             if (!acceptedTerms) {
                 showNotification('Please accept the Terms and Conditions to continue', 'error');
                 return;
@@ -13282,15 +13495,30 @@ function hideAccessDeniedModal() {
             if (registerText) { registerText.dataset.originalText = registerText.textContent; registerText.textContent = 'Creating account...'; }
             
             try {
-                const result = await apiCall('register', { business, email, password });
+                const result = await apiCall('register', { business, email, phone:phoneDigits, password });
                 
                 if (result.success) {
                     if (authLoading) authLoading.classList.remove('show');
-                    showNotification('Account created successfully! Please login.', 'success');
-                    showLoginPage();
-                    
+                    showNotification('Account created successfully. Signing you in...', 'success');
+                    // Register endpoint intentionally creates the account only. Authenticate
+                    // immediately with the same credentials so the normal session path is used.
+                    const loginResult = await apiCall('login', { email, password });
+                    if (!loginResult?.success || !loginResult.token) {
+                        showLoginPage();
+                        showNotification('Account created successfully. Please sign in using your new account.', 'info');
+                    } else {
+                        saveSession(loginResult);
+                        showApp();
+                        if (loginResult.userType !== 'seller' && email.toLowerCase() !== 'daxsystems.tz.co@gmail.com' && !loginResult.phoneVerified) {
+                            setTimeout(() => showAccountPhoneSetup(loginResult.phoneNumber || phoneDigits), 450);
+                        }
+                        setTimeout(() => refreshAllData(false).catch(console.error), 100);
+                        setTimeout(() => checkAndSync().catch(console.error), 0);
+                        showNotification('Account created and login successful!', 'success');
+                    }
                     document.getElementById('registerBusiness').value = '';
                     document.getElementById('registerEmail').value = '';
+                    document.getElementById('registerPhone').value = '';
                     document.getElementById('registerPassword').value = '';
                     document.getElementById('registerConfirmPassword').value = '';
                     document.getElementById('registerAcceptTerms').checked = false;
@@ -13310,6 +13538,8 @@ function hideAccessDeniedModal() {
         }
         
         let recoveryVerifiedOtp = '';
+        let recoveryChannel = 'email';
+        let recoveryPhoneNumber = '';
         let recoveryRequestBusy = false;
 
         function setRecoveryStep(step) {
@@ -13324,11 +13554,13 @@ function hideAccessDeniedModal() {
             });
             const title = document.getElementById('recoveryTitle');
             const subtitle = document.getElementById('recoverySubtitle');
-            if (title) title.textContent = step === 'email' ? 'Password Recovery' : step === 'otp' ? 'Verify Your Email' : 'Create New Password';
+            if (title) title.textContent = step === 'email' ? 'Password Recovery' : step === 'otp' ? (recoveryChannel === 'phone' ? 'Verify Your Phone' : 'Verify Your Email') : 'Create New Password';
             if (subtitle) subtitle.textContent = step === 'email'
-                ? 'Enter your registered email to receive a verification code'
-                : step === 'otp' ? 'Verify the one-time code sent to your email'
-                : 'Your email is verified. Choose a new password.';
+                ? 'Enter your registered email or phone number to receive a verification code'
+                : step === 'otp' ? (recoveryChannel === 'phone' ? 'Enter the 6-digit SMS code sent to your phone' : 'Enter the 6-digit code sent to your email')
+                : 'Your verification is complete. Choose a new password.';
+            if (step === 'otp') setTimeout(() => stpStartOtpCapture('recoveryOtp', verifyRecoveryOtp), 0);
+            else stpStopOtpCapture('recoveryOtp');
         }
 
         async function recoveryApi(action, data) {
@@ -13355,6 +13587,8 @@ function hideAccessDeniedModal() {
                 const result = await recoveryApi('forgot', {email});
                 if (!result.success) throw new Error(result.error || 'Could not send verification code.');
                 window.recoveryEmailAddress = email;
+                recoveryChannel = 'email';
+                recoveryPhoneNumber = '';
                 const label = document.getElementById('recoveryEmailLabel');
                 if (label) label.textContent = email;
                 document.getElementById('recoveryOtp').value = '';
@@ -13370,25 +13604,53 @@ function hideAccessDeniedModal() {
             }
         }
 
-        async function resendRecoveryOtp() {
-            const email = window.recoveryEmailAddress || document.getElementById('forgotEmail')?.value.trim();
-            if (!email) return backToRecoveryEmail();
-            const btn = document.getElementById('verifyOtpBtn');
-            if (btn) btn.disabled = true;
-            try {
-                const result = await recoveryApi('forgot', {email});
-                if (!result.success) throw new Error(result.error || 'Could not resend code.');
-                document.getElementById('recoveryOtp').value = '';
-                showNotification(result.message || 'A new code has been sent if the account is registered.', 'success');
-            } catch (error) {
-                showNotification(error.message || 'Could not resend code.', 'error');
-            } finally {
-                if (btn) btn.disabled = false;
+
+        async function forgotPhonePassword() {
+            const raw=String(document.getElementById('forgotPhone')?.value||'').trim();
+            const digits=raw.replace(/[^0-9+]/g,'').replace(/^0/,'255').replace(/^\+/,'');
+            if(!/^255[67][0-9]{8}$/.test(digits)) {
+                showNotification('Weka namba sahihi ya Tanzania, mfano 0712345678.', 'error'); return;
             }
+            const btn=document.getElementById('forgotPhoneBtn');
+            if(btn) btn.disabled=true;
+            try {
+                const result=await recoveryApi('forgotPhone',{phone:digits});
+                if(!result.success) throw new Error(result.error||'SMS OTP haikutumwa.');
+                recoveryChannel='phone'; recoveryPhoneNumber=digits; window.recoveryEmailAddress='';
+                const label=document.getElementById('recoveryEmailLabel');
+                if(label) label.textContent=result.message||'namba yako ya simu';
+                const otp=document.getElementById('recoveryOtp'); if(otp) otp.value='';
+                setRecoveryStep('otp');
+                showNotification(result.message||'OTP imetumwa kwa SMS.', 'success');
+                setTimeout(()=>document.getElementById('recoveryOtp')?.focus(),100);
+            } catch(error) { showNotification(error.message||'Imeshindikana kutuma OTP ya SMS.', 'error'); }
+            finally { if(btn) btn.disabled=false; }
+        }
+
+        async function resendRecoveryOtp() {
+            const btn=document.getElementById('verifyOtpBtn');
+            if(btn) btn.disabled=true;
+            try {
+                let result;
+                if(recoveryChannel==='phone' && recoveryPhoneNumber) {
+                    result=await recoveryApi('forgotPhone',{phone:recoveryPhoneNumber});
+                } else {
+                    const email=window.recoveryEmailAddress || document.getElementById('forgotEmail')?.value.trim();
+                    if(!email) return backToRecoveryEmail();
+                    result=await recoveryApi('forgot',{email});
+                }
+                if(!result.success) throw new Error(result.error||'Could not resend verification code.');
+                document.getElementById('recoveryOtp').value='';
+                showNotification(result.message||'Verification code sent again.','success');
+            } catch(error) {
+                showNotification(error.message||'Could not resend verification code.','error');
+            } finally { if(btn) btn.disabled=false; }
         }
 
         function backToRecoveryEmail() {
             recoveryVerifiedOtp = '';
+            recoveryChannel = 'email';
+            recoveryPhoneNumber = '';
             setRecoveryStep('email');
         }
 
@@ -13406,7 +13668,9 @@ function hideAccessDeniedModal() {
             if (text) text.textContent = 'Verifying...';
             if (loading) loading.classList.add('show');
             try {
-                const result = await recoveryApi('verifyPasswordResetOtp', {email, otp});
+                const result = recoveryChannel === 'phone'
+                    ? await recoveryApi('verifyPhonePasswordResetOtp', {phone:recoveryPhoneNumber, otp})
+                    : await recoveryApi('verifyPasswordResetOtp', {email, otp});
                 if (!result.success) throw new Error(result.error || 'Verification failed.');
                 recoveryVerifiedOtp = otp;
                 setRecoveryStep('password');
@@ -13431,7 +13695,7 @@ function hideAccessDeniedModal() {
                 showNotification('The passwords do not match.', 'error');
                 return;
             }
-            if (!recoveryVerifiedOtp || !window.recoveryEmailAddress) {
+            if (!recoveryVerifiedOtp || (recoveryChannel === 'phone' ? !recoveryPhoneNumber : !window.recoveryEmailAddress)) {
                 showNotification('Please verify your email again.', 'error');
                 setRecoveryStep('otp');
                 return;
@@ -13443,11 +13707,9 @@ function hideAccessDeniedModal() {
             if (text) text.textContent = 'Saving password...';
             if (loading) loading.classList.add('show');
             try {
-                const result = await recoveryApi('resetPasswordWithOtp', {
-                    email: window.recoveryEmailAddress,
-                    otp: recoveryVerifiedOtp,
-                    newPassword: password
-                });
+                const result = recoveryChannel === 'phone'
+                    ? await recoveryApi('resetPasswordWithPhoneOtp', {phone:recoveryPhoneNumber, otp:recoveryVerifiedOtp, newPassword:password})
+                    : await recoveryApi('resetPasswordWithOtp', {email:window.recoveryEmailAddress, otp:recoveryVerifiedOtp, newPassword:password});
                 if (!result.success) throw new Error(result.error || 'Could not change password.');
                 recoveryVerifiedOtp = '';
                 document.getElementById('recoveryNewPassword').value = '';
@@ -13783,7 +14045,7 @@ function hideAccessDeniedModal() {
             const text = String(value ?? '').trim();
             if (!text) return fallback;
             // Infrastructure details are for diagnostics only; never expose them in customer-facing UI.
-            if (/\b(D1|R2|SQLite|sqlite_master|SQLITE|SQL error|database binding|database schema|Cloudflare|Worker\/API|migration table|no such table|no such column|constraint failed|foreign key constraint|internal server error)\b/i.test(text)) {
+            if (/\b(D1|R2|SQLite|sqlite_master|SQLITE|SQL error|database binding|database schema|Cloudflare|Worker\/API|migration table|no such table|no such column|constraint failed|foreign key constraint|internal server error|SwalaSMS|Resend|sender.?id|API.?key|provider|SMTP|HTTP\s*4\d\d|HTTP\s*5\d\d)\b/i.test(text)) {
                 return 'The service is temporarily unavailable. Please try again. If the problem continues, contact support.';
             }
             return text.slice(0, 240);
@@ -13834,7 +14096,7 @@ function hideAccessDeniedModal() {
                 }
             }
 
-            const noAuthActions = ['login', 'register', 'forgot'];
+            const noAuthActions = ['login', 'register', 'forgot', 'forgotPhone', 'verifyPasswordResetOtp', 'resetPasswordWithOtp', 'verifyPhonePasswordResetOtp', 'resetPasswordWithPhoneOtp'];
             const payload = { ...data, action: action, clientTimeZone: getBusinessTimeZone() };
             if (currentUser.databaseId && !noAuthActions.includes(action)) payload.databaseId = currentUser.databaseId;
             if (currentUser.token && !noAuthActions.includes(action)) payload.token = currentUser.token;
@@ -29272,9 +29534,6 @@ function updateReportStatsFromCache() {
                 const profileBusiness = document.getElementById('profileBusiness');
                 if (profileBusiness) profileBusiness.value = settings.PROFILE.business_name?.value || currentUser.business;
                 
-                const profilePhone = document.getElementById('profilePhone');
-                if (profilePhone) profilePhone.value = settings.PROFILE.phone?.value || '';
-                
                 const profileAddress = document.getElementById('profileAddress');
                 if (profileAddress) profileAddress.value = settings.PROFILE.address?.value || '';
             }
@@ -29313,7 +29572,6 @@ function updateReportStatsFromCache() {
         
         async function updateProfile() {
             const business = document.getElementById('profileBusiness').value.trim();
-            const phone = document.getElementById('profilePhone').value.trim();
             const address = document.getElementById('profileAddress').value.trim();
             
             if (!business) {
@@ -29327,7 +29585,6 @@ function updateReportStatsFromCache() {
                 const result = await apiCall('updateProfile', {
                     email: currentUser.email,
                     business: business,
-                    phone: phone,
                     address: address
                 });
                 
