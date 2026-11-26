@@ -5606,7 +5606,7 @@ body.smart-trade-debt-saving-active{overflow:hidden;}
 </div>
         <div class="form-group">
 <input type="tel" id="registerPhone" placeholder="Phone Number (e.g. 0712345678)" inputmode="tel" autocomplete="tel" maxlength="16" required>
-<small style="display:block;color:#94a3b8;margin-top:5px;">Namba hii itatumika kwa password recovery. Utahitajika kuithibitisha kwa OTP baada ya kuingia.</small>
+
 </div>
         <div class="form-group">
             <div class="password-toggle-wrapper">
@@ -11070,32 +11070,54 @@ function checkSession() {
 }
        
        
-// OTP autofill support without domain-bound SMS annotations.
-// The SMS body intentionally contains only the human-readable code message.
-// Android/browser OTP suggestions can fill inputs marked autocomplete="one-time-code".
-// Once six digits are entered or autofilled, the input handler verifies automatically.
+// Robust OTP capture: native Android/keyboard autofill + WebOTP API where supported.
+// SMS must retain the origin-bound @domain #code suffix for WebOTP on Android Chrome.
 const stpOtpAutoVerifyBusy = new WeakSet();
+const stpOtpCaptureState = new WeakMap();
 function stpStartOtpCapture(inputId, verifyCallback) {
     const input = document.getElementById(inputId);
     if (!input) return;
     input.setAttribute('autocomplete', 'one-time-code');
     input.setAttribute('inputmode', 'numeric');
     input.setAttribute('maxlength', '6');
-    if (input.dataset.stpOtpBound === '1') return;
-    input.dataset.stpOtpBound = '1';
-    input.addEventListener('input', () => {
-        const digits = String(input.value || '').replace(/\D/g, '').slice(0, 6);
-        if (input.value !== digits) input.value = digits;
-        if (digits.length === 6 && !stpOtpAutoVerifyBusy.has(input)) {
-            stpOtpAutoVerifyBusy.add(input);
-            Promise.resolve().then(() => verifyCallback()).catch(() => {}).finally(() => stpOtpAutoVerifyBusy.delete(input));
-        }
-    });
+    input.setAttribute('pattern', '[0-9]{6}');
+    let state = stpOtpCaptureState.get(input);
+    if (!state) {
+        state = { controller: null, callback: null, verifying: false, lastSubmitted: '', handler: null };
+        state.handler = () => {
+            const digits = String(input.value || '').replace(/\D/g, '').slice(0, 6);
+            if (input.value !== digits) input.value = digits;
+            if (digits.length === 6 && !state.verifying && state.lastSubmitted !== digits) {
+                state.verifying = true;
+                state.lastSubmitted = digits;
+                stpOtpAutoVerifyBusy.add(input);
+                Promise.resolve().then(() => state.callback && state.callback())
+                    .catch(() => {})
+                    .finally(() => { state.verifying = false; stpOtpAutoVerifyBusy.delete(input); });
+            }
+        };
+        input.addEventListener('input', state.handler);
+        input.addEventListener('change', state.handler);
+        input.addEventListener('paste', () => setTimeout(state.handler, 0));
+        stpOtpCaptureState.set(input, state);
+    }
+    state.callback = verifyCallback;
+    if (window.isSecureContext && navigator.credentials && typeof navigator.credentials.get === 'function' && window.OTPCredential && !state.controller) {
+        state.controller = new AbortController();
+        navigator.credentials.get({ otp: { transport: ['sms'] }, signal: state.controller.signal })
+            .then(credential => {
+                state.controller = null;
+                if (!credential || !credential.code || !input.isConnected) return;
+                input.value = String(credential.code).replace(/\D/g, '').slice(0, 6);
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            })
+            .catch(() => { state.controller = null; });
+    }
 }
 function stpStopOtpCapture(inputId) {
-    // No long-running SMS-reading request is started. Kept as a safe lifecycle hook.
     const input = document.getElementById(inputId);
-    if (input) input.dataset.stpOtpBound = '0';
+    const state = input && stpOtpCaptureState.get(input);
+    if (state && state.controller) { try { state.controller.abort(); } catch (_) {} state.controller = null; }
 }
 
 // ============================================
@@ -11255,6 +11277,7 @@ async function sendAccountPhoneOtp() {
     }
     const btn=document.getElementById('accountPhoneSendOtpBtn');
     if(btn) btn.disabled=true;
+    stpStartOtpCapture('accountPhoneOtp', verifyAccountPhoneOtp);
     try {
         const result=await apiCall('sendAccountPhoneVerification',{phone});
         if(!result.success) throw new Error(result.error||'OTP haikutumwa.');
@@ -11267,6 +11290,7 @@ async function sendAccountPhoneOtp() {
         otpInput?.focus();
         stpStartOtpCapture('accountPhoneOtp', verifyAccountPhoneOtp);
     } catch(error) {
+        stpStopOtpCapture('accountPhoneOtp');
         showNotification(error.message||'Imeshindikana kutuma OTP.','error');
     } finally { if(btn) btn.disabled=false; }
 }
@@ -13500,19 +13524,20 @@ function hideAccessDeniedModal() {
                 if (result.success) {
                     if (authLoading) authLoading.classList.remove('show');
                     showNotification('Account created successfully. Signing you in...', 'success');
-                    // Register endpoint intentionally creates the account only. Authenticate
-                    // immediately with the same credentials so the normal session path is used.
-                    const loginResult = await apiCall('login', { email, password });
-                    if (!loginResult?.success || !loginResult.token) {
+                    // Current Worker returns a ready session with registration, avoiding
+                    // a second network round-trip. Fallback preserves compatibility with older Workers.
+                    let sessionResult = result;
+                    if (!sessionResult?.token) sessionResult = await apiCall('login', { email, password });
+                    if (!sessionResult?.success || !sessionResult.token) {
                         showLoginPage();
                         showNotification('Account created successfully. Please sign in using your new account.', 'info');
                     } else {
-                        saveSession(loginResult);
+                        saveSession(sessionResult);
                         showApp();
-                        if (loginResult.userType !== 'seller' && email.toLowerCase() !== 'daxsystems.tz.co@gmail.com' && !loginResult.phoneVerified) {
-                            setTimeout(() => showAccountPhoneSetup(loginResult.phoneNumber || phoneDigits), 450);
+                        if (sessionResult.userType !== 'seller' && email.toLowerCase() !== 'daxsystems.tz.co@gmail.com' && !sessionResult.phoneVerified) {
+                            setTimeout(() => showAccountPhoneSetup(sessionResult.phoneNumber || phoneDigits), 450);
                         }
-                        setTimeout(() => refreshAllData(false).catch(console.error), 100);
+                        setTimeout(() => refreshAllData(false).catch(console.error), 0);
                         setTimeout(() => checkAndSync().catch(console.error), 0);
                         showNotification('Account created and login successful!', 'success');
                     }
@@ -13614,7 +13639,8 @@ function hideAccessDeniedModal() {
             const btn=document.getElementById('forgotPhoneBtn');
             if(btn) btn.disabled=true;
             try {
-                const result=await recoveryApi('forgotPhone',{phone:digits});
+                stpStartOtpCapture('recoveryOtp', verifyRecoveryOtp);
+            const result=await recoveryApi('forgotPhone',{phone:digits});
                 if(!result.success) throw new Error(result.error||'SMS OTP haikutumwa.');
                 recoveryChannel='phone'; recoveryPhoneNumber=digits; window.recoveryEmailAddress='';
                 const label=document.getElementById('recoveryEmailLabel');
@@ -13623,7 +13649,7 @@ function hideAccessDeniedModal() {
                 setRecoveryStep('otp');
                 showNotification(result.message||'OTP imetumwa kwa SMS.', 'success');
                 setTimeout(()=>document.getElementById('recoveryOtp')?.focus(),100);
-            } catch(error) { showNotification(error.message||'Imeshindikana kutuma OTP ya SMS.', 'error'); }
+            } catch(error) { stpStopOtpCapture('recoveryOtp'); showNotification(error.message||'Imeshindikana kutuma OTP ya SMS.', 'error'); }
             finally { if(btn) btn.disabled=false; }
         }
 
@@ -20590,8 +20616,7 @@ async function updateStock() {
         function buildSalesReceiptPrintHTML(group) {
             if (!group || !group.items || !group.items.length) return '';
             const first = group.items[0];
-            const hasCachedLogo = typeof logoBase64Cache !== 'undefined' && logoBase64Cache && logoBase64Cache.data && logoBase64Cache.url === currentUser.logoUrl;
-            const logoHTML = hasCachedLogo ? `<img src="${logoBase64Cache.data}" class="receipt-logo" alt="">` : '';
+            const logoHTML = buildBusinessLogoHTML('receipt-logo', (currentUser.business || 'Business') + ' logo');
             const customer = group.customer || '';
             const seller = getSellerDisplayName(group.sellerId, first.sellerName || '');
             const receiptNo = first.receiptNo || first.receipt || 'Sale';
@@ -33978,11 +34003,24 @@ function triggerFileDownload(result) {
 
 let saleReceiptCounter = 0;
 
+// Resolve the active Business logo without depending exclusively on the
+// single-business local cache. The URL is scoped to currentUser and is a
+// safe fallback while the offline base64 cache is being refreshed.
+function getActiveBusinessLogoData() {
+    const cache = (typeof logoBase64Cache !== 'undefined' && logoBase64Cache) ? logoBase64Cache : null;
+    const logoUrl = String(currentUser && (currentUser.logoUrl || currentUser.altLogoUrl || currentUser.directLogoUrl) || '').trim();
+    if (cache && cache.data && cache.url && cache.url === logoUrl) return cache.data;
+    return logoUrl;
+}
+
+function buildBusinessLogoHTML(className, altText) {
+    const source = getActiveBusinessLogoData();
+    if (!source) return '';
+    return `<img src="${escapeHtml(source)}" class="${className}" alt="${escapeHtml(altText || 'Business logo')}" crossorigin="anonymous" referrerpolicy="no-referrer">`;
+}
+
 function generateSaleReceipt(items, customer, paymentMethod, grandTotal) {
-    const hasCachedLogo = logoBase64Cache && logoBase64Cache.data && logoBase64Cache.url === currentUser.logoUrl;
-    const logoHTML = hasCachedLogo
-        ? `<img src="${logoBase64Cache.data}" class="receipt-logo" alt="${escapeHtml(currentUser.business || '')} logo">`
-        : '';
+    const logoHTML = buildBusinessLogoHTML('receipt-logo', (currentUser.business || 'Business') + ' logo');
     
     const now = new Date();
     saleReceiptCounter++;
@@ -34073,10 +34111,7 @@ function generateDebtAgreement(items, borrowerName, borrowerPhone, grandTotal, b
     borrowerNIDA = displayNida(borrowerNIDA == null ? '' : borrowerNIDA);
     items = Array.isArray(items) ? items : [];
     grandTotal = Number(grandTotal) || 0;
-    const hasCachedLogo = logoBase64Cache && logoBase64Cache.data && logoBase64Cache.url === currentUser.logoUrl;
-    const logoHTML = hasCachedLogo
-        ? `<img src="${logoBase64Cache.data}" class="agreement-logo" alt="${escapeHtml(currentUser.business || '')} logo">`
-        : '';
+    const logoHTML = buildBusinessLogoHTML('agreement-logo', (currentUser.business || 'Business') + ' logo');
     
     const now = new Date();
     const dateDisplay = formatDate(now.toISOString(), true);
