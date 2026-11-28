@@ -7,18 +7,18 @@
  *  3. Always pick up new deployments automatically.
  *  4. NEVER interfere with calls to the Google Apps Script backend.
  *
- * Cache version is intentionally preserved. Normal deployments use
- * network-first for same-origin app files; bump only when old cached assets
- * must be forcibly discarded.
+ * v21 canonical Seller Branch identity redesign deployment: incremented cache version so installed clients
+ * refresh the updated application shell while preserving network-first behavior.
  */
 
-const CACHE_VERSION = 'v23';
+const CACHE_VERSION = 'v63';
 const CACHE_NAME = `smarttrade-cache-${CACHE_VERSION}`;
 
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
+  './icon-180.png',
   './icon-192.png',
   './icon-512.png'
 ];
